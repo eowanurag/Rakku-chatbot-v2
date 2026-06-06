@@ -3,9 +3,9 @@ import "./globals.css";
 import ThemeToggle from "./components/ThemeToggle";
 
 export const metadata: Metadata = {
-  title: "Rakku - Digital Police Assistant | Uttar Pradesh Police Citizen Services",
-  description: "AI-powered digital police assistant for Uttar Pradesh Police Citizen Services. Get guidance on Complaints, Tenant Verification, Character Certificates, and Event Permissions.",
-  keywords: "UP Police, Digital Police Assistant, UPCOP, Citizen Services, Tenant Verification, Character Certificate, Complaint, Uttar Pradesh, Rakku",
+  title: "Rakku - Your Digital Raksak | Uttar Pradesh Police Citizen Services",
+  description: "AI-powered digital assistant for Uttar Pradesh Police Citizen Services. Get guidance on Complaints, Tenant Verification, Character Certificates, and Event Permissions.",
+  keywords: "UP Police, Digital Raksak, UPCOP, Citizen Services, Tenant Verification, Character Certificate, Complaint, Uttar Pradesh, Rakku",
   authors: [{ name: "UP Police Tech Division" }],
   viewport: "width=device-width, initial-scale=1.0",
 };
@@ -38,7 +38,7 @@ export default function RootLayout({
                   <span>RAKKU</span>
                   <span className="text-xs px-2 py-0.5 bg-police-red text-white rounded font-normal tracking-normal">PROTOTYPE</span>
                 </h1>
-                <p className="text-[10px] text-police-gold font-medium uppercase tracking-widest">Digital Police Assistant</p>
+                <p className="text-[10px] text-police-gold font-medium uppercase tracking-widest">Your Digital Raksak</p>
               </div>
             </div>
             

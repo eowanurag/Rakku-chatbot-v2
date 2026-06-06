@@ -88,7 +88,7 @@ export default function DashboardPage() {
             <span>Rakku Digital Assistant</span>
           </h2>
           <p className="mt-3 text-lg text-slate-400 font-light">
-            &ldquo;Your Digital Police Assistant&rdquo;
+            &ldquo;Rakku, Your Digital Raksak&rdquo;
           </p>
           <p className="mt-4 text-sm text-slate-500 max-w-xl">
             An AI-powered interface helping citizens file complaints, verify tenants, request character checks, track status, and understand legal procedures easily in English, Hindi, and Hinglish.
