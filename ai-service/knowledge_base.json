@@ -1,0 +1,57 @@
+[
+  {
+    "category": "Complaint Registration",
+    "question": "What is the procedure to file a complaint for a lost mobile phone?",
+    "answer": "To report a lost mobile phone, you can register a lost article report (e-complaint) online using the UPCOP App or the UP Police Portal. You will need to provide your mobile's IMEI number, model, color, date and time of loss, and address of the incident. On submission, you will receive a mock registration number (e.g. UP-CMP-2026-XXXXXX) which can be used to block the IMEI through the Central Equipment Identity Register (CEIR)."
+  },
+  {
+    "category": "Complaint Registration",
+    "question": "Can I file an online FIR for cyber crime or financial fraud?",
+    "answer": "Yes, for cyber financial fraud, you can report it on the National Cyber Crime Portal (cybercrime.gov.in) or call the national helpline 1930. For local complaints in Uttar Pradesh, you can report online via UPCOP. Remember to report within the 'Golden Hour' (first 2 hours of transaction) to increase chances of freezing the stolen funds."
+  },
+  {
+    "category": "Character Certificate",
+    "question": "How do I apply for a Character Certificate in Uttar Pradesh?",
+    "answer": "You can apply for a Character Certificate online through the UPCOP App or the UP Police Citizen Portal. Fill in the online form, upload a passport photo, provide your current and permanent address details, and specify the purpose (e.g., job, visa). A fee of Rs. 50 must be paid online. After police verification, the certificate is issued electronically."
+  },
+  {
+    "category": "Character Certificate",
+    "question": "What happens during character certificate verification?",
+    "answer": "Once you submit your application and pay the fee, the application is routed to the local police station of your residence. A beat constable is assigned to physically verify your address and check with neighbors for any adverse records. Concurrently, a system check is run in the CCTNS database for any active FIRs or criminal history."
+  },
+  {
+    "category": "Tenant Verification",
+    "question": "What details are required for Tenant Verification?",
+    "answer": "For Tenant Verification, the landlord must provide: Tenant Full Name, Father's Name, Permanent Address, Current Address of the rented property, Tenant Mobile Number, Tenant Occupation, ID proof details (Aadhaar/PAN/Voter Card), and a passport size photograph of the tenant."
+  },
+  {
+    "category": "Tenant Verification",
+    "question": "Is PG or Domestic Help verification also required?",
+    "answer": "Yes, PG (Paying Guest) and Domestic Help (cook, driver, maid, guard) verifications follow the same legal requirements as tenant verification. Landlords and employers are legally obligated to register details at the local police station or through the online portal to verify criminal background checks."
+  },
+  {
+    "category": "Event Permission",
+    "question": "What permissions are needed to hold a rally or procession?",
+    "answer": "To hold a rally or procession in Uttar Pradesh, organizers must obtain an online event permission. This requires providing the event name, date, start and end route map, expected attendance, noise/mic permissions request, and a security undertaking. You must apply at least 7 days before the event."
+  },
+  {
+    "category": "Event Permission",
+    "question": "How do I request permission for a film shooting in Uttar Pradesh?",
+    "answer": "You can request film shooting permission online through the UPCOP portal. You must provide: Location list, dates, cast/crew count, script summary, and security requirements. UP Police routes the application through the SP or Police Commissioner for localized approvals."
+  },
+  {
+    "category": "Postmortem Report Request",
+    "question": "Who can get a copy of the Postmortem report and how?",
+    "answer": "A copy of the postmortem report can only be issued to close blood relatives or legal heirs of the deceased. You must apply in writing to the Chief Medical Officer (CMO) of the district where the autopsy was conducted. Bring a copy of the police inquest report (Panchnama), the death certificate, and your relationship ID proof."
+  },
+  {
+    "category": "Police Services",
+    "question": "What is CCTNS?",
+    "answer": "Crime and Criminal Tracking Network & Systems (CCTNS) is a nationwide mission mode project under the Government of India. It connects over 15,000 police stations across the country. In Uttar Pradesh, CCTNS stores FIR records, arrest data, and criminal profiles, allowing online citizen service verification to run seamlessly."
+  },
+  {
+    "category": "FAQs",
+    "question": "What should I do if a police officer demands a bribe for verification?",
+    "answer": "Demanding a bribe is a criminal offense. You should immediately report the incident to the Anti-Corruption Bureau (ACB) of Uttar Pradesh at their helpline number (0522-2307613) or file a complaint online on the UP vigilance portal. Do not pay bribes; all online services have fixed government-mandated fees."
+  }
+]

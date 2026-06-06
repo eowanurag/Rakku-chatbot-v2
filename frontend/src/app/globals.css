@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default Dark Mode colors */
+  --police-navy: #0F1E36;
+  --police-navy-light: #1A2E4C;
+  --police-navy-dark: #08101E;
+  
+  --police-red: #9E2A2B;
+  --police-red-light: #BE3E3F;
+  --police-red-dark: #7B1F20;
+  
+  --police-gold: #D4AF37;
+  --police-gold-light: #E5C158;
+  --police-gold-dark: #B3922B;
+  
+  --police-khaki: #E5D9C4;
+  --police-khaki-dark: #C5B294;
+
+  --text-primary: #f1f5f9; /* slate-100 */
+  --text-secondary: #94a3b8; /* slate-400 */
+  --bg-gradient-mesh-start: #08101e;
+  --bg-gradient-mesh-1: rgba(26, 46, 76, 0.4);
+  --bg-gradient-mesh-2: rgba(158, 42, 43, 0.25);
+  --bg-gradient-mesh-3: rgba(212, 175, 55, 0.1);
+  --border-glass: rgba(214, 217, 224, 0.1);
+  --border-glass-hover: rgba(212, 175, 55, 0.3);
+  --bg-glass-panel: rgba(26, 46, 76, 0.5);
+  --bg-glass-panel-hover: rgba(26, 46, 76, 0.75);
+  --bg-glass-card: rgba(15, 30, 54, 0.7);
+  --border-glass-card: rgba(212, 175, 55, 0.15);
+  --scrollbar-thumb: rgba(212, 175, 55, 0.3);
+  --scrollbar-thumb-hover: rgba(212, 175, 55, 0.6);
+
+  /* Chat bubble colors - Dark Mode */
+  --bg-bubble-assistant: rgba(15, 30, 54, 0.85);
+  --border-bubble-assistant: rgba(212, 175, 55, 0.2);
+  --text-bubble-assistant: #f1f5f9;
+  
+  --bg-bubble-user: rgba(158, 42, 43, 0.15);
+  --border-bubble-user: rgba(158, 42, 43, 0.25);
+  --text-bubble-user: #f1f5f9;
+}
+
+.theme-light {
+  /* Appealing, bright, and professional Light Mode colors - light blue theme */
+  --police-navy: #1E3A8A; /* Vibrant Navy Blue */
+  --police-navy-light: #D0E8FF; /* Soft light blue background for components */
+  --police-navy-dark: #FFFFFF; /* Pure white main background */
+  
+  --police-red: #B91C1C; /* Bold crimson red */
+  --police-red-light: #EF4444; /* Light crimson */
+  --police-red-dark: #991B1B; /* Dark crimson */
+  
+  --police-gold: #B45309; /* Deep gold/amber for high contrast and positive feeling */
+  --police-gold-light: #D97706;
+  --police-gold-dark: #78350F;
+  
+  --police-khaki: #F1E4C3;
+  --police-khaki-dark: #CBB279;
+
+  --text-primary: #0A1931; /* Deep dark navy blue (no grey) */
+  --text-secondary: #1B498B; /* Medium dark blue (no grey) */
+  --bg-gradient-mesh-start: #FFFFFF;
+  --bg-gradient-mesh-1: transparent;
+  --bg-gradient-mesh-2: transparent;
+  --bg-gradient-mesh-3: transparent;
+  --border-glass: rgba(30, 58, 138, 0.2);
+  --border-glass-hover: rgba(180, 83, 9, 0.6);
+  --bg-glass-panel: rgba(230, 242, 255, 0.85);
+  --bg-glass-panel-hover: rgba(230, 242, 255, 0.95);
+  --bg-glass-card: rgba(230, 242, 255, 0.9);
+  --border-glass-card: rgba(180, 83, 9, 0.3);
+  --scrollbar-thumb: rgba(180, 83, 9, 0.4);
+  --scrollbar-thumb-hover: rgba(180, 83, 9, 0.7);
+
+  /* Chat bubble colors - Light Mode (Highly visible) */
+  --bg-bubble-assistant: #D0E8FF; /* Soft light blue */
+  --border-bubble-assistant: rgba(30, 58, 138, 0.25);
+  --text-bubble-assistant: #0A1931; /* High visibility dark navy text */
+  
+  --bg-bubble-user: rgba(185, 28, 28, 0.08); /* Faint crimson red */
+  --border-bubble-user: rgba(185, 28, 28, 0.22);
+  --text-bubble-user: #0A1931; /* High visibility dark navy text */
+}
+
+@layer base {
+  body {
+    background-color: var(--police-navy-dark);
+    color: var(--text-primary);
+    min-h-screen: 100vh;
+    @apply antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-size: 1.05rem;
+    line-height: 1.6;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 30, 54, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: var(--bg-glass-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-panel-hover:hover {
+  background: var(--bg-glass-panel-hover);
+  border-color: var(--border-glass-hover);
+}
+
+.glass-card {
+  background: var(--bg-glass-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass-card);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* Chat bubble styling classes */
+.bubble-assistant {
+  background-color: var(--bg-bubble-assistant) !important;
+  border-color: var(--border-bubble-assistant) !important;
+  color: var(--text-bubble-assistant) !important;
+  font-size: 1rem !important;
+  font-weight: 400;
+}
+
+.bubble-user {
+  background-color: var(--bg-bubble-user) !important;
+  border-color: var(--border-bubble-user) !important;
+  color: var(--text-bubble-user) !important;
+  font-size: 1rem !important;
+  font-weight: 400;
+}
+
+/* Theme Button Primary Class - Red in Dark mode, Blue/Navy in Light Mode */
+.btn-primary {
+  background: linear-gradient(135deg, var(--police-red) 0%, var(--police-red-dark) 100%) !important;
+  border-color: var(--police-red-dark) !important;
+  color: #ffffff !important;
+  transition: all 0.2s ease-out;
+}
+.btn-primary:hover {
+  background: var(--police-red-light) !important;
+  border-color: var(--police-red-light) !important;
+}
+
+.theme-light .btn-primary {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%) !important;
+  border-color: #0284C7 !important;
+  color: #ffffff !important;
+}
+.theme-light .btn-primary:hover {
+  background: #38BDF8 !important;
+  border-color: #38BDF8 !important;
+}
+
+/* Custom glow animations */
+.glow-gold {
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+}
+.theme-light .glow-gold {
+  box-shadow: 0 0 15px rgba(180, 83, 9, 0.12);
+}
+
+.glow-red {
+  box-shadow: 0 0 15px rgba(158, 42, 43, 0.2);
+}
+.theme-light .glow-red {
+  box-shadow: 0 0 15px rgba(185, 28, 28, 0.15);
+}
+
+/* Background animated gradient */
+.bg-gradient-mesh {
+  background-color: var(--bg-gradient-mesh-start);
+  background-image: 
+    radial-gradient(at 10% 20%, var(--bg-gradient-mesh-1) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, var(--bg-gradient-mesh-2) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, var(--bg-gradient-mesh-3) 0px, transparent 50%);
+  background-size: 100% 100%;
+  transition: background-color 0.3s ease;
+}
+
+/* Light Theme Text & Utility Overrides to keep other files clean */
+.theme-light .text-white {
+  color: var(--text-primary) !important;
+}
+.theme-light .text-slate-100 {
+  color: var(--text-primary) !important;
+}
+.theme-light .text-slate-250 {
+  color: var(--text-primary) !important;
+}
+.theme-light .text-slate-200 {
+  color: var(--text-primary) !important;
+}
+.theme-light .text-slate-300 {
+  color: var(--text-secondary) !important;
+}
+.theme-light .text-slate-400 {
+  color: var(--text-secondary) !important;
+}
+.theme-light .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+.theme-light .text-slate-600 {
+  color: var(--text-secondary) !important;
+}
+.theme-light .text-slate-700 {
+  color: var(--text-secondary) !important;
+}
+.theme-light .border-slate-800 {
+  border-color: var(--border-glass) !important;
+}
+.theme-light .border-slate-700 {
+  border-color: var(--border-glass) !important;
+}
+.theme-light .border-slate-700\/80 {
+  border-color: var(--border-glass) !important;
+}
+.theme-light .bg-slate-900 {
+  background-color: var(--police-navy-light) !important;
+}
+.theme-light .bg-slate-800 {
+  background-color: var(--police-navy-light) !important;
+}
+.theme-light .bg-slate-900\/60 {
+  background-color: rgba(230, 242, 255, 0.75) !important;
+}
+.theme-light .bg-slate-900\/80 {
+  background-color: rgba(230, 242, 255, 0.9) !important;
+}
+.theme-light .bg-slate-800\/50 {
+  background-color: rgba(30, 58, 138, 0.08) !important;
+}
+.theme-light .bg-slate-800\/80 {
+  background-color: rgba(30, 58, 138, 0.12) !important;
+}
+.theme-light .hover\:bg-slate-755:hover {
+  background-color: rgba(30, 58, 138, 0.2) !important;
+}
+.theme-light .hover\:bg-slate-800:hover {
+  background-color: rgba(30, 58, 138, 0.2) !important;
+}
+.theme-light .hover\:text-white:hover {
+  color: var(--police-navy) !important;
+}
+.theme-light .group-hover\:text-white:hover {
+  color: var(--police-navy) !important;
+}
+.theme-light textarea {
+  color: var(--text-primary) !important;
+}
+.theme-light .bg-police-navy\/40 {
+  background-color: rgba(230, 242, 255, 0.5) !important;
+}
+.theme-light .bg-police-navy\/80 {
+  background-color: rgba(230, 242, 255, 0.85) !important;
+}
+
+/* Fix text colors inside elements overridden by light theme */
+.theme-light .bubble-assistant strong {
+  color: var(--police-navy) !important;
+}
+.theme-light .bubble-user strong {
+  color: var(--police-red) !important;
+}
+.theme-light .text-police-navy-dark {
+  color: #0A1931 !important;
+}
+
+/* Welcoming Speech Bubble Themes */
+.speech-bubble-welcome {
+  background-color: var(--police-navy) !important;
+  color: #ffffff !important;
+  border-color: rgba(212, 175, 55, 0.3) !important;
+}
+
+.theme-light .speech-bubble-welcome {
+  background-color: #ffffff !important;
+  color: #0A1931 !important;
+  border-color: rgba(30, 58, 138, 0.25) !important;
+}
+

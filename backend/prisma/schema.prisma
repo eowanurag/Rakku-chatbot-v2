@@ -1,0 +1,72 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Complaint {
+  id              String   @id @default(uuid())
+  referenceNumber String   @unique
+  complaintType   String
+  incidentDetails String
+  status          String   @default("Submitted")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Verification {
+  id              String   @id @default(uuid())
+  referenceNumber String   @unique
+  verificationType String  // Tenant, PG, Domestic Help, Employee
+  name            String
+  address         String
+  mobile          String
+  propertyDetails String
+  status          String   @default("Submitted")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CharacterCertificate {
+  id              String   @id @default(uuid())
+  referenceNumber String   @unique
+  name            String
+  address         String
+  district        String
+  purpose         String
+  status          String   @default("Submitted")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EventPermission {
+  id                 String   @id @default(uuid())
+  referenceNumber    String   @unique
+  eventType          String   // Event Permission, Procession Request, Protest Request, Film Shooting Request
+  eventName          String
+  location           String
+  date               String
+  expectedAttendance Int
+  status             String   @default("Submitted")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ChatHistory {
+  id        String   @id @default(uuid())
+  sessionId String
+  role      String   // user or assistant
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model KnowledgeItem {
+  id        String   @id @default(uuid())
+  category  String
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+}
