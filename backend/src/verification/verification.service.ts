@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 export interface VerificationData {
   id: string;
   referenceNumber: string;
+  citizenId: string;
   verificationType: string;
   name: string;
   address: string;
@@ -17,7 +18,7 @@ export interface VerificationData {
 @Injectable()
 export class VerificationService {
   private readonly logger = new Logger(VerificationService.name);
-  private inMemoryVerifications: VerificationData[] = [];
+  private inMemoryVerifications: any[] = [];
 
   constructor(private prisma: PrismaService) {}
 
@@ -27,6 +28,23 @@ export class VerificationService {
     return `UP-VER-${year}-${random}`;
   }
 
+  private async getOrCreateDefaultCitizenId(): Promise<string> {
+    try {
+      const defaultCitizen = await this.prisma.citizen.findFirst();
+      if (defaultCitizen) return defaultCitizen.id;
+      const newCitizen = await this.prisma.citizen.create({
+        data: {
+          fullName: "Default Citizen",
+          mobileNumber: "9999999999",
+          isConfirmed: true,
+        }
+      });
+      return newCitizen.id;
+    } catch {
+      return "mock-default-citizen-id";
+    }
+  }
+
   async createVerification(
     type: string,
     name: string,
@@ -34,8 +52,10 @@ export class VerificationService {
     mobile: string,
     propertyDetails: string,
     preGeneratedRefNum?: string,
+    citizenId?: string,
   ): Promise<VerificationData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
+    const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
     try {
       return await this.prisma.verification.create({
         data: {
@@ -45,13 +65,15 @@ export class VerificationService {
           address,
           mobile,
           propertyDetails,
+          citizenId: resolvedCitizenId,
         },
-      });
+      }) as unknown as VerificationData;
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Using in-memory store.`);
       const mock: VerificationData = {
         id: Math.random().toString(36).substring(7),
         referenceNumber: refNum,
+        citizenId: resolvedCitizenId,
         verificationType: type,
         name,
         address,
@@ -70,7 +92,8 @@ export class VerificationService {
     try {
       return await this.prisma.verification.findUnique({
         where: { referenceNumber: refNum },
-      });
+        include: { citizen: true },
+      }) as unknown as VerificationData;
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Reading in-memory store.`);
       return this.inMemoryVerifications.find(v => v.referenceNumber === refNum) || null;
@@ -81,7 +104,8 @@ export class VerificationService {
     try {
       return await this.prisma.verification.findMany({
         orderBy: { createdAt: 'desc' },
-      });
+        include: { citizen: true },
+      }) as unknown as VerificationData[];
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Reading in-memory store.`);
       return [...this.inMemoryVerifications].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());

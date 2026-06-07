@@ -23,10 +23,10 @@ graph TD
     C -- AI Generation --> F[Gemini 2.5 Flash API]
 ```
 
-- **Frontend (`/frontend`):** Next.js 15 app built with TypeScript, Tailwind CSS, and Lucide React icons. Features a ChatGPT-style conversational pane and tracking search timeline.
-- **Backend (`/backend`):** NestJS gateway API utilizing Prisma ORM to save applications to a PostgreSQL database. Features dynamic service interfaces and a TypeScript-based fallback workflow engine.
-- **AI Service (`/ai-service`):** FastAPI Python microservice running a slot-filling workflow state machine, local RAG keyword search engine, and official Google GenAI SDK (Gemini 2.5 Flash).
-- **Database (`/db`):** PostgreSQL database storing complaints, verifications, certificates, permissions, and conversation logs.
+- **Frontend (`/frontend`):** Next.js 15 app built with TypeScript, Tailwind CSS, and Lucide React. Enforces automatic coordinates lookup and passes them with messages to the backend to support seamless location mapping.
+- **Backend (`/backend`):** NestJS gateway API utilizing Prisma ORM to save applications to a PostgreSQL database. Features a dedicated `ValidationService` validating name / mobile formats and local fallbacks.
+- **AI Service (`/ai-service`):** FastAPI Python microservice running a slot-filling workflow state machine, Gemini structured information extraction layer, local RAG keyword search engine, and official Google GenAI SDK (Gemini 2.5 Flash).
+- **Database (`/db`):** PostgreSQL database storing `Citizen` profiles, `WorkflowSession` states, complaints, verifications, certificates, permissions, and conversation logs.
 
 ---
 
@@ -53,7 +53,7 @@ Rakku-chatbot-v1/
 │
 ├── backend/                 # NestJS Gateway API
 │   ├── prisma/
-│   │   └── schema.prisma    # Prisma PostgreSQL schema model mappings
+│   │   └── schema.prisma    # Prisma PostgreSQL schema mapping (Citizen, WorkflowSession, and relational tables)
 │   ├── src/
 │   │   ├── main.ts          # NestJS entrypoint (CORS, Pipes, Prefix)
 │   │   ├── app.module.ts    # Binds controllers and services
@@ -63,15 +63,15 @@ Rakku-chatbot-v1/
 │   │   ├── certificate/     # Character certificate service
 │   │   ├── event/           # Event, Procession, Protest & Film permissions
 │   │   ├── tracking/        # Unified status lookup service
-│   │   └── chat/            # Chat proxy (with built-in TS mock engine fallback)
+│   │   └── chat/            # Chat proxy & validation layer (validation.service.ts)
 │   ├── Dockerfile
 │   └── package.json
 │
 └── ai-service/              # FastAPI AI Agent Service
-    ├── main.py              # FastAPI app routing & health check
+    ├── main.py              # FastAPI app routing, stateless state parsing & health check
     ├── rag_engine.py        # Local JSON RAG matching retriever
-    ├── workflow_engine.py   # Slot-filling state machine & emergency checks
-    ├── gemini_client.py     # Gemini 2.5 Flash SDK prompt engineering
+    ├── workflow_engine.py   # Slot-filling state machine, profile validation & emergency checks
+    ├── gemini_client.py     # Gemini 2.5 Flash SDK prompt engineering & JSON profile extraction
     ├── knowledge_base.json  # Local citizen FAQs & official procedures
     ├── Dockerfile
     └── requirements.txt
@@ -116,7 +116,7 @@ cd backend
 npm install
 # Configure DATABASE_URL in a local .env file
 # Run Prisma migrations to initialize PostgreSQL
-npx prisma db push
+npx prisma db push --force-reset
 # Generate prisma client types
 npm run prisma:generate
 # Start backend in development watch mode
@@ -148,60 +148,16 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 ### 1. Chat Assistant Endpoint
 * **`POST /api/chat`**
-  * **Payload:** `{ "message": "My phone was stolen", "sessionId": "sess-abc" }`
-  * **Response:** `{ "response": "📋 [Complaint Form]... Please select Complaint Type:", "suggestions": ["Lost Mobile / Theft", "Lost Document"] }`
-
-### 2. Complaint Module
-* **`POST /api/complaint`**: Submits a new complaint draft.
-  * **Payload:** `{ "type": "Lost Mobile", "details": "iPhone stolen at Lucknow station on 05/06" }`
-  * **Response:** Returns complaint object with generated `referenceNumber` (e.g. `UP-CMP-2026-124982`).
-* **`PUT /api/complaint/:refNum`**: Modifies details of an existing complaint.
-* **`GET /api/complaint/:refNum`**: Fetches complaint status and details.
-
-### 3. Verification Module
-* **`POST /api/verification`**: Registers Tenant/PG/Domestic Help/Employee details.
-  * **Payload:** `{ "type": "Tenant", "name": "Rahul Sharma", "address": "Indira Nagar, Lucknow", "mobile": "9876543210", "propertyDetails": "Flat 302" }`
-  * **Response:** Returns verification object with generated `referenceNumber` (e.g. `UP-VER-2026-857214`).
-* **`GET /api/verification/:refNum`**: Fetches application status.
-
-### 4. Character Certificate Module
-* **`POST /api/certificate`**: Files character check request.
-  * **Payload:** `{ "name": "Aman Verma", "address": "Hazratganj", "district": "Lucknow", "purpose": "Private Employment" }`
-  * **Response:** Returns certificate object with generated `referenceNumber` (e.g. `UP-CER-2026-641203`).
-* **`GET /api/certificate/:refNum`**: Fetches status.
-
-### 5. Event Permission Module
-* **`POST /api/event`**: Registers event, procession, protest, or film request.
-  * **Payload:** `{ "type": "Protest Request", "eventName": "Peaceful Rally", "location": "1090 Crossing to Hazratganj", "date": "10/06/2026", "expectedAttendance": 200 }`
-  * **Response:** Returns permission object with generated `referenceNumber` (e.g. `UP-EVP-2026-724185`).
-* **`GET /api/event/:refNum`**: Fetches status.
-
-### 6. Tracking Module
-### 7. Citizen Assistance Module
-* **`GET /api/citizen-assistance/helplines`**: Returns the active directory of emergency contacts.
-* **`GET /api/citizen-assistance/police-stations/nearest?lat=...&lng=...`**: Calculates distance via Haversine formula and returns the closest Lucknow police station with Google Maps deep link.
-* **`GET /api/citizen-assistance/analytics/summary`**: Exposes persistent administrator performance metrics (total visits, helpline prompts, overrides).
+  * **Payload:** `{ "message": "My phone was stolen", "sessionId": "sess-abc", "latitude": 26.8467, "longitude": 80.9462 }`
+  * **Response:** `{ "response": "📋 [Confirmation Card]... Is everything correct?", "suggestions": ["Confirm Details", "Modify Details"], "state": { ... } }`
 
 ---
 
-## Demo Scenarios
+## Citizen Identification & State Flow
 
-Test the prototype using these simulation scenarios in the Chat panel:
-
-1. **Scenario 1: Lost Phone Complaint**
-   * *User:* "My phone was stolen."
-   * *Rakku:* Detects intent, starts the Complaint workflow, auto-detects the "Lost Mobile / Theft" type, expresses warm empathy, shows Recommended Services links, and gathers location, date/time, and description one question at a time before returning a completion reference code `UP-CMP-2026-XXXXXX`.
-2. **Scenario 2: Tenant Verification (Hindi)**
-   * *User:* "मुझे किरायेदार सत्यापन कराना है"
-   * *Rakku:* Detects language (Hindi), locks Verification workflow, shows Recommended Services link, and conducts form-filling in Hindi. Asks for Name, Permanent Address, Mobile, and Property details one-by-one, and returns reference code `UP-VER-2026-XXXXXX`.
-3. **Scenario 3: Character Certificate**
-   * *User:* "I need a character certificate for a job."
-   * *Rakku:* Locks Character Certificate workflow, gathers Name, Address, District, and Purpose in a conversational way, then displays a success report.
-4. **Scenario 4: Nearest Police Station Lookup**
-   * *User:* clicks "Find Station" card or types "nearest police station"
-   * *Rakku:* Prompts browser for location (via `navigator.geolocation`), sends coordinates to NestJS backend, and renders a card with the closest station, exact distance, phone link, and a Google Maps deep link.
-5. **Emergency Handler:**
-   * *User:* "Burglars are breaking into my house right now!"
-   * *Rakku:* Detects emergency trigger and overrides any active workflow to display the emergency helpline banner: **"⚠️ This appears to be an emergency situation. Please contact UP Police Emergency Services immediately by dialing 112. If someone is in immediate danger, do not wait for an online response."**
-
-
+Rakku mandates a structured validation sequence for all service requests:
+1. **Name check:** Resolves at least 2 chars, letters, spaces, hyphens, and apostrophes.
+2. **Mobile check:** Resolves 10-digit Indian numbers (normalizes standard prefixes).
+3. **Location mapping:** Maps browser coords automatically or prompts area input.
+4. **Confirmation card:** Displays details summary allowing natural language corrections (e.g. *"Change mobile to 9876543210"*).
+5. **Workflow progression:** Confirms the profile, inserts a `Citizen` row into the database, and begins target service slot-filling.

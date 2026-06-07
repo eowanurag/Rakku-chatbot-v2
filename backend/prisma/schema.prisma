@@ -7,9 +7,34 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model Citizen {
+  id               String    @id @default(cuid())
+  fullName         String
+  mobileNumber     String
+  email            String?
+  addressLine1     String?
+  addressLine2     String?
+  city             String?
+  district         String?
+  state            String?
+  pincode          String?
+  latitude         Float?
+  longitude        Float?
+  isConfirmed      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  complaints       Complaint[]
+  verifications    Verification[]
+  certificates     CharacterCertificate[]
+  permissions      EventPermission[]
+}
+
 model Complaint {
   id              String   @id @default(uuid())
   referenceNumber String   @unique
+  citizenId       String
+  citizen         Citizen  @relation(fields: [citizenId], references: [id])
   complaintType   String
   incidentDetails String
   status          String   @default("Submitted")
@@ -20,6 +45,8 @@ model Complaint {
 model Verification {
   id              String   @id @default(uuid())
   referenceNumber String   @unique
+  citizenId       String
+  citizen         Citizen  @relation(fields: [citizenId], references: [id])
   verificationType String  // Tenant, PG, Domestic Help, Employee
   name            String
   address         String
@@ -33,6 +60,8 @@ model Verification {
 model CharacterCertificate {
   id              String   @id @default(uuid())
   referenceNumber String   @unique
+  citizenId       String
+  citizen         Citizen  @relation(fields: [citizenId], references: [id])
   name            String
   address         String
   district        String
@@ -45,6 +74,8 @@ model CharacterCertificate {
 model EventPermission {
   id                 String   @id @default(uuid())
   referenceNumber    String   @unique
+  citizenId          String
+  citizen            Citizen  @relation(fields: [citizenId], references: [id])
   eventType          String   // Event Permission, Procession Request, Protest Request, Film Shooting Request
   eventName          String
   location           String
@@ -69,4 +100,15 @@ model KnowledgeItem {
   question  String
   answer    String
   createdAt DateTime @default(now())
+}
+
+model WorkflowSession {
+  id                String   @id @default(uuid())
+  citizenId         String?
+  serviceType       String?
+  currentStep       String
+  stateJson         Json
+  isCompleted       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

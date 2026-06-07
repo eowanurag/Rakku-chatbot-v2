@@ -53,8 +53,9 @@ function ChatContent() {
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
-  // Initialize Session ID
+  // Initialize Session ID and request location coordinates
   useEffect(() => {
     setSessionId(`session-${Math.random().toString(36).substring(7)}`);
     setMessages([
@@ -63,6 +64,20 @@ function ChatContent() {
         text: "👮 Welcome to Rakku\n\nI'm your Digital Police Assistant.\n\nI can help you with:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n\nPlease choose your preferred language:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nYou can also simply tell me what you need help with.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
       },
     ]);
+
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCoords({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.warn("Location permission denied or unavailable.");
+        }
+      );
+    }
   }, []);
 
   // Handle triggered query from dashboard
@@ -187,7 +202,12 @@ function ChatContent() {
     setMessages((prev) => [...prev, { role: "assistant", text: "...", isStreaming: true }]);
 
     try {
-      const data = await ChatService.sendMessage(userText, sessionId);
+      const data = await ChatService.sendMessage(
+        userText,
+        sessionId,
+        coords?.latitude || undefined,
+        coords?.longitude || undefined
+      );
       
       // Remove loading status
       setLoading(false);

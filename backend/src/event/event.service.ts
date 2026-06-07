@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 export interface EventPermissionData {
   id: string;
   referenceNumber: string;
+  citizenId: string;
   eventType: string; // Event, Procession, Protest, Film Shooting
   eventName: string;
   location: string;
@@ -17,7 +18,7 @@ export interface EventPermissionData {
 @Injectable()
 export class EventService {
   private readonly logger = new Logger(EventService.name);
-  private inMemoryEvents: EventPermissionData[] = [];
+  private inMemoryEvents: any[] = [];
 
   constructor(private prisma: PrismaService) {}
 
@@ -27,6 +28,23 @@ export class EventService {
     return `UP-EVP-${year}-${random}`;
   }
 
+  private async getOrCreateDefaultCitizenId(): Promise<string> {
+    try {
+      const defaultCitizen = await this.prisma.citizen.findFirst();
+      if (defaultCitizen) return defaultCitizen.id;
+      const newCitizen = await this.prisma.citizen.create({
+        data: {
+          fullName: "Default Citizen",
+          mobileNumber: "9999999999",
+          isConfirmed: true,
+        }
+      });
+      return newCitizen.id;
+    } catch {
+      return "mock-default-citizen-id";
+    }
+  }
+
   async createEventPermission(
     type: string,
     eventName: string,
@@ -34,8 +52,10 @@ export class EventService {
     date: string,
     expectedAttendance: number,
     preGeneratedRefNum?: string,
+    citizenId?: string,
   ): Promise<EventPermissionData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
+    const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
     try {
       return await this.prisma.eventPermission.create({
         data: {
@@ -45,13 +65,15 @@ export class EventService {
           location,
           date,
           expectedAttendance,
+          citizenId: resolvedCitizenId,
         },
-      });
+      }) as unknown as EventPermissionData;
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Using in-memory store.`);
       const mock: EventPermissionData = {
         id: Math.random().toString(36).substring(7),
         referenceNumber: refNum,
+        citizenId: resolvedCitizenId,
         eventType: type,
         eventName,
         location,
@@ -70,7 +92,8 @@ export class EventService {
     try {
       return await this.prisma.eventPermission.findUnique({
         where: { referenceNumber: refNum },
-      });
+        include: { citizen: true },
+      }) as unknown as EventPermissionData;
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Reading in-memory store.`);
       return this.inMemoryEvents.find(ev => ev.referenceNumber === refNum) || null;
@@ -81,7 +104,8 @@ export class EventService {
     try {
       return await this.prisma.eventPermission.findMany({
         orderBy: { createdAt: 'desc' },
-      });
+        include: { citizen: true },
+      }) as unknown as EventPermissionData[];
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Reading in-memory store.`);
       return [...this.inMemoryEvents].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());

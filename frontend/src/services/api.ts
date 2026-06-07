@@ -234,11 +234,11 @@ export const TrackingService = {
 
 // 5. Chat Service
 export const ChatService = {
-  async sendMessage(message: string, sessionId: string) {
+  async sendMessage(message: string, sessionId: string, latitude?: number, longitude?: number) {
     try {
       return await fetchApi("/chat", {
         method: "POST",
-        body: JSON.stringify({ message, sessionId }),
+        body: JSON.stringify({ message, sessionId, latitude, longitude }),
       });
     } catch {
       // Simulate chat stream or message locally in the UI

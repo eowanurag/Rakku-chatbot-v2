@@ -7,9 +7,9 @@ export class ChatController {
 
   @Post()
   async sendMessage(
-    @Body() body: { message: string; sessionId: string },
+    @Body() body: { message: string; sessionId: string; latitude?: number; longitude?: number },
   ) {
     const sessId = body.sessionId || 'default-session';
-    return this.chatService.sendMessage(body.message, sessId);
+    return this.chatService.sendMessage(body.message, sessId, body.latitude, body.longitude);
   }
 }

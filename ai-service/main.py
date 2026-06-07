@@ -34,11 +34,15 @@ gemini_client = GeminiClient()
 class ChatRequest(BaseModel):
     message: str
     session_id: str
+    latitude: float | None = None
+    longitude: float | None = None
+    state: dict | None = None
 
 class ChatResponse(BaseModel):
     response: str
     suggestions: list[str] = []
     db_action: dict | None = None
+    state: dict | None = None
 
 @app.post("/chat/message", response_model=ChatResponse)
 async def chat_message(req: ChatRequest):
@@ -46,9 +50,15 @@ async def chat_message(req: ChatRequest):
         message = req.message
         session_id = req.session_id
         
+        # Load state
+        session = workflow_engine.load_or_create_session(session_id, req.state)
+        if req.latitude is not None:
+            session.latitude = req.latitude
+        if req.longitude is not None:
+            session.longitude = req.longitude
+
         # 1. Emergency Checks (Intercept immediately)
         if workflow_engine.check_emergency(message):
-            session = workflow_engine.get_session(session_id)
             session.workflow = None
             session.step = 0
             session.data = {}
@@ -62,23 +72,24 @@ async def chat_message(req: ChatRequest):
             
             return ChatResponse(
                 response=emergency_msgs.get(lang, emergency_msgs["en"]),
-                suggestions=["File Complaint", "Track Status"]
+                suggestions=["File Complaint", "Track Status"],
+                state=session.to_dict()
             )
             
         # 2. Workflow engine slot filling check
-        wf_res = workflow_engine.process_message(message, session_id)
+        wf_res = workflow_engine.process_message(message, session_id, gemini_client)
         if wf_res["intercepted"]:
             return ChatResponse(
                 response=wf_res["response"],
                 suggestions=wf_res.get("suggestions", []),
-                db_action=wf_res.get("db_action", None)
+                db_action=wf_res.get("db_action", None),
+                state=session.to_dict()
             )
             
         # 3. Retrieve relevant context from Knowledge Base
         retrieved_context = rag_engine.retrieve(message, top_k=2)
         
         # 4. Generate Gemini response
-        session = workflow_engine.get_session(session_id)
         response_text = gemini_client.generate_response(
             prompt=message,
             retrieved_context=retrieved_context,
@@ -98,7 +109,8 @@ async def chat_message(req: ChatRequest):
         
         return ChatResponse(
             response=response_text,
-            suggestions=suggestions
+            suggestions=suggestions,
+            state=session.to_dict()
         )
         
     except Exception as e:

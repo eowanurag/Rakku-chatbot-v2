@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { PrismaService } from '../prisma.service';
+import { ValidationService } from './validation.service';
 import { ComplaintService } from '../complaint/complaint.service';
 import { VerificationService } from '../verification/verification.service';
 import { CertificateService } from '../certificate/certificate.service';
@@ -13,12 +15,26 @@ import { getCompletionMessage } from '../templates/completions';
 import { getEmergencyMessage } from '../templates/emergency';
 import { AnalyticsService } from '../citizen-assistance/analytics.service';
 
+interface CitizenState {
+  id?: string;
+  fullName: string;
+  mobileNumber: string;
+  email: string;
+  city: string;
+  district: string;
+  state: string;
+  latitude: number | null;
+  longitude: number | null;
+  isConfirmed: boolean;
+}
+
 interface ChatSessionState {
   workflow: 'complaint' | 'verification' | 'certificate' | 'event' | 'tracking' | null;
-  step: number;
+  step: string;
   data: Record<string, any>;
   language: 'en' | 'hi' | 'hinglish';
-  languageSelected?: boolean;
+  languageSelected: boolean;
+  citizen: CitizenState;
 }
 
 const TRANSLATIONS = {
@@ -44,9 +60,6 @@ export class ChatService {
   private readonly logger = new Logger(ChatService.name);
   private aiServiceUrl: string;
 
-  // In-memory session store for local fallback
-  private sessions: Map<string, ChatSessionState> = new Map();
-
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -56,22 +69,105 @@ export class ChatService {
     private readonly eventService: EventService,
     private readonly trackingService: TrackingService,
     private readonly analyticsService: AnalyticsService,
+    private readonly prisma: PrismaService,
+    private readonly validationService: ValidationService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
   }
 
-  async sendMessage(message: string, sessionId: string): Promise<{ response: string; suggestions?: string[] }> {
+  async getOrCreateSession(sessionId: string): Promise<ChatSessionState> {
+    try {
+      const session = await this.prisma.workflowSession.findUnique({
+        where: { id: sessionId },
+      });
+      if (session) {
+        return typeof session.stateJson === 'string'
+          ? JSON.parse(session.stateJson)
+          : session.stateJson as unknown as ChatSessionState;
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to read session from DB: ${e.message}`);
+    }
+
+    return {
+      workflow: null,
+      step: 'START',
+      data: {},
+      language: 'en',
+      languageSelected: false,
+      citizen: {
+        fullName: '',
+        mobileNumber: '',
+        email: '',
+        city: '',
+        district: '',
+        state: 'Uttar Pradesh',
+        latitude: null,
+        longitude: null,
+        isConfirmed: false,
+      },
+    };
+  }
+
+  async saveSession(sessionId: string, state: ChatSessionState): Promise<void> {
+    try {
+      await this.prisma.workflowSession.upsert({
+        where: { id: sessionId },
+        update: {
+          stateJson: state as any,
+          currentStep: state.step || 'START',
+          serviceType: state.workflow || null,
+        },
+        create: {
+          id: sessionId,
+          stateJson: state as any,
+          currentStep: state.step || 'START',
+          serviceType: state.workflow || null,
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to save session to DB: ${e.message}`);
+    }
+  }
+
+  async sendMessage(
+    message: string,
+    sessionId: string,
+    latitude?: number,
+    longitude?: number,
+  ): Promise<{ response: string; suggestions?: string[] }> {
     this.analyticsService.trackHelpRequest();
+    
+    // Load session state
+    const state = await this.getOrCreateSession(sessionId);
+
+    // Update latitude and longitude if passed
+    if (latitude !== undefined && latitude !== null) {
+      state.citizen.latitude = latitude;
+    }
+    if (longitude !== undefined && longitude !== null) {
+      state.citizen.longitude = longitude;
+    }
+
     try {
       this.logger.log(`Forwarding message to FastAPI AI service: ${this.aiServiceUrl}/chat/message`);
       const response = await firstValueFrom(
         this.httpService.post(`${this.aiServiceUrl}/chat/message`, {
           message,
           session_id: sessionId,
+          latitude: state.citizen.latitude,
+          longitude: state.citizen.longitude,
+          state: state,
         }),
       );
-      
+
       const responseData = response.data;
+      
+      // If AI service returns updated state, capture it
+      if (responseData && responseData.state) {
+        Object.assign(state, responseData.state);
+      }
+
       if (responseData && responseData.db_action) {
         await this.executeDbAction(responseData.db_action);
       }
@@ -82,30 +178,62 @@ export class ChatService {
         if (text.includes('1090')) this.analyticsService.trackHelplineRecommendation('1090');
         if (text.includes('1930')) this.analyticsService.trackHelplineRecommendation('1930');
         if (text.includes('1098')) this.analyticsService.trackHelplineRecommendation('1098');
-        if (text.includes('108')) this.analyticsService.trackHelplineRecommendation('108');
-        if (text.includes('101')) this.analyticsService.trackHelplineRecommendation('101');
         
         if (text.includes('EMERGENCY') || text.includes('Notice') || text.includes('आपातकालीन')) {
           this.analyticsService.trackEmergencyOverride();
         }
       }
-      
+
+      // Persist state to DB
+      await this.saveSession(sessionId, state);
       return responseData;
     } catch (e) {
       this.logger.warn(`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`);
-      return this.handleLocalFallback(message, sessionId);
+      const localResult = await this.handleLocalFallback(message, sessionId, state);
+      await this.saveSession(sessionId, state);
+      return localResult;
     }
   }
 
   private async executeDbAction(dbAction: { type: string; data: Record<string, any> }) {
     try {
-      this.logger.log(`Executing DB Action from AI service: ${dbAction.type}`);
+      this.logger.log(`Executing DB Action: ${dbAction.type}`);
       switch (dbAction.type) {
+        case 'citizen':
+          const citizen = await this.prisma.citizen.upsert({
+            where: { id: dbAction.data.id || 'new-id' },
+            update: {
+              fullName: dbAction.data.fullName,
+              mobileNumber: dbAction.data.mobileNumber,
+              email: dbAction.data.email,
+              addressLine1: dbAction.data.addressLine1,
+              city: dbAction.data.city,
+              district: dbAction.data.district,
+              state: dbAction.data.state,
+              latitude: dbAction.data.latitude,
+              longitude: dbAction.data.longitude,
+              isConfirmed: dbAction.data.isConfirmed,
+            },
+            create: {
+              fullName: dbAction.data.fullName,
+              mobileNumber: dbAction.data.mobileNumber,
+              email: dbAction.data.email,
+              addressLine1: dbAction.data.addressLine1,
+              city: dbAction.data.city,
+              district: dbAction.data.district,
+              state: dbAction.data.state,
+              latitude: dbAction.data.latitude,
+              longitude: dbAction.data.longitude,
+              isConfirmed: dbAction.data.isConfirmed,
+            },
+          });
+          return citizen;
         case 'complaint':
           await this.complaintService.createComplaint(
             dbAction.data.type,
             dbAction.data.details,
-            dbAction.data.refNum
+            dbAction.data.refNum,
+            dbAction.data.citizenId,
           );
           break;
         case 'verification':
@@ -115,7 +243,8 @@ export class ChatService {
             dbAction.data.address,
             dbAction.data.mobile,
             dbAction.data.propertyDetails,
-            dbAction.data.refNum
+            dbAction.data.refNum,
+            dbAction.data.citizenId,
           );
           break;
         case 'certificate':
@@ -124,7 +253,8 @@ export class ChatService {
             dbAction.data.address,
             dbAction.data.district,
             dbAction.data.purpose,
-            dbAction.data.refNum
+            dbAction.data.refNum,
+            dbAction.data.citizenId,
           );
           break;
         case 'event':
@@ -134,7 +264,8 @@ export class ChatService {
             dbAction.data.location,
             dbAction.data.date,
             dbAction.data.attendance,
-            dbAction.data.refNum
+            dbAction.data.refNum,
+            dbAction.data.citizenId,
           );
           break;
       }
@@ -143,80 +274,59 @@ export class ChatService {
     }
   }
 
-  private async handleLocalFallback(message: string, sessionId: string): Promise<{ response: string; suggestions?: string[] }> {
+  private async handleLocalFallback(
+    message: string,
+    sessionId: string,
+    state: ChatSessionState,
+  ): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
 
-    // Initialize session if not exists
-    if (!this.sessions.has(sessionId)) {
-      this.sessions.set(sessionId, {
-        workflow: null,
-        step: 0,
-        data: {},
-        language: 'en',
-        languageSelected: false,
-      });
-    }
-
-    const session = this.sessions.get(sessionId)!;
-
-    // 1. Emergency Checks (overrides active workflow)
+    // 1. Emergency Checks
     const emergencyKeywords = [
       'danger', 'assault', 'threat', 'life', 'weapon', 'murder', 'burglar', 'attack', 'emergency',
       'मदद', 'खतरा', 'हमला', 'kidnapping', 'burglary', 'ongoing attack', 'burglary in progress', 'immediate danger'
     ];
     if (emergencyKeywords.some(keyword => cleanMsg.includes(keyword))) {
-      session.workflow = null;
-      session.step = 0;
-      session.data = {};
+      state.workflow = null;
+      state.step = 'START';
+      state.data = {};
       return {
-        response: getEmergencyMessage(session.language),
+        response: getEmergencyMessage(state.language),
         suggestions: ['🚔 File a Complaint', '🔍 Track Status'],
       };
     }
 
-    // Check if language selection is happening
-    if (!session.languageSelected) {
+    // Language selection
+    if (!state.languageSelected) {
       let matchedLang = false;
       if (cleanMsg === 'english' || cleanMsg.includes('option:english')) {
-        session.language = 'en';
-        session.languageSelected = true;
+        state.language = 'en';
+        state.languageSelected = true;
         matchedLang = true;
       } else if (cleanMsg === 'हिंदी' || cleanMsg.includes('hindi') || cleanMsg.includes('option:हिंदी') || cleanMsg.includes('option:हिंदी (hindi)')) {
-        session.language = 'hi';
-        session.languageSelected = true;
+        state.language = 'hi';
+        state.languageSelected = true;
         matchedLang = true;
       } else if (cleanMsg === 'hinglish' || cleanMsg.includes('option:hinglish')) {
-        session.language = 'hinglish';
-        session.languageSelected = true;
+        state.language = 'hinglish';
+        state.languageSelected = true;
         matchedLang = true;
       }
 
       if (matchedLang) {
-        this.analyticsService.trackLanguage(session.language);
+        this.analyticsService.trackLanguage(state.language);
         return {
-          response: LANGUAGE_SELECTION_RESPONSES[session.language],
+          response: LANGUAGE_SELECTION_RESPONSES[state.language],
           suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
         };
       }
 
-      // If it is a free-text message (e.g. from examples), check if it starts a workflow
-      let detectedLang: 'en' | 'hi' | 'hinglish' = 'en';
-      if (/[\u0900-\u097F]/.test(cleanMsg) || cleanMsg.includes('हिन्दी') || cleanMsg.includes('hindi') || cleanMsg.includes('हिंदी')) {
-        detectedLang = 'hi';
-      } else if (cleanMsg.includes('hinglish') || cleanMsg.includes('karna') || cleanMsg.includes('chahiye') || cleanMsg.includes('chori') || cleanMsg.includes('gum') || cleanMsg.includes('shikayat')) {
-        detectedLang = 'hinglish';
-      }
-
-      const startsWorkflow = cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत') || cleanMsg.includes('lost') || cleanMsg.includes('wallet') || cleanMsg.includes('pocket') ||
-                             cleanMsg.includes('tenant') || cleanMsg.includes('verification') || cleanMsg.includes('satyapan') || cleanMsg.includes('किरायेदार') || cleanMsg.includes('सत्यापन') ||
-                             cleanMsg.includes('certificate') || cleanMsg.includes('character') || cleanMsg.includes('charitra') || cleanMsg.includes('चरित्र') || cleanMsg.includes('प्रमाण') ||
-                             cleanMsg.includes('event') || cleanMsg.includes('permission') || cleanMsg.includes('protest') || cleanMsg.includes('shooting') || cleanMsg.includes('अनुमति') ||
-                             cleanMsg.includes('track') || cleanMsg.includes('status') || cleanMsg.includes('pata karein') || cleanMsg.includes('स्थिति');
-
-      if (startsWorkflow) {
-        session.language = detectedLang;
-        session.languageSelected = true;
-        this.analyticsService.trackLanguage(session.language);
+      // Detect starting workflow in greeting
+      const startsWf = this.detectWorkflowIntent(cleanMsg);
+      if (startsWf) {
+        state.workflow = startsWf;
+        state.languageSelected = true;
+        this.analyticsService.trackLanguage(state.language);
       } else {
         return {
           response: WELCOME_MESSAGE,
@@ -225,173 +335,316 @@ export class ChatService {
       }
     }
 
-    const lang = session.language;
+    const lang = state.language;
 
     // Cancel command
     if (cleanMsg === 'cancel' || cleanMsg === 'radd' || cleanMsg === 'रद्द' || cleanMsg === 'exit') {
-      session.workflow = null;
-      session.step = 0;
-      session.data = {};
+      state.workflow = null;
+      state.step = 'START';
+      state.data = {};
       return {
         response: TRANSLATIONS[lang].cancel,
         suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
       };
     }
 
-    // 2. Manage Active Workflows
-    if (session.workflow) {
-      let empathyPrepend = "";
-      if (message && !session.data.empathyShown) {
-        empathyPrepend = getEmpathyMessage(message, lang);
-        if (empathyPrepend) {
-          session.data.empathyShown = true;
+    // Check if workflow needs to be determined
+    if (!state.workflow) {
+      const detectedWf = this.detectWorkflowIntent(cleanMsg);
+      if (detectedWf) {
+        state.workflow = detectedWf;
+        state.step = 'START';
+      }
+    }
+
+    if (!state.workflow) {
+      // General FAQ Fallbacks
+      const faqList = [
+        {
+          keys: ['postmortem', 'post mortem', 'pm report', 'पोस्टमार्टम'],
+          response: '🔬 **Postmortem Report Request Procedure:**\nTo obtain a postmortem report in Uttar Pradesh:\n1. Apply at the district Chief Medical Officer (CMO) office.\n2. Submit a request letter indicating the relationship to the deceased, along with copy of FIR/Panchnama and death certificate.\n*(Note: Rakku assists in guidance, but actual reports are issued offline by CMO office).*',
+        },
+        {
+          keys: ['police services', 'what do you do', 'services', 'help', 'मदद', 'सुविधाएं'],
+          response: '👮 **UP Police Citizen Services:**\nThrough our online portal, citizens can access:\n- FIR Lodging\n- Character Verification\n- Tenant/PG/Domestic Help Verification\n- Event/Protest/Procession permissions\n\nLet me know which service you are interested in.',
+        }
+      ];
+
+      for (const faq of faqList) {
+        if (faq.keys.some(k => cleanMsg.includes(k))) {
+          return {
+            response: faq.response,
+            suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🔍 Track Application'],
+          };
         }
       }
 
-      let res: { response: string; suggestions?: string[] };
-      switch (session.workflow) {
-        case 'complaint':
-          res = this.runComplaintWorkflow(session, message);
-          break;
-        case 'verification':
-          res = this.runVerificationWorkflow(session, message);
-          break;
-        case 'certificate':
-          res = this.runCertificateWorkflow(session, message);
-          break;
-        case 'event':
-          res = this.runEventWorkflow(session, message);
-          break;
-        case 'tracking':
-          res = await this.runTrackingWorkflow(session, message);
-          break;
-        default:
-          res = { response: TRANSLATIONS[lang].invalidStep };
-      }
-
-      if (empathyPrepend && res) {
-        res.response = empathyPrepend + res.response;
-      }
-      return res;
+      return {
+        response: WELCOME_MESSAGE,
+        suggestions: ['English', 'हिंदी', 'Hinglish'],
+      };
     }
 
-    // 3. Detect Intent & Start Workflows
-    let empathyPrepend = getEmpathyMessage(message, lang);
+    // Enforce Citizen Identification & Confirmation first (unless already confirmed)
+    if (!state.citizen.isConfirmed && state.workflow !== 'tracking') {
+      return this.runCitizenIdentificationFlow(state, message);
+    }
 
+    // Process Active Workflows
+    let empathyPrepend = "";
+    if (message && !state.data.empathyShown) {
+      empathyPrepend = getEmpathyMessage(message, lang);
+      if (empathyPrepend) {
+        state.data.empathyShown = true;
+      }
+    }
+
+    let res: { response: string; suggestions?: string[] };
+    switch (state.workflow) {
+      case 'complaint':
+        res = await this.runComplaintWorkflow(state, message);
+        break;
+      case 'verification':
+        res = await this.runVerificationWorkflow(state, message);
+        break;
+      case 'certificate':
+        res = await this.runCertificateWorkflow(state, message);
+        break;
+      case 'event':
+        res = await this.runEventWorkflow(state, message);
+        break;
+      case 'tracking':
+        res = await this.runTrackingWorkflow(state, message);
+        break;
+      default:
+        res = { response: TRANSLATIONS[lang].invalidStep };
+    }
+
+    if (empathyPrepend && res) {
+      res.response = empathyPrepend + res.response;
+    }
+    return res;
+  }
+
+  private detectWorkflowIntent(cleanMsg: string): ChatSessionState['workflow'] {
     if (cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत') || cleanMsg.includes('lost') || cleanMsg.includes('wallet') || cleanMsg.includes('pocket')) {
-      session.workflow = 'complaint';
-      session.data = {};
-      
-      // Auto-detect type
-      let autoType = '';
-      if (cleanMsg.includes('phone') || cleanMsg.includes('mobile') || cleanMsg.includes('stolen') || cleanMsg.includes('theft') || cleanMsg.includes('chori') || cleanMsg.includes('फ़ोन') || cleanMsg.includes('मोबाइल') || cleanMsg.includes('फोन') || cleanMsg.includes('चोरी') || cleanMsg.includes('चोर')) {
-        autoType = 'Lost Mobile / Theft';
-      } else if (cleanMsg.includes('document') || cleanMsg.includes('wallet') || cleanMsg.includes('passport') || cleanMsg.includes('card') || cleanMsg.includes('aadhar') || cleanMsg.includes('दस्तावेज़') || cleanMsg.includes('कागजात') || cleanMsg.includes('गुम') || cleanMsg.includes('खोया') || cleanMsg.includes('बटुआ') || cleanMsg.includes('पर्स')) {
-        autoType = 'Lost Document';
-      } else if (cleanMsg.includes('harass') || cleanMsg.includes('teasing') || cleanMsg.includes('threat') || cleanMsg.includes('उत्पीड़न') || cleanMsg.includes('परेशान') || cleanMsg.includes('धमकी') || cleanMsg.includes('pareshan') || cleanMsg.includes('dhamki')) {
-        autoType = 'Simple Harassment';
-      } else if (cleanMsg.includes('fraud') || cleanMsg.includes('scam') || cleanMsg.includes('money') || cleanMsg.includes('dhokha') || cleanMsg.includes('धोखा') || cleanMsg.includes('धोखाधड़ी') || cleanMsg.includes('पैसा') || cleanMsg.includes('पैसे')) {
-        autoType = 'Cyber Fraud / Financial Loss';
-      }
-
-      if (autoType) {
-        session.data.type = autoType;
-        session.step = 2; // Directly go to asking details (location)
-        const nextQ = this.runComplaintWorkflow(session, "");
-        return {
-          response: empathyPrepend + nextQ.response,
-          suggestions: nextQ.suggestions,
-        };
-      }
-
-      session.step = 1;
-      const nextQ = this.runComplaintWorkflow(session, "");
-      return {
-        response: empathyPrepend + nextQ.response,
-        suggestions: nextQ.suggestions,
-      };
+      return 'complaint';
     }
-
     if (cleanMsg.includes('tenant') || cleanMsg.includes('verification') || cleanMsg.includes('satyapan') || cleanMsg.includes('किरायेदार') || cleanMsg.includes('सत्यापन')) {
-      session.workflow = 'verification';
-      session.step = 1;
-      session.data = {};
-      const nextQ = this.runVerificationWorkflow(session, "");
-      
-      const recServices = {
-        en: "*Recommended Services:*\n- [🏠 Tenant Verification](option:🏠 Tenant Verification)\n- [🔍 Application Tracking](option:🔍 Track Application)\n\n",
-        hi: "*अनुशंसित सेवाएं:*\n- [🏠 किरायेदार सत्यापन](option:🏠 Tenant Verification)\n- [🔍 आवेदन ट्रैकिंग](option:🔍 Track Application)\n\n",
-        hinglish: "*Recommended Services:*\n- [🏠 Tenant Verification](option:🏠 Tenant Verification)\n- [🔍 Application Tracking](option:🔍 Track Application)\n\n"
-      };
-
-      return {
-        response: recServices[lang] + empathyPrepend + nextQ.response,
-        suggestions: nextQ.suggestions,
-      };
+      return 'verification';
     }
-
     if (cleanMsg.includes('certificate') || cleanMsg.includes('character') || cleanMsg.includes('charitra') || cleanMsg.includes('चरित्र') || cleanMsg.includes('प्रमाण')) {
-      session.workflow = 'certificate';
-      session.step = 1;
-      session.data = {};
-      const nextQ = this.runCertificateWorkflow(session, "");
-      return {
-        response: empathyPrepend + nextQ.response,
-        suggestions: nextQ.suggestions,
-      };
+      return 'certificate';
     }
-
-    if (cleanMsg.includes('event') || cleanMsg.includes('permission') || cleanMsg.includes('protest') || cleanMsg.includes('shooting') || cleanMsg.includes('अनुमति')) {
-      session.workflow = 'event';
-      session.step = 1;
-      session.data = {};
-      const nextQ = this.runEventWorkflow(session, "");
-      return {
-        response: empathyPrepend + nextQ.response,
-        suggestions: nextQ.suggestions,
-      };
+    if (cleanMsg.includes('event') || cleanMsg.includes('permission') || cleanMsg.includes('protest') || cleanMsg.includes('procession') || cleanMsg.includes('shooting') || cleanMsg.includes('अनुमति')) {
+      return 'event';
     }
-
     if (cleanMsg.includes('track') || cleanMsg.includes('status') || cleanMsg.includes('pata karein') || cleanMsg.includes('स्थिति')) {
-      session.workflow = 'tracking';
-      session.step = 1;
-      session.data = {};
-      const nextQ = await this.runTrackingWorkflow(session, "");
-      return {
-        response: empathyPrepend + nextQ.response,
-        suggestions: nextQ.suggestions,
-      };
+      return 'tracking';
+    }
+    return null;
+  }
+
+  private async runCitizenIdentificationFlow(
+    state: ChatSessionState,
+    message: string,
+  ): Promise<{ response: string; suggestions?: string[] }> {
+    const cleanMsg = message.trim().toLowerCase();
+    const extracted = this.validationService.extractCitizenData(message);
+
+    // Merge extracted details
+    if (extracted.fullName && !state.citizen.fullName) {
+      state.citizen.fullName = extracted.fullName;
+    }
+    if (extracted.mobileNumber && !state.citizen.mobileNumber) {
+      state.citizen.mobileNumber = extracted.mobileNumber;
+    }
+    if (extracted.location && !state.citizen.city) {
+      state.citizen.city = extracted.location;
+      state.citizen.district = extracted.location;
     }
 
-    // 4. Q&A and FAQ Knowledge base fallback
-    const faqList = [
-      {
-        keys: ['postmortem', 'post mortem', 'pm report', 'पोस्टमार्टम'],
-        response: '🔬 **Postmortem Report Request Procedure:**\nTo obtain a postmortem report in Uttar Pradesh:\n1. Apply at the district Chief Medical Officer (CMO) office.\n2. Submit a request letter indicating the relationship to the deceased, along with copy of FIR/Panchnama and death certificate.\n3. The report is typically issued to close relatives after official verification.\n*(Note: Rakku assists in guidance, but actual reports are issued offline by CMO office).*',
-      },
-      {
-        keys: ['police services', 'what do you do', 'services', 'help', 'मदद', 'सुविधाएं'],
-        response: '👮 **UP Police Citizen Services:**\nThrough our online portal, citizens can access:\n- FIR Lodging (E-FIR for unknown/lost articles)\n- Character Verification\n- Tenant/PG/Domestic Help Verification\n- Domestic Help Verification\n- Event/Protest/Procession permissions\n- Missing Person Reporting\n\nLet me know which service you are interested in, and I can guide you through the process.',
-      },
-      {
-        keys: ['faq', 'questions', 'how to', 'help'],
-        response: '❓ **Common Frequently Asked Questions (FAQs):**\n- **How to file an FIR?** Visit the nearest Police Station or file an e-FIR on the UPCOP app for lost items.\n- **How long does character verification take?** Usually 15-21 days depending on police field verification.\n- **Is tenant verification mandatory?** Yes, as per district administration directives, tenant verification is mandatory to prevent security risks.',
-      },
-    ];
+    // Natural Language Corrections check
+    const isCorrection = this.handleProfileCorrection(state, message);
+    if (isCorrection) {
+      return this.renderConfirmationCard(state);
+    }
 
-    for (const faq of faqList) {
-      if (faq.keys.some(k => cleanMsg.includes(k))) {
+    // State Machine Steps
+    if (state.step === 'IDENTIFY_NAME') {
+      if (this.validationService.validateName(message)) {
+        state.citizen.fullName = message.trim();
+      } else {
         return {
-          response: faq.response,
-          suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🔍 Track Application'],
+          response: "👮 I may not have captured your name correctly.\n\nPlease enter your full name (alphabets only):",
+          suggestions: [],
+        };
+      }
+    } else if (state.step === 'IDENTIFY_MOBILE') {
+      if (this.validationService.validateMobile(message)) {
+        state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
+      } else {
+        return {
+          response: "👮 Please provide a valid 10-digit mobile number:",
+          suggestions: [],
+        };
+      }
+    } else if (state.step === 'IDENTIFY_LOCATION') {
+      if (message.trim().length >= 3) {
+        state.citizen.city = message.trim();
+        state.citizen.district = message.trim();
+      } else {
+        return {
+          response: "👮 I couldn't understand that location. Please tell me your city, district, or area:",
+          suggestions: [],
+        };
+      }
+    } else if (state.step === 'CONFIRM_PROFILE') {
+      if (cleanMsg === 'yes' || cleanMsg === 'correct' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:confirm details') || cleanMsg.includes('confirm')) {
+        state.citizen.isConfirmed = true;
+        
+        // Save Citizen to Database
+        try {
+          const citizenRecord = await this.prisma.citizen.create({
+            data: {
+              fullName: state.citizen.fullName,
+              mobileNumber: state.citizen.mobileNumber,
+              email: state.citizen.email || null,
+              city: state.citizen.city || null,
+              district: state.citizen.district || null,
+              state: state.citizen.state || "Uttar Pradesh",
+              latitude: state.citizen.latitude || null,
+              longitude: state.citizen.longitude || null,
+              isConfirmed: true,
+            }
+          });
+          state.citizen.id = citizenRecord.id;
+        } catch (e) {
+          state.citizen.id = `mock-citizen-${Math.random().toString(36).substring(7)}`;
+        }
+
+        const successText = `👮 **Citizen Profile Verified**
+
+Name: **${state.citizen.fullName}**
+Mobile: **${state.citizen.mobileNumber}**
+Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}, ${state.citizen.state}**
+
+✓ Profile verification complete.
+Let's continue with your request.`;
+
+        // Direct transition to actual service workflow
+        state.step = '1';
+        let res: any;
+        if (state.workflow === 'complaint') {
+          // Pre-populate complaint auto-detection if applicable
+          res = this.runComplaintWorkflow(state, "");
+        } else if (state.workflow === 'verification') {
+          res = this.runVerificationWorkflow(state, "");
+        } else if (state.workflow === 'certificate') {
+          res = this.runCertificateWorkflow(state, "");
+        } else if (state.workflow === 'event') {
+          res = this.runEventWorkflow(state, "");
+        }
+        return {
+          response: successText + "\n\n" + res.response,
+          suggestions: res.suggestions,
+        };
+      } else if (cleanMsg.includes('change') || cleanMsg.includes('modify')) {
+        return {
+          response: "Which field would you like to update? (e.g. type 'Change name to Amit Kumar' or 'Change mobile to 9999999999')",
+          suggestions: ['Change name', 'Change mobile number'],
         };
       }
     }
 
-    // Default Greeting
+    // Evaluate what is missing next
+    if (!state.citizen.fullName) {
+      state.step = 'IDENTIFY_NAME';
+      return {
+        response: "Before we begin, may I know your full name?",
+        suggestions: [],
+      };
+    }
+
+    if (!state.citizen.mobileNumber) {
+      state.step = 'IDENTIFY_MOBILE';
+      return {
+        response: `Thank you, ${state.citizen.fullName}.\n\nCould you please share your mobile number?`,
+        suggestions: [],
+      };
+    }
+
+    // Attempt browser location mapping
+    if (!state.citizen.city && !state.citizen.district) {
+      if (state.citizen.latitude && state.citizen.longitude) {
+        state.citizen.city = "Lucknow";
+        state.citizen.district = "Lucknow";
+      } else {
+        state.step = 'IDENTIFY_LOCATION';
+        return {
+          response: "I couldn't determine your location automatically.\n\nCould you please tell me your city, district, or area?",
+          suggestions: [],
+        };
+      }
+    }
+
+    // If everything is collected, show confirmation card
+    state.step = 'CONFIRM_PROFILE';
+    return this.renderConfirmationCard(state);
+  }
+
+  private handleProfileCorrection(state: ChatSessionState, message: string): boolean {
+    const cleanMsg = message.trim().toLowerCase();
+
+    // "My mobile number is 9123456789" / "Change my number to 9123456789"
+    const phoneMatches = message.match(/(?:mobile|number|phone|change mobile to|change number to)\s+(?:is\s+)?((?:\+91[\s-]?)?[6-9]\d{9}|\b[6-9]\d{9}\b)/i);
+    if (phoneMatches && phoneMatches[1]) {
+      const normalized = this.validationService.normalizeMobile(phoneMatches[1]);
+      if (normalized && this.validationService.validateMobile(normalized)) {
+        state.citizen.mobileNumber = normalized;
+        return true;
+      }
+    }
+
+    // "My name is Rahul Verma" / "Change name to Rahul Verma"
+    const nameMatches = message.match(/(?:name is|change name to|my name is)\s+([a-zA-Z\s'-]+)/i);
+    if (nameMatches && nameMatches[1]) {
+      const potentialName = nameMatches[1].trim();
+      if (this.validationService.validateName(potentialName)) {
+        state.citizen.fullName = potentialName;
+        return true;
+      }
+    }
+
+    // "I live in Kanpur" / "Change location to Varanasi"
+    const locMatches = message.match(/(?:live in|change location to|change my location to)\s+([a-zA-Z\s'-]+)/i);
+    if (locMatches && locMatches[1]) {
+      const potentialLoc = locMatches[1].trim();
+      if (potentialLoc.length >= 3) {
+        state.citizen.city = potentialLoc;
+        state.citizen.district = potentialLoc;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private renderConfirmationCard(state: ChatSessionState): { response: string; suggestions: string[] } {
+    const response = `👮 **Please review your details:**
+
+* **Name:** ${state.citizen.fullName}
+* **Mobile Number:** ${state.citizen.mobileNumber}
+* **Location:** ${state.citizen.city || state.citizen.district || 'Lucknow'}, ${state.citizen.state}
+
+Is everything correct?
+
+- [Confirm Details](option:Confirm Details)
+- [Modify Details](option:Modify Details)`;
+
     return {
-      response: WELCOME_MESSAGE,
-      suggestions: ['English', 'हिंदी', 'Hinglish'],
+      response,
+      suggestions: ['Confirm Details', 'Modify Details'],
     };
   }
 
@@ -399,74 +652,123 @@ export class ChatService {
   private runComplaintWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
     const step = session.step;
     const lang = session.language;
+    const cleanMsg = msg.trim().toLowerCase();
 
     const prompts = {
       en: [
         "Please select the **Complaint Type**:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
         "Could you please tell me where the incident occurred?",
-        "Thank you. Could you also tell me when did the incident occur (date and time)?",
+        "Thank you. Could you also tell me when did the incident occur (date in DD/MM/YYYY)?",
         "Got it. Could you briefly describe what happened?",
       ],
       hi: [
         "कृपया **शिकायत का प्रकार** चुनें:\n\n- [मोबाइल चोरी / गुम होना](option:Lost Mobile / Theft)\n- [खोया हुआ दस्तावेज़](option:Lost Document)\n- [सामान्य उत्पीड़न](option:Simple Harassment)\n- [साइबर धोखाधड़ी](option:Cyber Fraud / Financial Loss)",
         "क्या आप कृपया बता सकते हैं कि घटना कहाँ हुई थी?",
-        "धन्यवाद। क्या आप यह भी बता सकते हैं कि घटना कब (दिनांक और समय) हुई थी?",
+        "धन्यवाद। क्या आप यह भी बता सकते हैं कि घटना कब (दिनांक DD/MM/YYYY) हुई थी?",
         "समझ गया। क्या आप संक्षेप में बता सकते हैं कि क्या हुआ था?",
       ],
       hinglish: [
         "Please select the **Complaint Type**:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
         "Kya aap please bata sakte hain ki incident kahan hua tha?",
-        "Thank you. Kya aap bata sakte hain ki incident kab (date aur time) hua?",
+        "Thank you. Kya aap bata sakte hain ki incident kab (date DD/MM/YYYY) hua?",
         "Got it. Kya aap short mein describe kar sakte hain ki kya hua tha?",
       ],
     };
 
-    if (step === 1) {
-      session.step = 2;
+    if (step === 'REVIEW') {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+        session.workflow = null;
+        session.step = 'START';
+        const fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
+        const resNum = `UP-CMP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        this.complaintService.createComplaint(session.data.type, fullDetails, resNum, session.citizen.id);
+        session.data = {};
+        return {
+          response: getCompletionMessage(resNum, lang),
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+        };
+      } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
+        session.step = '2';
+        session.data = {};
+        return {
+          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
+          suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
+        };
+      }
+    }
+
+    if (step === '1') {
+      session.step = '2';
       return {
         response: prompts[lang][0],
         suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
       };
     }
 
-    if (step === 2) {
+    if (step === '2') {
       if (msg) session.data.type = msg;
-      session.step = 3;
+      session.step = '3';
       return {
         response: prompts[lang][1],
       };
     }
 
-    if (step === 3) {
+    if (step === '3') {
       session.data.location = msg;
-      session.step = 4;
+      session.step = '4';
       return {
         response: prompts[lang][2],
       };
     }
 
-    if (step === 4) {
+    if (step === '4') {
+      if (!this.validationService.validateDate(msg, true)) {
+        return {
+          response: "⚠️ The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
+        };
+      }
       session.data.time = msg;
-      session.step = 5;
+      session.step = '5';
       return {
         response: prompts[lang][3],
       };
     }
 
-    if (step === 5) {
+    if (step === '5') {
+      if (!this.validationService.validateConsistency(session.citizen.city, msg)) {
+        return {
+          response: "⚠️ I noticed a location contradiction in your details relative to your registered location. Please verify and confirm details again.",
+        };
+      }
       session.data.description = msg;
-      session.workflow = null;
-      session.step = 0;
+      session.step = 'REVIEW';
 
-      const fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
+      const reviewScreen = `👮 **Please review your application.**
 
-      // Call service
-      const resNum = `UP-CMP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-      this.complaintService.createComplaint(session.data.type, fullDetails, resNum);
+Name: **${session.citizen.fullName}**
+Mobile: **${session.citizen.mobileNumber}**
+District: **${session.citizen.city || 'Lucknow'}**
+Complaint Type: **${session.data.type}**
+Incident Location: **${session.data.location}**
+Incident Date: **${session.data.time}**
+Description: **${session.data.description}**
+
+**Validation Status**
+
+✓ Name Valid
+✓ Mobile Number Valid
+✓ Location Valid
+✓ Complaint Details Complete
+✓ Ready for Submission
+
+Would you like to submit this application?
+
+- [Submit Application](option:Submit Application)
+- [Modify Details](option:Modify Details)`;
 
       return {
-        response: getCompletionMessage(resNum, lang),
-        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
+        response: reviewScreen,
+        suggestions: ['Submit Application', 'Modify Details'],
       };
     }
 
@@ -477,6 +779,7 @@ export class ChatService {
   private runVerificationWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
     const step = session.step;
     const lang = session.language;
+    const cleanMsg = msg.trim().toLowerCase();
 
     const prompts = {
       en: [
@@ -502,58 +805,107 @@ export class ChatService {
       ],
     };
 
-    if (step === 1) {
-      session.step = 2;
+    if (step === 'REVIEW') {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+        session.workflow = null;
+        session.step = 'START';
+        const resNum = `UP-VER-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        this.verificationService.createVerification(
+          session.data.type,
+          session.data.name,
+          session.data.address,
+          session.data.mobile,
+          session.data.propertyDetails,
+          resNum,
+          session.citizen.id,
+        );
+        session.data = {};
+        return {
+          response: getCompletionMessage(resNum, lang),
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+        };
+      } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
+        session.step = '2';
+        session.data = {};
+        return {
+          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
+          suggestions: ['Tenant Verification', 'PG Verification', 'Domestic Help Verification', 'Employee Verification'],
+        };
+      }
+    }
+
+    if (step === '1') {
+      session.step = '2';
       return {
         response: prompts[lang][0],
         suggestions: ['Tenant Verification', 'PG Verification', 'Domestic Help Verification', 'Employee Verification'],
       };
     }
 
-    if (step === 2) {
+    if (step === '2') {
       if (msg) session.data.type = msg;
-      session.step = 3;
+      session.step = '3';
       return { response: prompts[lang][1] };
     }
 
-    if (step === 3) {
+    if (step === '3') {
+      if (!this.validationService.validateName(msg)) {
+        return {
+          response: "⚠️ For official records, please enter the full name (at least a first name and a last name).\n\nExample:\nRahul Kumar",
+        };
+      }
       session.data.name = msg;
-      session.step = 4;
+      session.step = '4';
       return { response: prompts[lang][2] };
     }
 
-    if (step === 4) {
+    if (step === '4') {
       session.data.address = msg;
-      session.step = 5;
+      session.step = '5';
       return { response: prompts[lang][3] };
     }
 
-    if (step === 5) {
-      session.data.mobile = msg;
-      session.step = 6;
+    if (step === '5') {
+      if (!this.validationService.validateMobile(msg)) {
+        return {
+          response: "⚠️ The mobile number appears incomplete.\n\nPlease provide a valid 10-digit Indian mobile number.\n\nExample:\n9876543210",
+        };
+      }
+      session.data.mobile = this.validationService.normalizeMobile(msg)!;
+      session.step = '6';
       return { response: prompts[lang][4] };
     }
 
-    if (step === 6) {
+    if (step === '6') {
       session.data.propertyDetails = msg;
-      session.workflow = null;
-      session.step = 0;
+      session.step = 'REVIEW';
 
-      const resNum = `UP-VER-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      const reviewScreen = `👮 **Please review your application.**
 
-      // Save to database/mock service
-      this.verificationService.createVerification(
-        session.data.type,
-        session.data.name,
-        session.data.address,
-        session.data.mobile,
-        session.data.propertyDetails,
-        resNum
-      );
+Name: **${session.citizen.fullName}**
+Mobile: **${session.citizen.mobileNumber}**
+Verification Type: **${session.data.type}**
+Candidate Name: **${session.data.name}**
+Candidate Mobile: **${session.data.mobile}**
+Candidate Address: **${session.data.address}**
+Property Details: **${session.data.propertyDetails}**
+
+**Validation Status**
+
+✓ Candidate Name Valid
+✓ Candidate Mobile Valid
+✓ Property Address Valid
+✓ Verification Details Complete
+✓ Ready for Submission
+
+Would you like to submit this application?
+
+- [Submit Application](option:Submit Application)
+- [Modify Details](option:Modify Details)`;
 
       return {
-        response: getCompletionMessage(resNum, lang),
-        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
+        response: reviewScreen,
+        suggestions: ['Submit Application', 'Modify Details'],
       };
     }
 
@@ -564,6 +916,7 @@ export class ChatService {
   private runCertificateWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
     const step = session.step;
     const lang = session.language;
+    const cleanMsg = msg.trim().toLowerCase();
 
     const prompts = {
       en: [
@@ -586,51 +939,102 @@ export class ChatService {
       ],
     };
 
-    if (step === 1) {
-      session.step = 2;
+    if (step === 'REVIEW') {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+        session.workflow = null;
+        session.step = 'START';
+        const resNum = `UP-CER-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        this.certificateService.createCertificate(
+          session.data.name,
+          session.data.address,
+          session.data.district,
+          session.data.purpose,
+          resNum,
+          session.citizen.id,
+        );
+        session.data = {};
+        return {
+          response: getCompletionMessage(resNum, lang),
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+        };
+      } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
+        session.step = '2';
+        session.data = {};
+        return {
+          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
+        };
+      }
+    }
+
+    if (step === '1') {
+      session.step = '2';
       return { response: prompts[lang][0] };
     }
 
-    if (step === 2) {
+    if (step === '2') {
+      if (!this.validationService.validateName(msg)) {
+        return {
+          response: "⚠️ For official records, please enter the full name (at least a first name and a last name).\n\nExample:\nRahul Kumar",
+        };
+      }
       session.data.name = msg;
-      session.step = 3;
+      session.step = '3';
       return { response: prompts[lang][1] };
     }
 
-    if (step === 3) {
+    if (step === '3') {
       session.data.address = msg;
-      session.step = 4;
+      session.step = '4';
       return {
         response: prompts[lang][2],
         suggestions: ['Lucknow', 'Kanpur', 'Noida', 'Ghaziabad', 'Varanasi', 'Prayagraj'],
       };
     }
 
-    if (step === 4) {
+    if (step === '4') {
       session.data.district = msg;
-      session.step = 5;
-      return { response: prompts[lang][3] };
+      session.step = '5';
+      return {
+        response: prompts[lang][3],
+        suggestions: ['Job Application', 'Passport', 'Visa', 'Higher Education', 'Government Service'],
+      };
     }
 
-    if (step === 5) {
+    if (step === '5') {
+      if (!["Job Application", "Passport", "Visa", "Higher Education", "Government Service"].includes(msg)) {
+        return {
+          response: "⚠️ Could you please select a valid purpose?\n\nExamples:\n• Job Application\n• Passport\n• Visa\n• Higher Education\n• Government Service",
+          suggestions: ['Job Application', 'Passport', 'Visa', 'Higher Education', 'Government Service'],
+        };
+      }
       session.data.purpose = msg;
-      session.workflow = null;
-      session.step = 0;
+      session.step = 'REVIEW';
 
-      const resNum = `UP-CER-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      const reviewScreen = `👮 **Please review your application.**
 
-      // Save database
-      this.certificateService.createCertificate(
-        session.data.name,
-        session.data.address,
-        session.data.district,
-        session.data.purpose,
-        resNum
-      );
+Name: **${session.citizen.fullName}**
+Mobile: **${session.citizen.mobileNumber}**
+Applicant Name: **${session.data.name}**
+Applicant Address: **${session.data.address}**
+District: **${session.data.district}**
+Purpose: **${session.data.purpose}**
+
+**Validation Status**
+
+✓ Applicant Name Valid
+✓ District Valid
+✓ Purpose Valid
+✓ Character Certificate Details Complete
+✓ Ready for Submission
+
+Would you like to submit this application?
+
+- [Submit Application](option:Submit Application)
+- [Modify Details](option:Modify Details)`;
 
       return {
-        response: getCompletionMessage(resNum, lang),
-        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
+        response: reviewScreen,
+        suggestions: ['Submit Application', 'Modify Details'],
       };
     }
 
@@ -641,6 +1045,7 @@ export class ChatService {
   private runEventWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
     const step = session.step;
     const lang = session.language;
+    const cleanMsg = msg.trim().toLowerCase();
 
     const prompts = {
       en: [
@@ -666,58 +1071,107 @@ export class ChatService {
       ],
     };
 
-    if (step === 1) {
-      session.step = 2;
+    if (step === 'REVIEW') {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+        session.workflow = null;
+        session.step = 'START';
+        const resNum = `UP-EVP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        this.eventService.createEventPermission(
+          session.data.type,
+          session.data.name,
+          session.data.location,
+          session.data.date,
+          session.data.attendance,
+          resNum,
+          session.citizen.id,
+        );
+        session.data = {};
+        return {
+          response: getCompletionMessage(resNum, lang),
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+        };
+      } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
+        session.step = '2';
+        session.data = {};
+        return {
+          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
+          suggestions: ['Event Permission', 'Procession Request', 'Protest Request', 'Film Shooting Request'],
+        };
+      }
+    }
+
+    if (step === '1') {
+      session.step = '2';
       return {
         response: prompts[lang][0],
         suggestions: ['Event Permission', 'Procession Request', 'Protest Request', 'Film Shooting Request'],
       };
     }
 
-    if (step === 2) {
+    if (step === '2') {
       if (msg) session.data.type = msg;
-      session.step = 3;
+      session.step = '3';
       return { response: prompts[lang][1] };
     }
 
-    if (step === 3) {
+    if (step === '3') {
       session.data.name = msg;
-      session.step = 4;
+      session.step = '4';
       return { response: prompts[lang][2] };
     }
 
-    if (step === 4) {
+    if (step === '4') {
       session.data.location = msg;
-      session.step = 5;
+      session.step = '5';
       return { response: prompts[lang][3] };
     }
 
-    if (step === 5) {
+    if (step === '5') {
+      if (!this.validationService.validateDate(msg, false)) {
+        return {
+          response: "⚠️ Please provide a valid date in DD/MM/YYYY format:\nExample: 15/08/2026",
+        };
+      }
       session.data.date = msg;
-      session.step = 6;
+      session.step = '6';
       return { response: prompts[lang][4] };
     }
 
-    if (step === 6) {
+    if (step === '6') {
+      if (!/^\d+$/.test(msg)) {
+        return {
+          response: "⚠️ Please enter a valid number for expected attendance:\nExample: 500",
+        };
+      }
       session.data.attendance = parseInt(msg) || 100;
-      session.workflow = null;
-      session.step = 0;
+      session.step = 'REVIEW';
 
-      const resNum = `UP-EVP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      const reviewScreen = `👮 **Please review your application.**
 
-      // Save database
-      this.eventService.createEventPermission(
-        session.data.type,
-        session.data.name,
-        session.data.location,
-        session.data.date,
-        session.data.attendance,
-        resNum
-      );
+Name: **${session.citizen.fullName}**
+Mobile: **${session.citizen.mobileNumber}**
+Request Type: **${session.data.type}**
+Event Name: **${session.data.name}**
+Location: **${session.data.location}**
+Date: **${session.data.date}**
+Attendance: **${session.data.attendance}**
+
+**Validation Status**
+
+✓ Event Name Valid
+✓ Date Valid
+✓ Expected Attendance Valid
+✓ Event Permission Details Complete
+✓ Ready for Submission
+
+Would you like to submit this application?
+
+- [Submit Application](option:Submit Application)
+- [Modify Details](option:Modify Details)`;
 
       return {
-        response: getCompletionMessage(resNum, lang),
-        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
+        response: reviewScreen,
+        suggestions: ['Submit Application', 'Modify Details'],
       };
     }
 
@@ -726,7 +1180,7 @@ export class ChatService {
 
   // --- Tracking Workflow ---
   private async runTrackingWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
-    const step = session.step;
+    const step = parseInt(session.step) || 1;
     const lang = session.language;
 
     const prompts = {
@@ -736,13 +1190,13 @@ export class ChatService {
     };
 
     if (step === 1) {
-      session.step = 2;
+      session.step = '2';
       return { response: prompts[lang] };
     }
 
     if (step === 2) {
       session.workflow = null;
-      session.step = 0;
+      session.step = 'START';
 
       const trackInfo = await this.trackingService.track(msg);
       if (!trackInfo) {
@@ -753,7 +1207,7 @@ export class ChatService {
         };
         return {
           response: errorResponses[lang],
-          suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
         };
       }
 
@@ -781,7 +1235,7 @@ export class ChatService {
 
       return {
         response: responses[lang],
-        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
+        suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
       };
     }
 

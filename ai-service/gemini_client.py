@@ -56,6 +56,46 @@ class GeminiClient:
             "You are a citizen assistance officer, not a law enforcement decision maker."
         )
 
+    def extract_citizen_data(self, text: str) -> dict:
+        if not self.client:
+            return {}
+        try:
+            prompt = (
+                "You are an information extraction system. "
+                "Analyze the user message and extract the following citizen details if present. "
+                "Return a raw JSON object with these fields, or null/empty string if not mentioned:\n"
+                "- fullName: Full name of the person (must look like a name, minimum 2 chars)\n"
+                "- mobileNumber: 10-digit Indian mobile number (without country code, or normalized)\n"
+                "- email: valid email address\n"
+                "- location: city, district, or area mentioned\n\n"
+                f"User message: \"{text}\"\n"
+                "JSON response:"
+            )
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.1,
+                )
+            )
+            import json
+            data = json.loads(response.text)
+            # Normalize keys to match Python side
+            result = {}
+            if data.get("fullName"):
+                result["fullName"] = data["fullName"]
+            if data.get("mobileNumber"):
+                result["mobileNumber"] = data["mobileNumber"]
+            if data.get("email"):
+                result["email"] = data["email"]
+            if data.get("location"):
+                result["location"] = data["location"]
+            return result
+        except Exception as e:
+            print(f"Error in extract_citizen_data: {e}")
+            return {}
+
     def generate_response(self, prompt: str, retrieved_context: list, chat_history: list = None, language: str = "en") -> str:
         # Construct RAG context string
         context_str = ""

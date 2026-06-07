@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma.service';
 export interface ComplaintData {
   id: string;
   referenceNumber: string;
+  citizenId: string;
   complaintType: string;
   incidentDetails: string;
   status: string;
@@ -14,7 +15,7 @@ export interface ComplaintData {
 @Injectable()
 export class ComplaintService {
   private readonly logger = new Logger(ComplaintService.name);
-  private inMemoryComplaints: ComplaintData[] = [];
+  private inMemoryComplaints: any[] = [];
 
   constructor(private prisma: PrismaService) {}
 
@@ -24,21 +25,41 @@ export class ComplaintService {
     return `UP-CMP-${year}-${random}`;
   }
 
-  async createComplaint(type: string, details: string, preGeneratedRefNum?: string): Promise<ComplaintData> {
+  private async getOrCreateDefaultCitizenId(): Promise<string> {
+    try {
+      const defaultCitizen = await this.prisma.citizen.findFirst();
+      if (defaultCitizen) return defaultCitizen.id;
+      const newCitizen = await this.prisma.citizen.create({
+        data: {
+          fullName: "Default Citizen",
+          mobileNumber: "9999999999",
+          isConfirmed: true,
+        }
+      });
+      return newCitizen.id;
+    } catch {
+      return "mock-default-citizen-id";
+    }
+  }
+
+  async createComplaint(type: string, details: string, preGeneratedRefNum?: string, citizenId?: string): Promise<ComplaintData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
+    const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
     try {
       return await this.prisma.complaint.create({
         data: {
           referenceNumber: refNum,
           complaintType: type,
           incidentDetails: details,
+          citizenId: resolvedCitizenId,
         },
-      });
+      }) as unknown as ComplaintData;
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Using in-memory store.`);
       const mock: ComplaintData = {
         id: Math.random().toString(36).substring(7),
         referenceNumber: refNum,
+        citizenId: resolvedCitizenId,
         complaintType: type,
         incidentDetails: details,
         status: 'Submitted',
@@ -72,7 +93,8 @@ export class ComplaintService {
     try {
       return await this.prisma.complaint.findUnique({
         where: { referenceNumber: refNum },
-      });
+        include: { citizen: true },
+      }) as unknown as ComplaintData;
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Reading in-memory store.`);
       return this.inMemoryComplaints.find(c => c.referenceNumber === refNum) || null;
@@ -83,7 +105,8 @@ export class ComplaintService {
     try {
       return await this.prisma.complaint.findMany({
         orderBy: { createdAt: 'desc' },
-      });
+        include: { citizen: true },
+      }) as unknown as ComplaintData[];
     } catch (e) {
       this.logger.warn(`Prisma error: ${e.message}. Reading in-memory store.`);
       return [...this.inMemoryComplaints].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());

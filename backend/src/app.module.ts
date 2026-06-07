@@ -29,6 +29,7 @@ import { TrackingService } from './tracking/tracking.service';
 // Chat Assistant
 import { ChatController } from './chat/chat.controller';
 import { ChatService } from './chat/chat.service';
+import { ValidationService } from './chat/validation.service';
 
 // Knowledge
 import { KnowledgeController } from './knowledge/knowledge.controller';
@@ -59,6 +60,7 @@ import { KnowledgeService } from './knowledge/knowledge.service';
     EventService,
     TrackingService,
     ChatService,
+    ValidationService,
     KnowledgeService,
   ],
 })

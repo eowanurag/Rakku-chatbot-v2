@@ -266,52 +266,56 @@ export default function AdminPage() {
                       {activeTab === "complaints" && (
                         <div>
                           <p className="font-semibold text-white">{item.complaintType}</p>
-                          <p className="text-[10px] text-slate-500">Complaint</p>
+                          <p className="text-[10px] text-slate-400">Citizen: <strong className="text-police-gold">{item.citizen?.fullName || 'N/A'}</strong></p>
                         </div>
                       )}
                       {activeTab === "verifications" && (
                         <div>
-                          <p className="font-semibold text-white">{item.name}</p>
-                          <p className="text-[10px] text-slate-500">{item.verificationType}</p>
+                          <p className="font-semibold text-white">Candidate: {item.name}</p>
+                          <p className="text-[10px] text-slate-400">{item.verificationType} | Citizen: <strong className="text-police-gold">{item.citizen?.fullName || 'N/A'}</strong></p>
                         </div>
                       )}
                       {activeTab === "certificates" && (
                         <div>
-                          <p className="font-semibold text-white">{item.name}</p>
-                          <p className="text-[10px] text-slate-500">District: {item.district}</p>
+                          <p className="font-semibold text-white">Applicant: {item.name}</p>
+                          <p className="text-[10px] text-slate-400">District: {item.district} | Citizen: <strong className="text-police-gold">{item.citizen?.fullName || 'N/A'}</strong></p>
                         </div>
                       )}
                       {activeTab === "events" && (
                         <div>
-                          <p className="font-semibold text-white">{item.eventName}</p>
-                          <p className="text-[10px] text-slate-500">{item.eventType}</p>
+                          <p className="font-semibold text-white">Event: {item.eventName}</p>
+                          <p className="text-[10px] text-slate-400">{item.eventType} | Citizen: <strong className="text-police-gold">{item.citizen?.fullName || 'N/A'}</strong></p>
                         </div>
                       )}
                     </td>
 
                     {/* Details / Address */}
-                    <td className="p-4 max-w-xs truncate">
+                    <td className="p-4 max-w-xs whitespace-pre-wrap">
                       {activeTab === "complaints" && (
-                        <p className="text-slate-300 font-light" title={item.incidentDetails}>
-                          {item.incidentDetails}
-                        </p>
+                        <div>
+                          <p className="text-slate-300 font-light truncate" title={item.incidentDetails}>{item.incidentDetails}</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">Mob: {item.citizen?.mobileNumber || 'N/A'}</p>
+                        </div>
                       )}
                       {activeTab === "verifications" && (
                         <div>
-                          <p className="text-slate-300 font-light truncate" title={item.address}>{item.address}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">Mob: {item.mobile}</p>
+                          <p className="text-slate-300 font-light truncate" title={item.address}>Address: {item.address}</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">Property: {item.propertyDetails}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">Cand. Mob: {item.mobile} | Cit. Mob: {item.citizen?.mobileNumber || 'N/A'}</p>
                         </div>
                       )}
                       {activeTab === "certificates" && (
                         <div>
-                          <p className="text-slate-300 font-light truncate" title={item.address}>{item.address}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">Purpose: {item.purpose}</p>
+                          <p className="text-slate-300 font-light truncate" title={item.address}>Address: {item.address}</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">Purpose: {item.purpose}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">Cit. Mob: {item.citizen?.mobileNumber || 'N/A'}</p>
                         </div>
                       )}
                       {activeTab === "events" && (
                         <div>
-                          <p className="text-slate-300 font-light truncate" title={item.location}>{item.location}</p>
-                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">Date: {item.date} | Att: {item.expectedAttendance}</p>
+                          <p className="text-slate-300 font-light truncate" title={item.location}>Location: {item.location}</p>
+                          <p className="text-[10px] text-slate-500 font-mono mt-0.5">Date: {item.date} | Att: {item.expectedAttendance}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">Cit. Mob: {item.citizen?.mobileNumber || 'N/A'}</p>
                         </div>
                       )}
                     </td>
