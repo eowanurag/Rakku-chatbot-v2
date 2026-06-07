@@ -24,8 +24,8 @@ export class ComplaintService {
     return `UP-CMP-${year}-${random}`;
   }
 
-  async createComplaint(type: string, details: string): Promise<ComplaintData> {
-    const refNum = this.generateRefNumber();
+  async createComplaint(type: string, details: string, preGeneratedRefNum?: string): Promise<ComplaintData> {
+    const refNum = preGeneratedRefNum || this.generateRefNumber();
     try {
       return await this.prisma.complaint.create({
         data: {

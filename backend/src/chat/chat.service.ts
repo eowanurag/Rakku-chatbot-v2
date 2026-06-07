@@ -7,32 +7,35 @@ import { VerificationService } from '../verification/verification.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { EventService } from '../event/event.service';
 import { TrackingService } from '../tracking/tracking.service';
+import { WELCOME_MESSAGE, LANGUAGE_SELECTION_RESPONSES } from '../templates/greetings';
+import { getEmpathyMessage } from '../templates/empathy';
+import { getCompletionMessage } from '../templates/completions';
+import { getEmergencyMessage } from '../templates/emergency';
+import { AnalyticsService } from '../citizen-assistance/analytics.service';
 
 interface ChatSessionState {
   workflow: 'complaint' | 'verification' | 'certificate' | 'event' | 'tracking' | null;
   step: number;
   data: Record<string, any>;
   language: 'en' | 'hi' | 'hinglish';
+  languageSelected?: boolean;
 }
 
 const TRANSLATIONS = {
   en: {
-    welcome: "👮 **Welcome! I am Rakku, your Digital Police Assistant.**\nHow can I help you today? I can guide you through the following digital services:",
     cancel: "Current request has been cancelled. How else can I assist you?",
     invalidStep: "I couldn't understand that. Let's restart the workflow.",
-    upcopApp: "\n\n📱 *Need more official services? Download the official **UPCOP Mobile App** from the [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice) to access 27+ citizen services directly.*",
+    upcopApp: "\n\n*Need more official services? Download the official **UPCOP Mobile App** from the [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice) to access 27+ citizen services directly.*",
   },
   hi: {
-    welcome: "👮 **नमस्कार! मैं रक्कु हूँ, आपका डिजिटल पुलिस सहायक।**\nआज मैं आपकी क्या सहायता कर सकता हूँ? मैं आपको निम्नलिखित डिजिटल सेवाओं में मदद कर सकता हूँ:",
     cancel: "वर्तमान अनुरोध रद्द कर दिया गया है। मैं आपकी और क्या सहायता कर सकता हूँ?",
-    invalidStep: "मुझे समझ नहीं आया। चलिए फिर से शुरू करते हैं।",
-    upcopApp: "\n\n📱 *अधिक आधिकारिक नागरिक सेवाओं के लिए, गूगल प्ले स्टोर से आधिकारिक **UPCOP मोबाइल ऐप** डाउनलोड करें: [गूगल प्ले स्टोर](https://play.google.com/store/apps/details?id=com.up.uppolice)।*",
+    invalidStep: "मुझे समझ नहीं आया। फिर से प्रयास करते हैं।",
+    upcopApp: "\n\n*अधिक आधिकारिक सेवाओं के लिए, कृपया [गूगल प्ले स्टोर](https://play.google.com/store/apps/details?id=com.up.uppolice) से आधिकारिक **UPCOP मोबाइल ऐप** डाउनलोड करें।* ",
   },
   hinglish: {
-    welcome: "👮 **Hello! Main Rakku hoon, aapka Digital Police Assistant.**\nMain aapki kya help kar sakta hoon? Main niche diye gaye tasks me help kar sakta hoon:",
     cancel: "Request cancel kar di gayi hai. Aapko aur kis cheez me help chahiye?",
     invalidStep: "Mujhe samajh nahi aaya. Fir se try karte hain.",
-    upcopApp: "\n\n📱 *Baaki official services ke liye, official **UPCOP App** download karein: [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice).* ",
+    upcopApp: "\n\n*Baaki official services ke liye, official **UPCOP App** download karein: [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice).* ",
   },
 };
 
@@ -52,11 +55,13 @@ export class ChatService {
     private readonly certificateService: CertificateService,
     private readonly eventService: EventService,
     private readonly trackingService: TrackingService,
+    private readonly analyticsService: AnalyticsService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
   }
 
   async sendMessage(message: string, sessionId: string): Promise<{ response: string; suggestions?: string[] }> {
+    this.analyticsService.trackHelpRequest();
     try {
       this.logger.log(`Forwarding message to FastAPI AI service: ${this.aiServiceUrl}/chat/message`);
       const response = await firstValueFrom(
@@ -65,24 +70,81 @@ export class ChatService {
           session_id: sessionId,
         }),
       );
-      return response.data;
+      
+      const responseData = response.data;
+      if (responseData && responseData.db_action) {
+        await this.executeDbAction(responseData.db_action);
+      }
+
+      if (responseData && responseData.response) {
+        const text = responseData.response;
+        if (text.includes('112')) this.analyticsService.trackHelplineRecommendation('112');
+        if (text.includes('1090')) this.analyticsService.trackHelplineRecommendation('1090');
+        if (text.includes('1930')) this.analyticsService.trackHelplineRecommendation('1930');
+        if (text.includes('1098')) this.analyticsService.trackHelplineRecommendation('1098');
+        if (text.includes('108')) this.analyticsService.trackHelplineRecommendation('108');
+        if (text.includes('101')) this.analyticsService.trackHelplineRecommendation('101');
+        
+        if (text.includes('EMERGENCY') || text.includes('Notice') || text.includes('आपातकालीन')) {
+          this.analyticsService.trackEmergencyOverride();
+        }
+      }
+      
+      return responseData;
     } catch (e) {
       this.logger.warn(`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`);
       return this.handleLocalFallback(message, sessionId);
     }
   }
 
+  private async executeDbAction(dbAction: { type: string; data: Record<string, any> }) {
+    try {
+      this.logger.log(`Executing DB Action from AI service: ${dbAction.type}`);
+      switch (dbAction.type) {
+        case 'complaint':
+          await this.complaintService.createComplaint(
+            dbAction.data.type,
+            dbAction.data.details,
+            dbAction.data.refNum
+          );
+          break;
+        case 'verification':
+          await this.verificationService.createVerification(
+            dbAction.data.type,
+            dbAction.data.name,
+            dbAction.data.address,
+            dbAction.data.mobile,
+            dbAction.data.propertyDetails,
+            dbAction.data.refNum
+          );
+          break;
+        case 'certificate':
+          await this.certificateService.createCertificate(
+            dbAction.data.name,
+            dbAction.data.address,
+            dbAction.data.district,
+            dbAction.data.purpose,
+            dbAction.data.refNum
+          );
+          break;
+        case 'event':
+          await this.eventService.createEventPermission(
+            dbAction.data.type,
+            dbAction.data.name,
+            dbAction.data.location,
+            dbAction.data.date,
+            dbAction.data.attendance,
+            dbAction.data.refNum
+          );
+          break;
+      }
+    } catch (error) {
+      this.logger.error(`Failed to execute DB action: ${error.message}`);
+    }
+  }
+
   private async handleLocalFallback(message: string, sessionId: string): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
-
-    // 1. Emergency Checks
-    const emergencyKeywords = ['danger', 'assault', 'threat', 'life', 'weapon', 'murder', 'burglar', 'attack', 'emergency', 'मदद', 'खतरा', 'हमला'];
-    if (emergencyKeywords.some(keyword => cleanMsg.includes(keyword))) {
-      return {
-        response: '⚠️ **EMERGENCY NOTICE / आपातकालीन सूचना:**\nThis appears to be an emergency requiring immediate action. Please contact UP Police emergency services immediately by dialing **112** or go to your nearest police station. We cannot dispatch officers or log active emergency reports through this assistant.\n\nयह एक आपातकालीन स्थिति लगती है। कृपया तुरंत **112** डायल करके उत्तर प्रदेश पुलिस आपातकालीन सेवाओं से संपर्क करें।',
-        suggestions: ['Main Dashboard', 'File Complaint', 'Track Status'],
-      };
-    }
 
     // Initialize session if not exists
     if (!this.sessions.has(sessionId)) {
@@ -91,16 +153,76 @@ export class ChatService {
         step: 0,
         data: {},
         language: 'en',
+        languageSelected: false,
       });
     }
 
     const session = this.sessions.get(sessionId)!;
 
-    // Detect language preference
-    if (cleanMsg.includes('हिन्दी') || cleanMsg.includes('hindi') || cleanMsg.includes('हिंदी')) {
-      session.language = 'hi';
-    } else if (cleanMsg.includes('hinglish') || cleanMsg.includes('karna hai')) {
-      session.language = 'hinglish';
+    // 1. Emergency Checks (overrides active workflow)
+    const emergencyKeywords = [
+      'danger', 'assault', 'threat', 'life', 'weapon', 'murder', 'burglar', 'attack', 'emergency',
+      'मदद', 'खतरा', 'हमला', 'kidnapping', 'burglary', 'ongoing attack', 'burglary in progress', 'immediate danger'
+    ];
+    if (emergencyKeywords.some(keyword => cleanMsg.includes(keyword))) {
+      session.workflow = null;
+      session.step = 0;
+      session.data = {};
+      return {
+        response: getEmergencyMessage(session.language),
+        suggestions: ['🚔 File a Complaint', '🔍 Track Status'],
+      };
+    }
+
+    // Check if language selection is happening
+    if (!session.languageSelected) {
+      let matchedLang = false;
+      if (cleanMsg === 'english' || cleanMsg.includes('option:english')) {
+        session.language = 'en';
+        session.languageSelected = true;
+        matchedLang = true;
+      } else if (cleanMsg === 'हिंदी' || cleanMsg.includes('hindi') || cleanMsg.includes('option:हिंदी') || cleanMsg.includes('option:हिंदी (hindi)')) {
+        session.language = 'hi';
+        session.languageSelected = true;
+        matchedLang = true;
+      } else if (cleanMsg === 'hinglish' || cleanMsg.includes('option:hinglish')) {
+        session.language = 'hinglish';
+        session.languageSelected = true;
+        matchedLang = true;
+      }
+
+      if (matchedLang) {
+        this.analyticsService.trackLanguage(session.language);
+        return {
+          response: LANGUAGE_SELECTION_RESPONSES[session.language],
+          suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
+        };
+      }
+
+      // If it is a free-text message (e.g. from examples), check if it starts a workflow
+      let detectedLang: 'en' | 'hi' | 'hinglish' = 'en';
+      if (/[\u0900-\u097F]/.test(cleanMsg) || cleanMsg.includes('हिन्दी') || cleanMsg.includes('hindi') || cleanMsg.includes('हिंदी')) {
+        detectedLang = 'hi';
+      } else if (cleanMsg.includes('hinglish') || cleanMsg.includes('karna') || cleanMsg.includes('chahiye') || cleanMsg.includes('chori') || cleanMsg.includes('gum') || cleanMsg.includes('shikayat')) {
+        detectedLang = 'hinglish';
+      }
+
+      const startsWorkflow = cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत') || cleanMsg.includes('lost') || cleanMsg.includes('wallet') || cleanMsg.includes('pocket') ||
+                             cleanMsg.includes('tenant') || cleanMsg.includes('verification') || cleanMsg.includes('satyapan') || cleanMsg.includes('किरायेदार') || cleanMsg.includes('सत्यापन') ||
+                             cleanMsg.includes('certificate') || cleanMsg.includes('character') || cleanMsg.includes('charitra') || cleanMsg.includes('चरित्र') || cleanMsg.includes('प्रमाण') ||
+                             cleanMsg.includes('event') || cleanMsg.includes('permission') || cleanMsg.includes('protest') || cleanMsg.includes('shooting') || cleanMsg.includes('अनुमति') ||
+                             cleanMsg.includes('track') || cleanMsg.includes('status') || cleanMsg.includes('pata karein') || cleanMsg.includes('स्थिति');
+
+      if (startsWorkflow) {
+        session.language = detectedLang;
+        session.languageSelected = true;
+        this.analyticsService.trackLanguage(session.language);
+      } else {
+        return {
+          response: WELCOME_MESSAGE,
+          suggestions: ['English', 'हिंदी', 'Hinglish'],
+        };
+      }
     }
 
     const lang = session.language;
@@ -112,60 +234,133 @@ export class ChatService {
       session.data = {};
       return {
         response: TRANSLATIONS[lang].cancel,
-        suggestions: ['File Complaint', 'Tenant Verification', 'Character Certificate', 'Event Permission', 'Track Application'],
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
       };
     }
 
     // 2. Manage Active Workflows
     if (session.workflow) {
+      let empathyPrepend = "";
+      if (message && !session.data.empathyShown) {
+        empathyPrepend = getEmpathyMessage(message, lang);
+        if (empathyPrepend) {
+          session.data.empathyShown = true;
+        }
+      }
+
+      let res: { response: string; suggestions?: string[] };
       switch (session.workflow) {
         case 'complaint':
-          return this.runComplaintWorkflow(session, message);
+          res = this.runComplaintWorkflow(session, message);
+          break;
         case 'verification':
-          return this.runVerificationWorkflow(session, message);
+          res = this.runVerificationWorkflow(session, message);
+          break;
         case 'certificate':
-          return this.runCertificateWorkflow(session, message);
+          res = this.runCertificateWorkflow(session, message);
+          break;
         case 'event':
-          return this.runEventWorkflow(session, message);
+          res = this.runEventWorkflow(session, message);
+          break;
         case 'tracking':
-          return this.runTrackingWorkflow(session, message);
+          res = await this.runTrackingWorkflow(session, message);
+          break;
+        default:
+          res = { response: TRANSLATIONS[lang].invalidStep };
       }
+
+      if (empathyPrepend && res) {
+        res.response = empathyPrepend + res.response;
+      }
+      return res;
     }
 
     // 3. Detect Intent & Start Workflows
-    if (cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत')) {
+    let empathyPrepend = getEmpathyMessage(message, lang);
+
+    if (cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत') || cleanMsg.includes('lost') || cleanMsg.includes('wallet') || cleanMsg.includes('pocket')) {
       session.workflow = 'complaint';
-      session.step = 1;
       session.data = {};
-      return this.runComplaintWorkflow(session, message);
+      
+      // Auto-detect type
+      let autoType = '';
+      if (cleanMsg.includes('phone') || cleanMsg.includes('mobile') || cleanMsg.includes('stolen') || cleanMsg.includes('theft') || cleanMsg.includes('chori') || cleanMsg.includes('फ़ोन') || cleanMsg.includes('मोबाइल') || cleanMsg.includes('फोन') || cleanMsg.includes('चोरी') || cleanMsg.includes('चोर')) {
+        autoType = 'Lost Mobile / Theft';
+      } else if (cleanMsg.includes('document') || cleanMsg.includes('wallet') || cleanMsg.includes('passport') || cleanMsg.includes('card') || cleanMsg.includes('aadhar') || cleanMsg.includes('दस्तावेज़') || cleanMsg.includes('कागजात') || cleanMsg.includes('गुम') || cleanMsg.includes('खोया') || cleanMsg.includes('बटुआ') || cleanMsg.includes('पर्स')) {
+        autoType = 'Lost Document';
+      } else if (cleanMsg.includes('harass') || cleanMsg.includes('teasing') || cleanMsg.includes('threat') || cleanMsg.includes('उत्पीड़न') || cleanMsg.includes('परेशान') || cleanMsg.includes('धमकी') || cleanMsg.includes('pareshan') || cleanMsg.includes('dhamki')) {
+        autoType = 'Simple Harassment';
+      } else if (cleanMsg.includes('fraud') || cleanMsg.includes('scam') || cleanMsg.includes('money') || cleanMsg.includes('dhokha') || cleanMsg.includes('धोखा') || cleanMsg.includes('धोखाधड़ी') || cleanMsg.includes('पैसा') || cleanMsg.includes('पैसे')) {
+        autoType = 'Cyber Fraud / Financial Loss';
+      }
+
+      if (autoType) {
+        session.data.type = autoType;
+        session.step = 2; // Directly go to asking details (location)
+        const nextQ = this.runComplaintWorkflow(session, "");
+        return {
+          response: empathyPrepend + nextQ.response,
+          suggestions: nextQ.suggestions,
+        };
+      }
+
+      session.step = 1;
+      const nextQ = this.runComplaintWorkflow(session, "");
+      return {
+        response: empathyPrepend + nextQ.response,
+        suggestions: nextQ.suggestions,
+      };
     }
 
     if (cleanMsg.includes('tenant') || cleanMsg.includes('verification') || cleanMsg.includes('satyapan') || cleanMsg.includes('किरायेदार') || cleanMsg.includes('सत्यापन')) {
       session.workflow = 'verification';
       session.step = 1;
       session.data = {};
-      return this.runVerificationWorkflow(session, message);
+      const nextQ = this.runVerificationWorkflow(session, "");
+      
+      const recServices = {
+        en: "*Recommended Services:*\n- [🏠 Tenant Verification](option:🏠 Tenant Verification)\n- [🔍 Application Tracking](option:🔍 Track Application)\n\n",
+        hi: "*अनुशंसित सेवाएं:*\n- [🏠 किरायेदार सत्यापन](option:🏠 Tenant Verification)\n- [🔍 आवेदन ट्रैकिंग](option:🔍 Track Application)\n\n",
+        hinglish: "*Recommended Services:*\n- [🏠 Tenant Verification](option:🏠 Tenant Verification)\n- [🔍 Application Tracking](option:🔍 Track Application)\n\n"
+      };
+
+      return {
+        response: recServices[lang] + empathyPrepend + nextQ.response,
+        suggestions: nextQ.suggestions,
+      };
     }
 
     if (cleanMsg.includes('certificate') || cleanMsg.includes('character') || cleanMsg.includes('charitra') || cleanMsg.includes('चरित्र') || cleanMsg.includes('प्रमाण')) {
       session.workflow = 'certificate';
       session.step = 1;
       session.data = {};
-      return this.runCertificateWorkflow(session, message);
+      const nextQ = this.runCertificateWorkflow(session, "");
+      return {
+        response: empathyPrepend + nextQ.response,
+        suggestions: nextQ.suggestions,
+      };
     }
 
     if (cleanMsg.includes('event') || cleanMsg.includes('permission') || cleanMsg.includes('protest') || cleanMsg.includes('shooting') || cleanMsg.includes('अनुमति')) {
       session.workflow = 'event';
       session.step = 1;
       session.data = {};
-      return this.runEventWorkflow(session, message);
+      const nextQ = this.runEventWorkflow(session, "");
+      return {
+        response: empathyPrepend + nextQ.response,
+        suggestions: nextQ.suggestions,
+      };
     }
 
     if (cleanMsg.includes('track') || cleanMsg.includes('status') || cleanMsg.includes('pata karein') || cleanMsg.includes('स्थिति')) {
       session.workflow = 'tracking';
       session.step = 1;
       session.data = {};
-      return this.runTrackingWorkflow(session, message);
+      const nextQ = await this.runTrackingWorkflow(session, "");
+      return {
+        response: empathyPrepend + nextQ.response,
+        suggestions: nextQ.suggestions,
+      };
     }
 
     // 4. Q&A and FAQ Knowledge base fallback
@@ -188,15 +383,15 @@ export class ChatService {
       if (faq.keys.some(k => cleanMsg.includes(k))) {
         return {
           response: faq.response,
-          suggestions: ['File Complaint', 'Tenant Verification', 'Character Certificate', 'Ask about Postmortem'],
+          suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🔍 Track Application'],
         };
       }
     }
 
     // Default Greeting
     return {
-      response: `${TRANSLATIONS[lang].welcome}\n\n1. 📋 **File Complaint** (e.g. phone theft, lost items)\n2. 🏠 **Tenant Verification** (PG, Domestic help, Tenant details)\n3. 🎖️ **Character Certificate** (for employment/visas)\n4. 📅 **Event Permission** (Processions, protests, film shooting)\n5. 🔍 **Track Application** (check mock application status)\n\nPlease choose one of the actions below or type your query in English or Hindi.${TRANSLATIONS[lang].upcopApp}`,
-      suggestions: ['File Complaint', 'Tenant Verification', 'Character Certificate', 'Event Permission', 'Track Application'],
+      response: WELCOME_MESSAGE,
+      suggestions: ['English', 'हिंदी', 'Hinglish'],
     };
   }
 
@@ -207,19 +402,22 @@ export class ChatService {
 
     const prompts = {
       en: [
-        "Please select the **Complaint Type**:\n- Lost Document (e.g. Aadhaar, Passport)\n- Lost Mobile / Theft\n- Simple Harassment\n- Cyber Fraud / Financial Loss",
-        "Please provide the **Incident Details** (date, time, location, description):",
-        "Processing your complaint...",
+        "Please select the **Complaint Type**:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
+        "Could you please tell me where the incident occurred?",
+        "Thank you. Could you also tell me when did the incident occur (date and time)?",
+        "Got it. Could you briefly describe what happened?",
       ],
       hi: [
-        "कृपया **शिकायत का प्रकार** चुनें:\n- खोया हुआ दस्तावेज़ (आधार, पासपोर्ट)\n- मोबाइल चोरी / गुम होना\n- सामान्य उत्पीड़न\n- साइबर धोखाधड़ी",
-        "कृपया **घटना का विवरण** दें (दिनांक, समय, स्थान, विवरण):",
-        "आपकी शिकायत दर्ज की जा रही है...",
+        "कृपया **शिकायत का प्रकार** चुनें:\n\n- [मोबाइल चोरी / गुम होना](option:Lost Mobile / Theft)\n- [खोया हुआ दस्तावेज़](option:Lost Document)\n- [सामान्य उत्पीड़न](option:Simple Harassment)\n- [साइबर धोखाधड़ी](option:Cyber Fraud / Financial Loss)",
+        "क्या आप कृपया बता सकते हैं कि घटना कहाँ हुई थी?",
+        "धन्यवाद। क्या आप यह भी बता सकते हैं कि घटना कब (दिनांक और समय) हुई थी?",
+        "समझ गया। क्या आप संक्षेप में बता सकते हैं कि क्या हुआ था?",
       ],
       hinglish: [
-        "Please select the **Complaint Type**:\n- Lost Document (Aadhaar, Passport)\n- Lost Mobile / Theft\n- Simple Harassment\n- Cyber Fraud",
-        "Apna **Incident Details** batayein (date, time, location, description):",
-        "Complaint register ho rahi hai...",
+        "Please select the **Complaint Type**:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
+        "Kya aap please bata sakte hain ki incident kahan hua tha?",
+        "Thank you. Kya aap bata sakte hain ki incident kab (date aur time) hua?",
+        "Got it. Kya aap short mein describe kar sakte hain ki kya hua tha?",
       ],
     };
 
@@ -227,12 +425,12 @@ export class ChatService {
       session.step = 2;
       return {
         response: prompts[lang][0],
-        suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Cyber Fraud'],
+        suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
       };
     }
 
     if (step === 2) {
-      session.data.type = msg;
+      if (msg) session.data.type = msg;
       session.step = 3;
       return {
         response: prompts[lang][1],
@@ -240,23 +438,35 @@ export class ChatService {
     }
 
     if (step === 3) {
-      session.data.details = msg;
+      session.data.location = msg;
+      session.step = 4;
+      return {
+        response: prompts[lang][2],
+      };
+    }
+
+    if (step === 4) {
+      session.data.time = msg;
+      session.step = 5;
+      return {
+        response: prompts[lang][3],
+      };
+    }
+
+    if (step === 5) {
+      session.data.description = msg;
       session.workflow = null;
       session.step = 0;
 
-      // Call service
-      const mockResult = this.complaintService.createComplaint(session.data.type, session.data.details);
-      const resNum = `UP-CMP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      const fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
 
-      const responses = {
-        en: `✅ **Complaint Drafted Successfully!**\nYour mock complaint reference number is: \`${resNum}\`.\n\n*Summary:*\n- **Type:** ${session.data.type}\n- **Details:** ${session.data.details}\n\nYou can track its progress using the tracking module.`,
-        hi: `✅ **शिकायत सफलतापूर्वक दर्ज हुई!**\nआपका संदर्भ संख्या (Reference Number): \`${resNum}\`.\n\n*विवरण:*\n- **प्रकार:** ${session.data.type}\n- **विवरण:** ${session.data.details}\n\nआप इस संदर्भ संख्या से अपनी स्थिति ट्रैक कर सकते हैं।`,
-        hinglish: `✅ **Complaint successfully register ho gayi hai!**\nAapka reference number hai: \`${resNum}\`.\n\n*Summary:*\n- **Type:** ${session.data.type}\n- **Details:** ${session.data.details}\n\nAap tracking section me jaakar ise track kar sakte hain.`,
-      };
+      // Call service
+      const resNum = `UP-CMP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+      this.complaintService.createComplaint(session.data.type, fullDetails, resNum);
 
       return {
-        response: responses[lang],
-        suggestions: ['Track Status', 'New Chat'],
+        response: getCompletionMessage(resNum, lang),
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
       };
     }
 
@@ -270,25 +480,25 @@ export class ChatService {
 
     const prompts = {
       en: [
-        "Please select the **Verification Type**:\n- Tenant Verification\n- PG Verification\n- Domestic Help Verification\n- Employee Verification",
-        "Please enter the **Full Name** of the person being verified:",
-        "Please enter the **Address** of the property / landlord:",
-        "Please enter the **Mobile Number** of the candidate:",
-        "Please enter the **Property Details** (e.g. flat number, city):",
+        "Please select the **Verification Type**:\n\n- [Tenant Verification](option:Tenant Verification)\n- [PG Verification](option:PG Verification)\n- [Domestic Help Verification](option:Domestic Help Verification)\n- [Employee Verification](option:Employee Verification)",
+        "Let's start with their full name. What is their full name?",
+        "Thank you. What is the permanent address of the person being verified?",
+        "Got it. Could you please share their mobile number?",
+        "Thank you. Could you also provide the property details (such as flat number, block, and city) where they will reside?",
       ],
       hi: [
-        "कृपया **सत्यापन का प्रकार** चुनें:\n- किरायेदार सत्यापन (Tenant Verification)\n- पीजी सत्यापन (PG Verification)\n- घरेलू सहायक सत्यापन (Domestic Help)\n- कर्मचारी सत्यापन (Employee Verification)",
-        "कृपया सत्यापित किए जाने वाले व्यक्ति का **पूरा नाम** दर्ज करें:",
-        "कृपया मकान मालिक / संपत्ति का **पता** दर्ज करें:",
-        "कृपया उम्मीदवार का **मोबाइल नंबर** दर्ज करें:",
-        "कृपया **संपत्ति का विवरण** दर्ज करें (उदा. फ्लैट नंबर, शहर):",
+        "कृपया **सत्यापन का प्रकार** चुनें:\n\n- [किरायेदार सत्यापन](option:Tenant Verification)\n- [पीजी सत्यापन](option:PG Verification)\n- [घरेलू सहायक सत्यापन](option:Domestic Help Verification)\n- [कर्मचारी सत्यापन](option:Employee Verification)",
+        "चलिए उनके पूरे नाम से शुरू करते हैं। उनका पूरा नाम क्या है?",
+        "धन्यवाद। सत्यापित किए जाने वाले व्यक्ति का स्थायी पता क्या है?",
+        "ठीक है। क्या आप कृपया उनका मोबाइल नंबर साझा कर सकते हैं?",
+        "धन्यवाद। क्या आप उस संपत्ति का विवरण (जैसे फ्लैट नंबर, ब्लॉक और शहर) भी दे सकते हैं जहाँ वे रहेंगे?",
       ],
       hinglish: [
-        "Please select the **Verification Type**:\n- Tenant Verification\n- PG Verification\n- Domestic Help Verification\n- Employee Verification",
-        "Satyapit kiye jaane wale vyakti ka **Full Name** likhein:",
-        "Landlord ya property ka **Address** likhein:",
-        "Candidate ka **Mobile Number** likhein:",
-        "**Property Details** (flat number, city etc.) enter karein:",
+        "Please select the **Verification Type**:\n\n- [Tenant Verification](option:Tenant Verification)\n- [PG Verification](option:PG Verification)\n- [Domestic Help Verification](option:Domestic Help Verification)\n- [Employee Verification](option:Employee Verification)",
+        "Let's start with their full name. Unka full name kya hai?",
+        "Thank you. Satyapit hone wale vyakti ka permanent address kya hai?",
+        "Got it. Kya aap unka mobile number share karenge?",
+        "Thank you. Kya aap property details (jaise flat number, block, city) batayenge jahan wo rahenge?",
       ],
     };
 
@@ -301,7 +511,7 @@ export class ChatService {
     }
 
     if (step === 2) {
-      session.data.type = msg;
+      if (msg) session.data.type = msg;
       session.step = 3;
       return { response: prompts[lang][1] };
     }
@@ -338,17 +548,12 @@ export class ChatService {
         session.data.address,
         session.data.mobile,
         session.data.propertyDetails,
+        resNum
       );
 
-      const responses = {
-        en: `✅ **Verification Request Submitted!**\nYour mock Application Reference Number is: \`${resNum}\`.\n\n*Summary:*\n- **Service:** ${session.data.type}\n- **Name:** ${session.data.name}\n- **Mobile:** ${session.data.mobile}\n- **Property Address:** ${session.data.address}`,
-        hi: `✅ **सत्यापन अनुरोध सबमिट किया गया!**\nआपका संदर्भ संख्या: \`${resNum}\`.\n\n*विवरण:*\n- **सेवा:** ${session.data.type}\n- **नाम:** ${session.data.name}\n- **मोबाइल:** ${session.data.mobile}\n- **संपत्ति का पता:** ${session.data.address}`,
-        hinglish: `✅ **Verification request submit ho gayi hai!**\nAapka mock Application Number hai: \`${resNum}\`.\n\n*Summary:*\n- **Service:** ${session.data.type}\n- **Name:** ${session.data.name}\n- **Mobile:** ${session.data.mobile}\n- **Address:** ${session.data.address}`,
-      };
-
       return {
-        response: responses[lang],
-        suggestions: ['Track Status', 'New Chat'],
+        response: getCompletionMessage(resNum, lang),
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
       };
     }
 
@@ -362,22 +567,22 @@ export class ChatService {
 
     const prompts = {
       en: [
-        "Please enter your **Full Name** for the character certificate:",
-        "Please enter your **Permanent Address**:",
-        "Please select your **District** in Uttar Pradesh:",
-        "Please enter the **Purpose** of requesting this certificate (e.g. Government Job, Private Employment, Passport):",
+        "Let's start with your full name. What is your full name?",
+        "Thank you. What is your permanent address?",
+        "Got it. Which district in Uttar Pradesh are you applying from?",
+        "Thank you. What is the purpose of this certificate?",
       ],
       hi: [
-        "चरित्र प्रमाण पत्र के लिए अपना **पूरा नाम** दर्ज करें:",
-        "अपना **स्थायी पता** दर्ज करें:",
-        "उत्तर प्रदेश के अपने **ज़िले** का चयन करें:",
-        "यह प्रमाण पत्र प्राप्त करने का **उद्देश्य** दर्ज करें (उदा. सरकारी नौकरी, निजी नौकरी, पासपोर्ट):",
+        "चलिए आपके पूरे नाम से शुरू करते हैं। आपका पूरा नाम क्या है?",
+        "धन्यवाद। आपका स्थायी पता क्या है?",
+        "ठीक है। आप उत्तर प्रदेश के किस ज़िले से आवेदन कर रहे हैं?",
+        "धन्यवाद। इस प्रमाण पत्र का उद्देश्य क्या है?",
       ],
       hinglish: [
-        "Character Certificate ke liye apna **Full Name** likhein:",
-        "Apna **Permanent Address** likhein:",
-        "Uttar Pradesh ka apna **District** select karein:",
-        "Certificate lene ka **Purpose** batayein (jaise: Government Job, Visa, Private Job):",
+        "Let's start with your full name. Aapka full name kya hai?",
+        "Thank you. Aapka permanent address kya hai?",
+        "Got it. Aap Uttar Pradesh ke kis district se apply kar rahe hain?",
+        "Thank you. Is certificate ka purpose kya hai?",
       ],
     };
 
@@ -420,17 +625,12 @@ export class ChatService {
         session.data.address,
         session.data.district,
         session.data.purpose,
+        resNum
       );
 
-      const responses = {
-        en: `✅ **Character Certificate Application Filed!**\nYour mock Application Number is: \`${resNum}\`.\n\n*Summary:*\n- **Applicant:** ${session.data.name}\n- **District:** ${session.data.district}\n- **Purpose:** ${session.data.purpose}\n\nThis application will be processed within 15-21 working days.`,
-        hi: `✅ **चरित्र प्रमाण पत्र आवेदन दायर किया गया!**\nआपका संदर्भ संख्या: \`${resNum}\`.\n\n*विवरण:*\n- **आवेदक:** ${session.data.name}\n- **ज़िला:** ${session.data.district}\n- **उद्देश्य:** ${session.data.purpose}\n\nयह आमतौर पर 15-21 दिनों में सत्यापित किया जाता है।`,
-        hinglish: `✅ **Character certificate application submit ho gayi!**\nAapka Application Number hai: \`${resNum}\`.\n\n*Summary:*\n- **Name:** ${session.data.name}\n- **District:** ${session.data.district}\n- **Purpose:** ${session.data.purpose}\n\nIska completion time 15-21 working days hota hai.`,
-      };
-
       return {
-        response: responses[lang],
-        suggestions: ['Track Status', 'New Chat'],
+        response: getCompletionMessage(resNum, lang),
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
       };
     }
 
@@ -444,25 +644,25 @@ export class ChatService {
 
     const prompts = {
       en: [
-        "Please select the **Request Type**:\n- Event Permission\n- Procession Request\n- Protest Request\n- Film Shooting Request",
-        "Please enter the **Event / Request Name**:",
-        "Please enter the **Location / Route** details:",
-        "Please enter the **Date** (DD/MM/YYYY):",
-        "Please enter the **Expected Attendance**:",
+        "Please select the **Request Type**:\n\n- [Event Permission](option:Event Permission)\n- [Procession Request](option:Procession Request)\n- [Protest Request](option:Protest Request)\n- [Film Shooting Request](option:Film Shooting Request)",
+        "Let's start with the event name. What is the name of your event?",
+        "Thank you. Could you also tell me where the event will take place (location or route)?",
+        "Got it. On what date is the event scheduled (DD/MM/YYYY)?",
+        "Thank you. Could you tell me what the expected attendance number is?",
       ],
       hi: [
-        "कृपया **अनुरोध का प्रकार** चुनें:\n- कार्यक्रम अनुमति (Event Permission)\n- जुलूस अनुमति (Procession Request)\n- विरोध प्रदर्शन (Protest Request)\n- फिल्म शूटिंग (Film Shooting)",
-        "कृपया कार्यक्रम / अनुरोध का **नाम** दर्ज करें:",
-        "कृपया **स्थान / मार्ग** का विवरण दर्ज करें:",
-        "कृपया **तिथि** दर्ज करें (DD/MM/YYYY):",
-        "कृपया **संभावित उपस्थिति** की संख्या लिखें:",
+        "कृपया **अनुरोध का प्रकार** चुनें:\n\n- [कार्यक्रम अनुमति](option:Event Permission)\n- [जुलूस अनुमति](option:Procession Request)\n- [विरोध प्रदर्शन](option:Protest Request)\n- [फिल्म शूटिंग](option:Film Shooting Request)",
+        "चलिए कार्यक्रम के नाम से शुरू करते हैं। आपके कार्यक्रम का नाम क्या है?",
+        "धन्यवाद। क्या आप बता सकते हैं कि कार्यक्रम कहाँ (स्थान या मार्ग) आयोजित होगा?",
+        "ठीक है। कार्यक्रम किस तिथि (DD/MM/YYYY) को निर्धारित है?",
+        "धन्यवाद। क्या आप बता सकते हैं कि कार्यक्रम में संभावित उपस्थिति संख्या कितनी है?",
       ],
       hinglish: [
-        "Select the **Request Type**:\n- Event Permission\n- Procession Request\n- Protest Request\n- Film Shooting Request",
-        "Event ya Request ka **Name** enter karein:",
-        "Event ka **Location / Route** likhein:",
-        "Event ki **Date** likhein (DD/MM/YYYY):",
-        "**Expected Attendance** kitni hai?:",
+        "Please select the **Request Type**:\n\n- [Event Permission](option:Event Permission)\n- [Procession Request](option:Procession Request)\n- [Protest Request](option:Protest Request)\n- [Film Shooting Request](option:Film Shooting Request)",
+        "Event ke naam se shuru karte hain. Aapke event ka naam kya hai?",
+        "Thank you. Event kahan (location/route) hone wala hai?",
+        "Got it. Event kis date (DD/MM/YYYY) ko hone wala hai?",
+        "Thank you. Event mein kitne logon ke aane ki ummeed hai?",
       ],
     };
 
@@ -475,7 +675,7 @@ export class ChatService {
     }
 
     if (step === 2) {
-      session.data.type = msg;
+      if (msg) session.data.type = msg;
       session.step = 3;
       return { response: prompts[lang][1] };
     }
@@ -512,17 +712,12 @@ export class ChatService {
         session.data.location,
         session.data.date,
         session.data.attendance,
+        resNum
       );
 
-      const responses = {
-        en: `✅ **Event Permission Application Lodged!**\nYour mock Application Reference Number is: \`${resNum}\`.\n\n*Summary:*\n- **Type:** ${session.data.type}\n- **Event Name:** ${session.data.name}\n- **Date:** ${session.data.date}\n- **Expected Attendance:** ${session.data.attendance}\n\nLocal administration and traffic police will review this request.`,
-        hi: `✅ **कार्यक्रम अनुमति आवेदन दर्ज!**\nआपका संदर्भ संख्या: \`${resNum}\`.\n\n*विवरण:*\n- **प्रकार:** ${session.data.type}\n- **नाम:** ${session.data.name}\n- **तिथि:** ${session.data.date}\n- **संभावित उपस्थिति:** ${session.data.attendance}\n\nस्थानीय प्रशासन और पुलिस विभाग इसका परीक्षण करेंगे।`,
-        hinglish: `✅ **Event Permission request submit ho gayi hai!**\nAapka Application Number: \`${resNum}\`.\n\n*Summary:*\n- **Type:** ${session.data.type}\n- **Event:** ${session.data.name}\n- **Date:** ${session.data.date}\n- **Attendance:** ${session.data.attendance}`,
-      };
-
       return {
-        response: responses[lang],
-        suggestions: ['Track Status', 'New Chat'],
+        response: getCompletionMessage(resNum, lang),
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
       };
     }
 
@@ -535,9 +730,9 @@ export class ChatService {
     const lang = session.language;
 
     const prompts = {
-      en: "Please enter your **Application Reference Number** (e.g. `UP-CMP-2026-001245`):",
-      hi: "कृपया अपना **संदर्भ संख्या** (Reference Number) दर्ज करें (जैसे `UP-CMP-2026-001245`):",
-      hinglish: "Apna **Application Reference Number** likhein (jaise `UP-CMP-2026-001245`):",
+      en: "Please provide your Application Reference Number for tracking (e.g. UP-CMP-2026-123456):",
+      hi: "कृपया ट्रैकिंग के लिए अपनी आवेदन संदर्भ संख्या प्रदान करें (उदा. UP-CMP-2026-123456):",
+      hinglish: "Please track karne ke liye apna Application Reference Number batayein (jaise UP-CMP-2026-123456):",
     };
 
     if (step === 1) {
@@ -552,13 +747,13 @@ export class ChatService {
       const trackInfo = await this.trackingService.track(msg);
       if (!trackInfo) {
         const errorResponses = {
-          en: `❌ **No application found** matching the reference number \`${msg}\`. Make sure it starts with a valid prefix (e.g., UP-CMP-, UP-VER-, UP-CER-, or UP-EVP-).`,
-          hi: `❌ संदर्भ संख्या \`${msg}\` का **कोई रिकॉर्ड नहीं मिला**। कृपया सही नंबर जांचें।`,
-          hinglish: `❌ \`${msg}\` reference number ka **koi application nahi mila**. Dubara check karein.`,
+          en: `❌ No application found matching reference number \`${msg}\`. Please check and try again.`,
+          hi: `❌ संदर्भ संख्या \`${msg}\` से मेल खाता कोई आवेदन नहीं मिला। कृपया जांचें और पुनः प्रयास करें।`,
+          hinglish: `❌ \`${msg}\` reference number ka koi application nahi mila. Please check karke fir se try karein.`,
         };
         return {
           response: errorResponses[lang],
-          suggestions: ['Track Application', 'New Chat'],
+          suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
         };
       }
 
@@ -571,22 +766,22 @@ export class ChatService {
       };
 
       const statusEmojis = {
-        'Submitted': '📥',
+        'Submitted': '📋',
         'Under Review': '🔍',
-        'Pending Verification': '👮',
-        'Approved': '🟢',
-        'Rejected': '🔴',
+        'Pending Verification': '🏠',
+        'Approved': '✅',
+        'Rejected': '❌',
       };
 
       const responses = {
         en: `🔍 **Application Tracking Details:**\n\n- **Reference Number:** \`${trackInfo.referenceNumber}\`\n- **Service:** ${trackInfo.serviceType}\n- **Current Status:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **Last Updated:** ${trackInfo.updatedAt.toLocaleString()}\n\n*Status Info:* ${statusDesc[trackInfo.status] || 'Processing.'}`,
-        hi: `🔍 **आवेदन ट्रैकिंग स्थिति:**\n\n- **संदर्भ संख्या:** \`${trackInfo.referenceNumber}\`\n- **सेवा:** ${trackInfo.serviceType}\n- **वर्तमान स्थिति:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **अंतिम अपडेट:** ${trackInfo.updatedAt.toLocaleString()}`,
+        hi: `🔍 **आवेदन ट्रैकिंग विवरण:**\n\n- **संदर्भ संख्या:** \`${trackInfo.referenceNumber}\`\n- **सेवा:** ${trackInfo.serviceType}\n- **वर्तमान स्थिति:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **अंतिम अपडेट:** ${trackInfo.updatedAt.toLocaleString()}`,
         hinglish: `🔍 **Application tracking status:**\n\n- **Reference Number:** \`${trackInfo.referenceNumber}\`\n- **Service:** ${trackInfo.serviceType}\n- **Current Status:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **Last Updated:** ${trackInfo.updatedAt.toLocaleString()}`,
       };
 
       return {
         response: responses[lang],
-        suggestions: ['New Chat', 'Track Another Application'],
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status'],
       };
     }
 

@@ -38,6 +38,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     suggestions: list[str] = []
+    db_action: dict | None = None
 
 @app.post("/chat/message", response_model=ChatResponse)
 async def chat_message(req: ChatRequest):
@@ -48,6 +49,9 @@ async def chat_message(req: ChatRequest):
         # 1. Emergency Checks (Intercept immediately)
         if workflow_engine.check_emergency(message):
             session = workflow_engine.get_session(session_id)
+            session.workflow = None
+            session.step = 0
+            session.data = {}
             lang = session.language
             
             emergency_msgs = {
@@ -66,7 +70,8 @@ async def chat_message(req: ChatRequest):
         if wf_res["intercepted"]:
             return ChatResponse(
                 response=wf_res["response"],
-                suggestions=wf_res.get("suggestions", [])
+                suggestions=wf_res.get("suggestions", []),
+                db_action=wf_res.get("db_action", None)
             )
             
         # 3. Retrieve relevant context from Knowledge Base
@@ -76,7 +81,8 @@ async def chat_message(req: ChatRequest):
         session = workflow_engine.get_session(session_id)
         response_text = gemini_client.generate_response(
             prompt=message,
-            retrieved_context=retrieved_context
+            retrieved_context=retrieved_context,
+            language=session.language
         )
         
         # Determine dynamic suggestions based on context

@@ -38,11 +38,12 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([
-    "My phone was stolen",
-    "मुझे किरायेदार सत्यापन कराना है",
-    "I need a character certificate for a job",
-    "How to get film shooting permission?",
-    "What is UP 112 emergency?",
+    "🚔 File a Complaint",
+    "🏠 Tenant Verification",
+    "📜 Character Certificate",
+    "🎭 Event Permission",
+    "🔍 Track Application",
+    "📍 Find Police Station",
   ]);
 
   const [history, setHistory] = useState<ChatSession[]>([
@@ -59,7 +60,7 @@ function ChatContent() {
     setMessages([
       {
         role: "assistant",
-        text: "👮 **Namaste! I am Rakku, your Digital Police Assistant from UP Police.**\nI can help you file complaints, submit tenant verifications, character certificates, and check permission requests for events or protests. \n\n*Please choose one of the suggestions below or type your request in English, Hindi, or Hinglish.*\n\n📱 *Need more official services? Download the official **UPCOP Mobile App** from the [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice).*",
+        text: "👮 Welcome to Rakku\n\nI'm your Digital Police Assistant.\n\nI can help you with:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n\nPlease choose your preferred language:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nYou can also simply tell me what you need help with.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
       },
     ]);
   }, []);
@@ -115,6 +116,67 @@ function ChatContent() {
 
     const userText = textToSend;
     setInput("");
+
+    const cleanLower = userText.toLowerCase().trim();
+    if (cleanLower.includes('nearest police station') || cleanLower.includes('police station near me') || cleanLower.includes('closest station') || cleanLower === 'find police station') {
+      setLoading(true);
+      setMessages((prev) => [...prev, { role: "user", text: userText }]);
+      
+      if (typeof window === "undefined" || !navigator.geolocation) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            text: "❌ Geolocation is not supported by your browser.",
+          },
+        ]);
+        setLoading(false);
+        return;
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            
+            const res = await fetch(`/api/citizen-assistance/police-stations/nearest?lat=${lat}&lng=${lng}`);
+            if (res.ok) {
+              const data = await res.json();
+              const stationMsg = `🚔 **Nearest Police Station Found:**\n\n` +
+                `- **Name:** **${data.station.name}**\n` +
+                `- **Address:** ${data.station.address}\n` +
+                `- **Phone Number:** [${data.station.phone}](tel:${data.station.phone})\n` +
+                `- **Distance:** **${data.distanceKm} km** away\n\n` +
+                `👉 [Open in Google Maps](${data.mapsUrl})`;
+              
+              setMessages((prev) => [...prev, { role: "assistant", text: stationMsg }]);
+            } else {
+              setMessages((prev) => [...prev, { role: "assistant", text: "❌ Failed to fetch nearest police station." }]);
+            }
+          } catch (e) {
+            setMessages((prev) => [...prev, { role: "assistant", text: "❌ Error occurred while searching for police station." }]);
+          } finally {
+            setLoading(false);
+          }
+        },
+        (error) => {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              text: `❌ Location access denied or unavailable. Falling back to default Hazratganj Central Station:\n\n` +
+                `🚔 **Hazratganj Police Station**\n` +
+                `- **Address:** Hazratganj, Lucknow, Uttar Pradesh 226001\n` +
+                `- **Phone:** [0522-2200201](tel:0522-2200201)\n\n` +
+                `👉 [Open in Google Maps](https://www.google.com/maps/search/?api=1&query=26.8467,80.9462)`,
+            },
+          ]);
+          setLoading(false);
+        }
+      );
+      return;
+    }
     
     // Add user message
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
@@ -161,14 +223,16 @@ function ChatContent() {
     setMessages([
       {
         role: "assistant",
-        text: "👮 **Chat reset. How can I help you now?**\nI can assist you with complaints, character certificates, tenant verifications, and event permissions.",
+        text: "👮 Welcome to Rakku\n\nI'm your Digital Police Assistant.\n\nI can help you with:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n\nPlease choose your preferred language:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nYou can also simply tell me what you need help with.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
       },
     ]);
     setSuggestions([
-      "My phone was stolen",
-      "Tenant verification karna hai",
-      "I need a character certificate for a job",
-      "Event Permission Request",
+      "🚔 File a Complaint",
+      "🏠 Tenant Verification",
+      "📜 Character Certificate",
+      "🎭 Event Permission",
+      "🔍 Track Application",
+      "📍 Find Police Station",
     ]);
   };
 
@@ -286,42 +350,142 @@ function ChatContent() {
                         ? "bubble-assistant glow-gold/5" 
                         : "bubble-user"
                     }`}>
-                      {/* Format Markdown bold titles and bullets inside prototype */}
                       {msg.text.split("\n").map((line, lIdx) => {
-                        let formattedLine = line;
-                        
-                        // Bold parsing (**text**)
-                        const boldRegex = /\*\*(.*?)\*\*/g;
-                        const parts = [];
-                        let lastIndex = 0;
-                        let match;
-                        
-                        while ((match = boldRegex.exec(line)) !== null) {
-                          if (match.index > lastIndex) {
-                            parts.push(line.substring(lastIndex, match.index));
-                          }
-                          parts.push(<strong key={match.index} className="text-police-gold font-bold">{match[1]}</strong>);
-                          lastIndex = boldRegex.lastIndex;
-                        }
-                        
-                        if (lastIndex < line.length) {
-                          parts.push(line.substring(lastIndex));
-                        }
-
-                        // Code backticks (`text`)
-                        const codeRegex = /`(.*?)`/g;
                         // For simplicity, if we have markdown bullets, indent them
                         const isBullet = line.trim().startsWith("-") || line.trim().startsWith("👉") || line.trim().startsWith("•");
+
+                        // Parse markdown elements: **bold** and [label](url-or-option)
+                        const parseMarkdown = (text: string) => {
+                          const regex = /(\*\*.*?\*\*|\[.*?\]\(.*?\))/g;
+                          const elements = text.split(regex);
+                          
+                          return elements.map((part, index) => {
+                            if (part.startsWith('**') && part.endsWith('**')) {
+                              return (
+                                <strong key={index} className="text-police-gold font-bold">
+                                  {part.slice(2, -2)}
+                                </strong>
+                              );
+                            } else if (part.startsWith('[') && part.endsWith(')')) {
+                              const linkMatch = part.match(/\[(.*?)\]\((.*?)\)/);
+                              if (linkMatch) {
+                                const label = linkMatch[1];
+                                const url = linkMatch[2];
+                                if (url.startsWith('option:')) {
+                                  const optionVal = url.substring(7);
+                                  return (
+                                    <button
+                                      key={index}
+                                      onClick={() => handleSendMessage(optionVal)}
+                                      className="text-police-gold hover:text-white underline font-semibold mx-1 cursor-pointer transition-colors text-left bg-transparent border-0 p-0 inline align-baseline"
+                                    >
+                                      {label}
+                                    </button>
+                                  );
+                                } else {
+                                  return (
+                                    <a
+                                      key={index}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-police-gold hover:underline font-semibold mx-1 inline"
+                                    >
+                                      {label}
+                                    </a>
+                                  );
+                                }
+                              }
+                            }
+                            return part;
+                          });
+                        };
 
                         return (
                           <p 
                             key={lIdx} 
                             className={`${isBullet ? "pl-4 py-0.5" : ""} ${line.trim() === "" ? "h-3" : ""}`}
                           >
-                            {parts.length > 0 ? parts : line}
+                            {parseMarkdown(line)}
                           </p>
                         );
                       })}
+
+                      {isAssistant && idx === 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-800/80">
+                          <button
+                            onClick={() => handleSendMessage("🚔 File a Complaint")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
+                          >
+                            <span className="text-xl">🚔</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">File Complaint</span>
+                          </button>
+                          
+                          <button
+                            onClick={() => handleSendMessage("🏠 Tenant Verification")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
+                          >
+                            <span className="text-xl">🏠</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Tenant Verify</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("📜 Character Certificate")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
+                          >
+                            <span className="text-xl">📜</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Character Cert</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("🎭 Event Permission")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
+                          >
+                            <span className="text-xl">🎭</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Event Permit</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("🔍 Track Application")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
+                          >
+                            <span className="text-xl">🔍</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Track Status</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("nearest police station")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
+                          >
+                            <span className="text-xl">📍</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Find Station</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("Emergency Contacts")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer col-span-1"
+                          >
+                            <span className="text-xl">📞</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Emergency Helplines</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("I got scammed online")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer col-span-1"
+                          >
+                            <span className="text-xl">💻</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Cyber Crime Help</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleSendMessage("harass")}
+                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer col-span-1"
+                          >
+                            <span className="text-xl">👩</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Women Safety Help</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

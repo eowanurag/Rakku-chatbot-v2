@@ -31,8 +31,9 @@ export class CertificateService {
     address: string,
     district: string,
     purpose: string,
+    preGeneratedRefNum?: string,
   ): Promise<CertificateData> {
-    const refNum = this.generateRefNumber();
+    const refNum = preGeneratedRefNum || this.generateRefNumber();
     try {
       return await this.prisma.characterCertificate.create({
         data: {

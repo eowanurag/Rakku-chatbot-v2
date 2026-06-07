@@ -3,6 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { PrismaService } from './prisma.service';
 
+// Citizen Assistance
+import { CitizenAssistanceModule } from './citizen-assistance/citizen-assistance.module';
+
 // Complaints
 import { ComplaintController } from './complaint/complaint.controller';
 import { ComplaintService } from './complaint/complaint.service';
@@ -37,6 +40,7 @@ import { KnowledgeService } from './knowledge/knowledge.service';
       isGlobal: true,
     }),
     HttpModule,
+    CitizenAssistanceModule,
   ],
   controllers: [
     ComplaintController,

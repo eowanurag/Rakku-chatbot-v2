@@ -33,8 +33,9 @@ export class EventService {
     location: string,
     date: string,
     expectedAttendance: number,
+    preGeneratedRefNum?: string,
   ): Promise<EventPermissionData> {
-    const refNum = this.generateRefNumber();
+    const refNum = preGeneratedRefNum || this.generateRefNumber();
     try {
       return await this.prisma.eventPermission.create({
         data: {

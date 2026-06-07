@@ -33,8 +33,9 @@ export class VerificationService {
     address: string,
     mobile: string,
     propertyDetails: string,
+    preGeneratedRefNum?: string,
   ): Promise<VerificationData> {
-    const refNum = this.generateRefNumber();
+    const refNum = preGeneratedRefNum || this.generateRefNumber();
     try {
       return await this.prisma.verification.create({
         data: {

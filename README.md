@@ -177,24 +177,31 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 * **`GET /api/event/:refNum`**: Fetches status.
 
 ### 6. Tracking Module
-* **`GET /api/tracking/:refNum`**
-  * **Response:** `{ "referenceNumber": "UP-CMP-2026-124982", "serviceType": "Complaint Registration", "status": "Under Review", "updatedAt": "2026-06-05T12:00:00Z", "details": { ... } }`
+### 7. Citizen Assistance Module
+* **`GET /api/citizen-assistance/helplines`**: Returns the active directory of emergency contacts.
+* **`GET /api/citizen-assistance/police-stations/nearest?lat=...&lng=...`**: Calculates distance via Haversine formula and returns the closest Lucknow police station with Google Maps deep link.
+* **`GET /api/citizen-assistance/analytics/summary`**: Exposes persistent administrator performance metrics (total visits, helpline prompts, overrides).
 
 ---
 
 ## Demo Scenarios
 
-Test the prototype using these three simulation scenarios in the Chat panel:
+Test the prototype using these simulation scenarios in the Chat panel:
 
 1. **Scenario 1: Lost Phone Complaint**
    * *User:* "My phone was stolen."
-   * *Rakku:* Detects intent, locks Complaint workflow, and prompts for "Complaint Type" (recommends options in chips). Follows up by collecting incident details, then returns a mock complaint code `UP-CMP-2026-XXXXXX`.
+   * *Rakku:* Detects intent, starts the Complaint workflow, auto-detects the "Lost Mobile / Theft" type, expresses warm empathy, shows Recommended Services links, and gathers location, date/time, and description one question at a time before returning a completion reference code `UP-CMP-2026-XXXXXX`.
 2. **Scenario 2: Tenant Verification (Hindi)**
    * *User:* "मुझे किरायेदार सत्यापन कराना है"
-   * *Rakku:* Detects language (Hindi), locks Verification workflow, and conducts form-filling in Hindi. Asks for Name, Address, Mobile, and Property details one-by-one, and returns reference code `UP-VER-2026-XXXXXX`.
+   * *Rakku:* Detects language (Hindi), locks Verification workflow, shows Recommended Services link, and conducts form-filling in Hindi. Asks for Name, Permanent Address, Mobile, and Property details one-by-one, and returns reference code `UP-VER-2026-XXXXXX`.
 3. **Scenario 3: Character Certificate**
    * *User:* "I need a character certificate for a job."
-   * *Rakku:* Locks Character Certificate workflow, gathers Name, Address, District, and Purpose, then displays a success report.
-4. **Emergency Handler:**
+   * *Rakku:* Locks Character Certificate workflow, gathers Name, Address, District, and Purpose in a conversational way, then displays a success report.
+4. **Scenario 4: Nearest Police Station Lookup**
+   * *User:* clicks "Find Station" card or types "nearest police station"
+   * *Rakku:* Prompts browser for location (via `navigator.geolocation`), sends coordinates to NestJS backend, and renders a card with the closest station, exact distance, phone link, and a Google Maps deep link.
+5. **Emergency Handler:**
    * *User:* "Burglars are breaking into my house right now!"
-   * *Rakku:* Detects emergency trigger and overrides any active workflow to display the emergency helpline banner: **"This appears to be an emergency. Please contact UP Police emergency services immediately by dialing 112."**
+   * *Rakku:* Detects emergency trigger and overrides any active workflow to display the emergency helpline banner: **"⚠️ This appears to be an emergency situation. Please contact UP Police Emergency Services immediately by dialing 112. If someone is in immediate danger, do not wait for an online response."**
+
+
