@@ -67,7 +67,9 @@ Rakku-chatbot-v1/
 ├── frontend/                # Next.js 15 Web Portal
 │   ├── src/
 │   │   ├── app/
+│   │   │   ├── admin/       # Analytics dashboard for tracking helplines and reports
 │   │   │   ├── chat/        # ChatGPT-style digital assistant workspace
+│   │   │   ├── components/  # Shared components (e.g. ThemeToggle)
 │   │   │   ├── track/       # Application tracking portal with visual timeline
 │   │   │   ├── globals.css  # CSS with UP Police navy/crimson/gold theme
 │   │   │   ├── layout.tsx   # Global layouts and SEO metadata
@@ -88,8 +90,11 @@ Rakku-chatbot-v1/
 │   │   ├── verification/    # Tenant/PG/Domestic Help/Employee verification
 │   │   ├── certificate/     # Character certificate service
 │   │   ├── event/           # Event, Procession, Protest & Film permissions
+│   │   ├── citizen-assistance/ # Nearest police lookup, helplines directory & analytics
+│   │   ├── knowledge/       # vector search RAG items retrieval
+│   │   ├── templates/       # Conversation responses (empathy, emergency notices)
 │   │   ├── tracking/        # Unified status lookup service
-│   │   └── chat/            # Chat proxy & validation layer (validation.service.ts)
+│   │   └── chat/            # Chat fallback state machine (chat.service.ts, validation.service.ts)
 │   ├── Dockerfile
 │   └── package.json
 │
@@ -97,7 +102,7 @@ Rakku-chatbot-v1/
     ├── main.py              # FastAPI app routing, stateless state parsing & health check
     ├── rag_engine.py        # Local JSON RAG matching retriever
     ├── workflow_engine.py   # Slot-filling state machine, profile validation & emergency checks
-    ├── gemini_client.py     # Gemini 2.5 Flash SDK prompt engineering & JSON profile extraction
+    ├── gemini_client.py     # Gemini structured profile extraction & prompt templates
     ├── knowledge_base.json  # Local citizen FAQs & official procedures
     ├── Dockerfile
     └── requirements.txt
