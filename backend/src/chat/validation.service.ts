@@ -8,14 +8,69 @@ export class ValidationService {
    * - Only alphabets, spaces, hyphens, and apostrophes allowed.
    * - Must contain at least a first name and a last name (at least two words).
    */
-  validateName(name: string): boolean {
-    if (!name) return false;
+  validateNameConfidence(name: string): { valid: boolean; confidence: number } {
+    if (!name || name.trim().length < 2) {
+      return { valid: false, confidence: 0 };
+    }
     const trimmed = name.trim();
-    const nameRegex = /^[a-zA-Z\s'-]+$/;
-    if (!nameRegex.test(trimmed)) return false;
     
-    const parts = trimmed.split(/\s+/);
-    return parts.length >= 2 && parts.every(part => part.length >= 1);
+    // Pure numbers
+    if (/^\d+$/.test(trimmed)) {
+      return { valid: false, confidence: 0 };
+    }
+    
+    // Special characters only (excluding Unicode letters, English letters, spaces, hyphens, and apostrophes)
+    const invalidRegex = /^[^a-zA-Z\u0900-\u097F\s'-]+$/;
+    if (invalidRegex.test(trimmed)) {
+      return { valid: false, confidence: 0 };
+    }
+    
+    // Only spaces/hyphens/apostrophes
+    if (/^[\s'-]+$/.test(trimmed)) {
+      return { valid: false, confidence: 0 };
+    }
+    
+    // Confidence score
+    // Lower confidence if name contains numbers or suspicious characters
+    if (/[0-9@#$%^&*()_+={}\[\]|\\:;"'<>,.?/~`]/.test(trimmed)) {
+      return { valid: true, confidence: 0.60 };
+    }
+    return { valid: true, confidence: 0.99 };
+  }
+
+  validateName(name: string): boolean {
+    return this.validateNameConfidence(name).valid;
+  }
+
+  parseFullAddress(text: string): { addressLine1: string; addressLine2: string | null; pincode: string | null } {
+    const pincodeMatch = text.match(/\b\d{6}\b/);
+    const pincode = pincodeMatch ? pincodeMatch[0] : null;
+    
+    let cleanText = text;
+    if (pincode) {
+      cleanText = cleanText.replace(new RegExp('\\b' + pincode + '\\b', 'g'), '');
+      cleanText = cleanText.replace(/[\s,-]+$/, '');
+      cleanText = cleanText.replace(/\s*,\s*,/g, ',');
+      cleanText = cleanText.trim();
+    }
+    
+    const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    let addressLine1 = '';
+    let addressLine2: string | null = null;
+    
+    if (lines.length >= 2) {
+      addressLine1 = lines[0];
+      addressLine2 = lines.slice(1).join(', ');
+    } else {
+      addressLine1 = cleanText.trim();
+      addressLine2 = null;
+    }
+    
+    return {
+      addressLine1,
+      addressLine2,
+      pincode,
+    };
   }
 
   /**
@@ -156,19 +211,32 @@ export class ValidationService {
       }
     }
 
-    // 4. Location Extraction Patterns
-    // "i live in Lucknow", "change location to Kanpur", "my location is Varanasi", "live in Noida"
+    // 4. Location Extraction Patterns (including Hindi/Hinglish)
     const locationPatterns = [
-      /(?:i live in|change location to|my location is|live in|location is|i am in)\s+([a-zA-Z\s'-]+)/i,
-      /change my location to\s+([a-zA-Z\s'-]+)/i
+      /(?:i live in|change location to|my location is|live in|location is|i am in|change my location to|my district is|district is)\s+([a-zA-Z\u0900-\u097F\s'-]+)/i,
+      /([a-zA-Z\u0900-\u097F]+)\s+(?:me\s+rehta|me\s+rehti|mein\s+rehta|mein\s+rehti|me\s+rahta|me\s+rahti)/i,
+      /([a-zA-Z\u0900-\u097F]+)\s*(?:में रहता|में रहती|मे रहता|मे रहती)/
     ];
 
     for (const pattern of locationPatterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
-        const potentialLoc = match[1].trim().split(/\s+and\s+|\s+my\s+|\s+number\s+/i)[0].trim();
+        let potentialLoc = match[1].trim().split(/\s+and\s+|\s+my\s+|\s+number\s+/i)[0].trim();
+        potentialLoc = potentialLoc.replace(/[।?!.,]$/, "").trim();
         if (potentialLoc.length >= 3) {
-          data.location = potentialLoc;
+          data.location = potentialLoc.charAt(0).toUpperCase() + potentialLoc.slice(1);
+          break;
+        }
+      }
+    }
+
+    // Fallback known UP cities list
+    if (!data.location) {
+      const upCities = ["lucknow", "kanpur", "noida", "ghaziabad", "varanasi", "prayagraj", "agra", "meerut", "bareilly", "aligarh", "moradabad", "saharanpur", "gorakhpur", "ayodhya", "jhansi", "muzaffarnagar", "mathura", "firozabad", "mirzapur", "lakhimpur", "hapur", "amroha", "greater noida"];
+      const words = lowerText.split(/\s+/);
+      for (const w of words) {
+        if (upCities.includes(w)) {
+          data.location = w.charAt(0).toUpperCase() + w.slice(1);
           break;
         }
       }

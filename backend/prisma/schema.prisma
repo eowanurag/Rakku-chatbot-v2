@@ -1,67 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Citizen {
-  id               String    @id @default(cuid())
-  fullName         String
-  mobileNumber     String
-  email            String?
-  addressLine1     String?
-  addressLine2     String?
-  city             String?
-  district         String?
-  state            String?
-  pincode          String?
-  latitude         Float?
-  longitude        Float?
-  isConfirmed      Boolean   @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  complaints       Complaint[]
-  verifications    Verification[]
-  certificates     CharacterCertificate[]
-  permissions      EventPermission[]
+  id            String                 @id @default(cuid())
+  fullName      String
+  mobileNumber  String
+  email         String?
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  district      String?
+  state         String?
+  pincode       String?
+  latitude      Float?
+  longitude     Float?
+  isConfirmed   Boolean                @default(false)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  certificates  CharacterCertificate[]
+  complaints    Complaint[]
+  permissions   EventPermission[]
+  verifications Verification[]
 }
 
 model Complaint {
   id              String   @id @default(uuid())
   referenceNumber String   @unique
   citizenId       String
-  citizen         Citizen  @relation(fields: [citizenId], references: [id])
   complaintType   String
   incidentDetails String
   status          String   @default("Submitted")
+  mobileBrand     String?
+  mobileModel     String?
+  mobileColor     String?
+  purchaseYear    Int?
+  imeiNumber      String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  citizen         Citizen  @relation(fields: [citizenId], references: [id])
 }
 
 model Verification {
-  id              String   @id @default(uuid())
-  referenceNumber String   @unique
-  citizenId       String
-  citizen         Citizen  @relation(fields: [citizenId], references: [id])
-  verificationType String  // Tenant, PG, Domestic Help, Employee
-  name            String
-  address         String
-  mobile          String
-  propertyDetails String
-  status          String   @default("Submitted")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid())
+  referenceNumber  String   @unique
+  citizenId        String
+  verificationType String
+  name             String
+  address          String
+  mobile           String
+  propertyDetails  String
+  status           String   @default("Submitted")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  citizen          Citizen  @relation(fields: [citizenId], references: [id])
 }
 
 model CharacterCertificate {
   id              String   @id @default(uuid())
   referenceNumber String   @unique
   citizenId       String
-  citizen         Citizen  @relation(fields: [citizenId], references: [id])
   name            String
   address         String
   district        String
@@ -69,14 +72,14 @@ model CharacterCertificate {
   status          String   @default("Submitted")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  citizen         Citizen  @relation(fields: [citizenId], references: [id])
 }
 
 model EventPermission {
   id                 String   @id @default(uuid())
   referenceNumber    String   @unique
   citizenId          String
-  citizen            Citizen  @relation(fields: [citizenId], references: [id])
-  eventType          String   // Event Permission, Procession Request, Protest Request, Film Shooting Request
+  eventType          String
   eventName          String
   location           String
   date               String
@@ -84,12 +87,13 @@ model EventPermission {
   status             String   @default("Submitted")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  citizen            Citizen  @relation(fields: [citizenId], references: [id])
 }
 
 model ChatHistory {
   id        String   @id @default(uuid())
   sessionId String
-  role      String   // user or assistant
+  role      String
   message   String
   createdAt DateTime @default(now())
 }
@@ -103,12 +107,33 @@ model KnowledgeItem {
 }
 
 model WorkflowSession {
-  id                String   @id @default(uuid())
+  id          String   @id @default(uuid())
+  citizenId   String?
+  serviceType String?
+  currentStep String
+  stateJson   Json
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  sessionId   String
+  eventType   String
+  eventData   Json
+  createdAt   DateTime @default(now())
+}
+
+model TrackingRecord {
+  id                String   @id @default(cuid())
+  referenceNumber   String   @unique
+  serviceType       String
+  entityId          String
   citizenId         String?
-  serviceType       String?
-  currentStep       String
-  stateJson         Json
-  isCompleted       Boolean  @default(false)
+  currentStatus     String
+  statusHistory     Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+

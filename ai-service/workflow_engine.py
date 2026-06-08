@@ -2,13 +2,123 @@ import random
 import re
 from datetime import datetime
 
-def validate_name(name: str) -> bool:
+def validate_name_confidence(name: str) -> tuple[bool, float]:
     if not name or len(name.strip()) < 2:
-        return False
-    if not bool(re.match(r"^[a-zA-Z\s'-]+$", name.strip())):
-        return False
-    parts = name.strip().split()
-    return len(parts) >= 2 and all(len(p) >= 1 for p in parts)
+        return False, 0.0
+    trimmed = name.strip()
+    if re.match(r"^\d+$", trimmed):
+        return False, 0.0
+    if re.match(r"^[^a-zA-Z\u0900-\u097F\s'-]+$", trimmed):
+        return False, 0.0
+    # Obvious garbage checks
+    if re.match(r"^[\s'-]+$", trimmed):
+        return False, 0.0
+    
+    # Calculate confidence score
+    # Lower confidence if name contains numbers or suspicious characters
+    if re.search(r"[0-9@#$%^&*()_+={}\[\]|\\:;\"'<>,.?/~`]", trimmed):
+        return True, 0.60
+    return True, 0.99
+
+def validate_name(name: str) -> bool:
+    valid, _ = validate_name_confidence(name)
+    return valid
+
+def parse_full_address(text: str) -> dict:
+    pincode_match = re.search(r"\b\d{6}\b", text)
+    pincode = pincode_match.group(0) if pincode_match else None
+    
+    # Remove pincode from the text to prevent duplication in lines
+    clean_text = text
+    if pincode:
+        clean_text = re.sub(r"\b" + pincode + r"\b", "", clean_text)
+        # Remove trailing hyphens or extra commas left after removing pincode
+        clean_text = re.sub(r"[\s,-]+$", "", clean_text)
+        clean_text = re.sub(r"\s*,\s*,", ",", clean_text)
+        clean_text = clean_text.strip()
+        
+    lines = [l.strip() for l in clean_text.split("\n") if l.strip()]
+    if len(lines) >= 2:
+        addressLine1 = lines[0]
+        addressLine2 = ", ".join(lines[1:])
+    else:
+        parts = [p.strip() for p in clean_text.split(",") if p.strip()]
+        if len(parts) >= 2:
+            addressLine1 = parts[0]
+            addressLine2 = ", ".join(parts[1:])
+        else:
+            addressLine1 = clean_text.strip()
+            addressLine2 = None
+            
+    return {
+        "addressLine1": addressLine1,
+        "addressLine2": addressLine2,
+        "pincode": pincode
+    }
+
+def log_audit(session, event_type: str, event_data: dict, db_action_list: list = None):
+    timestamp = datetime.now().isoformat()
+    import json
+    log_line = json.dumps({
+        "timestamp": timestamp,
+        "sessionId": session.citizenId or "unknown",
+        "eventType": event_type,
+        "eventData": event_data
+    })
+    try:
+        with open("rakku_audit.log", "a", encoding="utf-8") as f:
+            f.write(log_line + "\n")
+    except Exception as e:
+        print(f"Failed to write audit log file: {e}")
+        
+    db_action = {
+        "type": "audit_log",
+        "data": {
+            "sessionId": session.citizenId or "unknown",
+            "eventType": event_type,
+            "eventData": event_data
+        }
+    }
+    if db_action_list is not None:
+        db_action_list.append(db_action)
+
+def extract_location(text: str) -> str | None:
+    if not text:
+        return None
+    # 1. Regex patterns for locations in English and Hindi/Hinglish
+    patterns = [
+        r"(?:change location to|change my location to|location to)\s+([a-zA-Z\u0900-\u097F\s'-]+)",
+        r"(?:live in|living in|resident of)\s+([a-zA-Z\u0900-\u097F\s'-]+)",
+        r"(?:my district is|district is)\s+([a-zA-Z\u0900-\u097F\s'-]+)",
+        r"(?:location is)\s+([a-zA-Z\u0900-\u097F\s'-]+)",
+        r"([a-zA-Z\u0900-\u097F]+)\s+(?:me\s+rehta|me\s+rehti|mein\s+rehta|mein\s+rehti|me\s+rahta|me\s+rahti)",
+        r"([a-zA-Z\u0900-\u097F]+)\s*(?:में रहता|में रहती|मे रहता|मे रहती)"
+    ]
+    
+    for pat in patterns:
+        match = re.search(pat, text, re.IGNORECASE)
+        if match:
+            loc = match.group(1).strip()
+            loc = re.sub(r"[।?!.,]$", "", loc).strip()
+            if loc:
+                return loc.capitalize()
+                
+    # 2. Known cities in UP fallback extraction:
+    up_cities = ["lucknow", "kanpur", "noida", "ghaziabad", "varanasi", "prayagraj", "agra", "meerut", "bareilly", "aligarh", "moradabad", "saharanpur", "gorakhpur", "ayodhya", "jhansi", "muzaffarnagar", "mathura", "firozabad", "mirzapur", "lakhimpur", "hapur", "amroha", "noida", "greater noida"]
+    words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
+    for w in words:
+        if w in up_cities:
+            return w.capitalize()
+            
+    hindi_cities = {
+        "लखनऊ": "Lucknow", "कानपुर": "Kanpur", "नोएडा": "Noida", "गाजियाबाद": "Ghaziabad",
+        "वाराणसी": "Varanasi", "प्रयागराज": "Prayagraj", "आगरा": "Agra", "गोरखपुर": "Gorakhpur"
+    }
+    for k, v in hindi_cities.items():
+        if k in text:
+            return v
+            
+    return None
 
 def normalize_mobile(mobile: str) -> str | None:
     if not mobile:
@@ -88,20 +198,42 @@ class WorkflowSession:
         self.fullName = ""
         self.mobileNumber = ""
         self.email = ""
+        
+        # Structured location & address
+        self.area = ""
         self.city = ""
         self.district = ""
         self.state_name = "Uttar Pradesh"
+        self.pincode = ""
+        self.addressLine1 = ""
+        self.addressLine2 = ""
+        
         self.latitude = None
         self.longitude = None
+        
+        self.currentWorkflowState = "START"  # PROFILE_COLLECTION, PROFILE_CONFIRMATION, PROFILE_VERIFIED, SERVICE_COLLECTION, APPLICATION_REVIEW, APPLICATION_SUBMITTED, APPLICATION_MODIFICATION
+        self.serviceType = None
+        self.applicationData = {}
+        self.referenceNumber = ""
         self.isConfirmed = False
+        self.profileConfirmed = False
+        self.applicationConfirmed = False
+        self.currentExpectedField = ""
 
     def to_dict(self) -> dict:
         return {
             "workflow": self.workflow,
             "step": str(self.step),
+            "currentWorkflowState": self.currentWorkflowState,
+            "serviceType": self.serviceType,
+            "applicationData": self.applicationData,
+            "referenceNumber": self.referenceNumber,
             "data": self.data,
             "language": self.language,
             "languageSelected": self.language_selected,
+            "profileConfirmed": self.profileConfirmed,
+            "applicationConfirmed": self.applicationConfirmed,
+            "currentExpectedField": self.currentExpectedField,
             "citizen": {
                 "id": self.citizenId,
                 "fullName": self.fullName,
@@ -110,6 +242,10 @@ class WorkflowSession:
                 "city": self.city,
                 "district": self.district,
                 "state": self.state_name,
+                "area": self.area,
+                "pincode": self.pincode,
+                "addressLine1": self.addressLine1,
+                "addressLine2": self.addressLine2,
                 "latitude": self.latitude,
                 "longitude": self.longitude,
                 "isConfirmed": self.isConfirmed,
@@ -121,13 +257,25 @@ class WorkflowSession:
             return
         self.workflow = d.get("workflow")
         step_val = d.get("step", 0)
+        self.currentWorkflowState = d.get("currentWorkflowState", "START")
+        self.serviceType = d.get("serviceType", self.workflow)
+        self.applicationData = d.get("applicationData", {})
+        self.referenceNumber = d.get("referenceNumber", "")
+        
+        valid_steps = [
+            'REVIEW', 'MODIFY_SELECT', 'MODIFY_INPUT', 'CONFIRM_AUTO_LOCATION', 
+            'CONFIRM_NAME', 'IDENTIFY_ADDRESS', 'MODIFY_PROFILE_SELECT', 'MODIFY_PROFILE_INPUT'
+        ]
         try:
-            self.step = int(step_val) if str(step_val).isdigit() or step_val == 'REVIEW' else step_val
+            self.step = int(step_val) if str(step_val).isdigit() or step_val in valid_steps else step_val
         except:
             self.step = step_val
         self.data = d.get("data", {})
         self.language = d.get("language", "en")
         self.language_selected = d.get("languageSelected", False)
+        self.profileConfirmed = d.get("profileConfirmed", False)
+        self.applicationConfirmed = d.get("applicationConfirmed", False)
+        self.currentExpectedField = d.get("currentExpectedField", "")
         
         cit = d.get("citizen", {})
         self.citizenId = cit.get("id")
@@ -137,6 +285,10 @@ class WorkflowSession:
         self.city = cit.get("city", "")
         self.district = cit.get("district", "")
         self.state_name = cit.get("state", "Uttar Pradesh")
+        self.area = cit.get("area", "")
+        self.pincode = cit.get("pincode", "")
+        self.addressLine1 = cit.get("addressLine1", "")
+        self.addressLine2 = cit.get("addressLine2", "")
         self.latitude = cit.get("latitude")
         self.longitude = cit.get("longitude")
         self.isConfirmed = cit.get("isConfirmed", False)
@@ -178,6 +330,22 @@ class WorkflowEngine:
                 {"name": "reference_number", "label": "Application Reference Number / आवेदन संदर्भ संख्या (e.g. UP-CMP-2026-123456)", "suggestions": []}
             ]
         }
+
+    def get_workflow_fields(self, session: WorkflowSession) -> list[dict]:
+        fields = list(self.workflow_fields.get(session.workflow, []))
+        if session.workflow == "complaint" and session.data.get("complaint_type") == "Lost Mobile / Theft":
+            extended_fields = [
+                {"name": "mobile_brand", "label": "Mobile Brand / मोबाइल ब्रांड", "suggestions": ["Samsung", "Apple", "Xiaomi", "Realme", "OnePlus", "Vivo", "Oppo"]},
+                {"name": "mobile_model", "label": "Mobile Model / मोबाइल मॉडल", "suggestions": []},
+                {"name": "mobile_color", "label": "Mobile Color / मोबाइल का रंग", "suggestions": []},
+                {"name": "purchase_year", "label": "Purchase Year / खरीद का वर्ष (e.g. 2024)", "suggestions": []},
+                {"name": "imei_number", "label": "IMEI Number (optional) / आईएमईआई नंबर (वैकल्पिक)", "suggestions": ["Skip / छोड़ें"]}
+            ]
+            for ef in extended_fields:
+                if not any(f["name"] == ef["name"] for f in fields):
+                    fields.append(ef)
+        return fields
+
 
     def get_session(self, session_id: str) -> WorkflowSession:
         if session_id not in self.sessions:
@@ -284,11 +452,18 @@ class WorkflowEngine:
         return False
 
     def render_confirmation_card(self, session: WorkflowSession) -> dict:
+        address_display = f"{session.addressLine1}"
+        if session.addressLine2:
+            address_display += f", {session.addressLine2}"
+        if session.pincode:
+            address_display += f" - {session.pincode}"
+            
         confirm_card = (
             f"👮 **Please review your details:**\n\n"
             f"* **Name:** {session.fullName}\n"
             f"* **Mobile Number:** {session.mobileNumber}\n"
-            f"* **Location:** {session.city or session.district or 'Lucknow'}, {session.state_name}\n\n"
+            f"* **Location:** {session.city or session.district or 'Lucknow'}, {session.state_name}\n"
+            f"* **Address:** {address_display or 'Not provided'}\n\n"
             f"Is everything correct?\n\n"
             f"- [Confirm Details](option:Confirm Details)\n"
             f"- [Modify Details](option:Modify Details)"
@@ -357,15 +532,111 @@ class WorkflowEngine:
                     "suggestions": ["English", "हिंदी", "Hinglish"]
                 }
 
-        # Check for cancel command
-        if clean_msg in ["cancel", "radd", "रद्द", "exit", "stop"]:
+        # Log workflow states and actions
+        print(f"[WORKFLOW_LOG] State: {session.currentWorkflowState} | Action Received: {message} | Handler: process_message")
+
+        # Explicitly support early intercept of actions before Gemini or routing
+        if clean_msg in ["confirm details", "option:confirm details", "confirm", "yes", "correct"]:
+            if session.currentWorkflowState == "PROFILE_CONFIRMATION":
+                session.currentWorkflowState = "PROFILE_VERIFIED"
+                return self.run_citizen_verification_flow(message, session, gemini_client)
+        
+        if clean_msg in ["modify details", "option:modify details", "modify"]:
+            if session.currentWorkflowState == "PROFILE_CONFIRMATION" or session.currentWorkflowState == "PROFILE_COLLECTION":
+                session.currentWorkflowState = "PROFILE_CONFIRMATION"
+                session.step = "MODIFY_PROFILE_INPUT"
+                return {
+                    "intercepted": True,
+                    "response": "Understood. Please describe the changes you would like to make (e.g. \"My name is Mohan Singh\", \"Change my number to 9876543210\", \"I live in Kanpur\"):",
+                    "suggestions": []
+                }
+            elif session.currentWorkflowState == "APPLICATION_REVIEW":
+                session.currentWorkflowState = "APPLICATION_MODIFICATION"
+                session.step = "MODIFY_SELECT"
+                fields = self.get_workflow_fields(session)
+                field_list = ""
+                for idx, f in enumerate(fields, 1):
+                    val = session.data.get(f["name"], "")
+                    field_list += f"- [{idx}. {f['label']} ({val})](option:{idx})\n"
+                return {
+                    "intercepted": True,
+                    "response": f"👮 Which field would you like to modify?\n\n{field_list}",
+                    "suggestions": [str(i) for i in range(1, len(fields) + 1)]
+                }
+
+
+        if clean_msg in ["submit application", "option:submit application", "confirm submission", "yes, submit", "submit"]:
+            if session.currentWorkflowState == "APPLICATION_REVIEW":
+                return self._finalize_workflow(session)
+            elif session.currentWorkflowState == "APPLICATION_SUBMITTED":
+                return {
+                    "intercepted": True,
+                    "response": "This application has already been submitted.",
+                    "suggestions": ["Track Application", "Download Receipt", "Start New Request"]
+                }
+
+        if clean_msg in ["track application", "option:track application"]:
+            session.workflow = "tracking"
+            session.step = 1
+            session.currentWorkflowState = "SERVICE_COLLECTION"
+            return {
+                "intercepted": True,
+                "response": "Please provide your Application Reference Number for tracking (e.g. UP-CMP-2026-123456):",
+                "suggestions": []
+            }
+
+        if clean_msg in ["start new request", "option:start new request"]:
             session.workflow = None
             session.step = 0
+            session.currentWorkflowState = "START"
+            session.data = {}
+            return {
+                "intercepted": True,
+                "response": "Hello and welcome.\n\nHow can I assist you today?",
+                "suggestions": ["File Complaint", "Tenant Verification", "Character Certificate", "Event Permission", "Track Application"]
+            }
+
+        # Check for cancel command
+        if clean_msg in ["cancel", "radd", "रद्द", "exit", "stop", "option:cancel"]:
+            session.workflow = None
+            session.step = 0
+            session.currentWorkflowState = "START"
             session.data = {}
             return {
                 "intercepted": True,
                 "response": "Current operation cancelled. How else can I help you?",
                 "suggestions": ["File Complaint", "Tenant Verification", "Character Certificate", "Event Permission", "Track Application"]
+            }
+
+        # Handle tracking lookup bypassing the workflow state machine
+        if session.workflow == "tracking":
+            ref_num = message.strip()
+            # Reset tracking session state immediately
+            session.workflow = None
+            session.step = 0
+            session.currentWorkflowState = "START"
+            session.data = {}
+            
+            ref_upper = ref_num.upper()
+            valid_format = any(ref_upper.startswith(prefix) for prefix in ["UP-CMP-", "UP-TV-", "UP-CC-", "UP-EP-", "UP-VER-", "UP-CER-", "UP-EVP-"])
+            if not valid_format:
+                return {
+                    "intercepted": True,
+                    "response": "👮 The reference number format appears invalid. Please enter a valid reference number (e.g. UP-CMP-2026-123456):",
+                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
+                }
+            
+            return {
+                "intercepted": True,
+                "response": "Querying tracking record...", # This will be overwritten by NestJS
+                "suggestions": ["File Complaint", "Tenant Verification", "Track Status"],
+                "db_action": {
+                    "type": "track_query",
+                    "data": {
+                        "referenceNumber": ref_upper,
+                        "language": session.language
+                    }
+                }
             }
 
         # Detect starting new workflow
@@ -379,34 +650,131 @@ class WorkflowEngine:
         if not session.workflow:
             return {"intercepted": False}
 
+
+        # Map session state variable on initial workflow starting
+        if session.currentWorkflowState == "START":
+            session.currentWorkflowState = "PROFILE_COLLECTION"
+
+        # Prevent duplicate submissions
+        if session.currentWorkflowState == "APPLICATION_SUBMITTED":
+            return {
+                "intercepted": True,
+                "response": f"👮 Your request has already been submitted successfully under reference number **{session.referenceNumber}**.\n\nIs there anything else I can help you with today?",
+                "suggestions": ["Track Application", "Download Receipt", "Start New Request"]
+            }
+
         # Enforce Citizen Verification first (except for tracking)
-        if not session.isConfirmed and session.workflow != "tracking":
-            return self.run_citizen_verification_flow(message, session, gemini_client)
+        if session.currentWorkflowState in ["PROFILE_COLLECTION", "PROFILE_CONFIRMATION", "PROFILE_VERIFIED"] and session.workflow != "tracking":
+            if not session.profileConfirmed and not session.isConfirmed:
+                if session.currentWorkflowState == "PROFILE_COLLECTION" and getattr(session, "step", "") == "CONFIRM_PROFILE":
+                    session.currentWorkflowState = "PROFILE_CONFIRMATION"
+                res = self.run_citizen_verification_flow(message, session, gemini_client)
+                if session.profileConfirmed or session.isConfirmed:
+                    session.currentWorkflowState = "PROFILE_VERIFIED"
+                return res
+
+        # Align current state
+        if session.currentWorkflowState == "PROFILE_VERIFIED":
+            session.currentWorkflowState = "SERVICE_COLLECTION"
 
         # Pre-Submission Review screen step mapping
-        if str(session.step) == "REVIEW":
-            if clean_msg in ["yes", "submit", "confirm", "option:yes", "option:submit application", "option:confirm details"]:
-                res = self._finalize_workflow(session)
-                return res
-            elif clean_msg in ["no", "modify", "option:no", "option:modify details"]:
-                session.step = 0
-                fields = self.workflow_fields[session.workflow]
-                next_field = fields[0]
-                session.step = 1
+        if session.currentWorkflowState == "APPLICATION_REVIEW":
+            if clean_msg in ["yes", "submit", "confirm", "submit application", "confirm details", "confirm submission", "yes, submit", "option:yes", "option:submit application", "option:confirm details", "option:confirm submission"]:
+                name_valid = validate_name(session.fullName)
+                mobile_valid = validate_mobile(session.mobileNumber)
+                location_valid = bool(session.city or session.district)
+                fields = self.get_workflow_fields(session)
+                fields_complete = all(session.data.get(f["name"]) for f in fields)
+                if name_valid and mobile_valid and location_valid and fields_complete:
+                    return self._finalize_workflow(session)
+                else:
+                    return {
+                        "intercepted": True,
+                        "response": "⚠️ **Cannot Submit:** Some validations are still missing. Could you please provide the information in a different way or modify details?",
+                        "suggestions": ["Modify Details"]
+                    }
+            elif clean_msg in ["no", "modify", "modify details", "option:no", "option:modify details"]:
+                session.currentWorkflowState = "APPLICATION_MODIFICATION"
+                session.step = "MODIFY_SELECT"
+                fields = self.get_workflow_fields(session)
+                field_list = ""
+                for idx, f in enumerate(fields, 1):
+                    val = session.data.get(f["name"], "")
+                    field_list += f"- [{idx}. {f['label']} ({val})](option:{idx})\n"
+                
                 return {
                     "intercepted": True,
-                    "response": "Understood. Let's restart the form. Please select or enter the details again.\n\n" + self._format_question(session.workflow, next_field, session.language, 1),
-                    "suggestions": next_field["suggestions"]
+                    "response": f"👮 Which field would you like to modify?\n\n{field_list}",
+                    "suggestions": [str(i) for i in range(1, len(fields) + 1)]
                 }
+            else:
+                # Check for natural language corrections on review screen
+                is_corr = self.handle_profile_correction(session, message)
+                if is_corr:
+                    return self.render_presubmission_review_screen(session)
+
+        # Handle modify flows
+        if session.currentWorkflowState == "APPLICATION_MODIFICATION":
+            if str(session.step) == "MODIFY_SELECT":
+                fields = self.get_workflow_fields(session)
+                selected_field = None
+                for idx, f in enumerate(fields, 1):
+                    if clean_msg == str(idx) or f["name"] in clean_msg or f["label"].lower() in clean_msg:
+                        selected_field = f
+                        break
+                
+                if selected_field:
+                    session.step = "MODIFY_INPUT"
+                    session.currentExpectedField = selected_field["name"]
+                    return {
+                        "intercepted": True,
+                        "response": f"Please enter the new value for **{selected_field['label']}**:",
+                        "suggestions": selected_field.get("suggestions", [])
+                    }
+                else:
+                    field_list = ""
+                    for idx, f in enumerate(fields, 1):
+                        val = session.data.get(f["name"], "")
+                        field_list += f"- [{idx}. {f['label']} ({val})](option:{idx})\n"
+                    return {
+                        "intercepted": True,
+                        "response": f"I may not have understood correctly. Could you please select a valid field to modify?\n\n{field_list}",
+                        "suggestions": [str(i) for i in range(1, len(fields) + 1)]
+                    }
+
+            if str(session.step) == "MODIFY_INPUT":
+                field_name = getattr(session, "currentExpectedField", "")
+                if not field_name:
+                    session.currentWorkflowState = "APPLICATION_REVIEW"
+                    session.step = "REVIEW"
+                    return self.render_presubmission_review_screen(session)
+                    
+                is_valid = self.validate_workflow_field(session.workflow, field_name, message, session)
+                if not is_valid:
+                    error_msg = self.get_workflow_field_error_msg(session.workflow, field_name, session.language)
+                    return {
+                        "intercepted": True,
+                        "response": error_msg,
+                        "suggestions": []
+                    }
+                
+                session.data[field_name] = message
+                db_action_list = []
+                log_audit(session, "field_modified", {"field": field_name, "value": message}, db_action_list)
+                session.currentExpectedField = ""
+                session.currentWorkflowState = "APPLICATION_REVIEW"
+                session.step = "REVIEW"
+                return self.render_presubmission_review_screen(session)
 
         # Main active workflow logic
-        fields = self.workflow_fields[session.workflow]
+        session.currentWorkflowState = "SERVICE_COLLECTION"
+        fields = self.get_workflow_fields(session)
         
         # Auto-detect fields on start
         if session.step == 0:
             if session.workflow == "complaint":
                 auto_type = None
-                if any(w in clean_msg for w in ["phone", "mobile", "stolen", "theft", "chori", "फ़ोन", "मोबाइल", "फोन", "चोरी", "चोर"]):
+                if any(w in clean_msg for w in ["phone", "mobile", "stolen", "theft", "chori", "फ़ोन", "मोबाइल", "फोन", "चोरी", "चोर", "chora"]):
                     auto_type = "Lost Mobile / Theft"
                 elif any(w in clean_msg for w in ["document", "wallet", "passport", "aadhar", "card"]):
                     auto_type = "Lost Document"
@@ -414,15 +782,16 @@ class WorkflowEngine:
                 if auto_type:
                     session.data["complaint_type"] = auto_type
                     session.step = 1
-
+ 
         # Enforce step validations before moving forward
         if session.step > 0:
             prev_field_name = fields[session.step - 1]["name"]
+            session.currentExpectedField = prev_field_name
             
             # Run field validation on message input
             is_valid = self.validate_workflow_field(session.workflow, prev_field_name, message, session)
             if not is_valid:
-                # Validation failed! Return error and keep step unchanged
+                # Validation failed! Return error and keep step unchanged (no restart)
                 error_msg = self.get_workflow_field_error_msg(session.workflow, prev_field_name, session.language)
                 return {
                     "intercepted": True,
@@ -432,12 +801,18 @@ class WorkflowEngine:
             
             # Save valid data
             session.data[prev_field_name] = message
-
+            if prev_field_name == "name" and len(message.strip().split()) == 1:
+                session.data["name_suggest_flag"] = True
+ 
         # Prompt next field or transition to Review Screen
         if session.step < len(fields):
             next_field = fields[session.step]
             session.step += 1
+            session.currentExpectedField = next_field["name"]
             response_txt = self._format_question(session.workflow, next_field, session.language, session.step)
+            if session.data.get("name_suggest_flag"):
+                response_txt = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + response_txt
+                session.data["name_suggest_flag"] = False
             return {
                 "intercepted": True,
                 "response": response_txt,
@@ -445,11 +820,13 @@ class WorkflowEngine:
             }
         else:
             # We collected all fields. Enforce Rejection Prevention Layer consistency and completeness checks!
+            session.currentWorkflowState = "APPLICATION_REVIEW"
             session.step = "REVIEW"
+            session.currentExpectedField = ""
             return self.render_presubmission_review_screen(session)
 
     def detect_workflow_intent(self, clean_msg: str) -> str | None:
-        if any(w in clean_msg for w in ["complaint", "stolen", "report", "shikayat", "शिकायत", "lost", "wallet"]):
+        if any(w in clean_msg for w in ["complaint", "stolen", "report", "shikayat", "शिकायत", "lost", "wallet", "chori", "chora", "kho gaya", "kho", "gum", "pocket", "fraud", "scam"]):
             return "complaint"
         if any(w in clean_msg for w in ["tenant", "verification", "satyapan", "rent", "किरायेदार", "सत्यापन"]):
             return "verification"
@@ -468,6 +845,20 @@ class WorkflowEngine:
             if field_name == "incident_description":
                 # Check consistency between citizen city and report details
                 return validate_consistency(session.city, value)
+            if field_name == "mobile_brand":
+                return len(value.strip()) > 0
+            if field_name == "mobile_model":
+                return len(value.strip()) > 0
+            if field_name == "mobile_color":
+                return len(value.strip()) > 0
+            if field_name == "purchase_year":
+                val_clean = value.strip()
+                return val_clean.isdigit() and len(val_clean) == 4
+            if field_name == "imei_number":
+                val_clean = value.strip().lower()
+                if val_clean in ["skip", "skip / छोड़ें", "chodein", "option:skip / छोड़ें", "option:skip", "none", "not available", "i don't know", "no"]:
+                    return True
+                return len(val_clean) == 15 and val_clean.isdigit()
         elif workflow == "verification":
             if field_name == "name":
                 return validate_name(value)
@@ -489,107 +880,163 @@ class WorkflowEngine:
     def get_workflow_field_error_msg(self, workflow: str, field_name: str, lang: str) -> str:
         errors = {
             "complaint": {
-                "incident_time": "⚠️ The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
-                "incident_description": "⚠️ I noticed a location contradiction in your details relative to your registered location. Please verify and confirm details again."
+                "incident_time": "👮 As your citizen assistance officer, I'm here to help. The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
+                "incident_description": "👮 As your citizen assistance officer, I noticed a location contradiction in your details relative to your registered location. Please verify and confirm details again.",
+                "mobile_brand": "👮 Please provide a valid mobile brand name.",
+                "mobile_model": "👮 Please provide a valid mobile model name.",
+                "mobile_color": "👮 Please provide the color of the mobile phone.",
+                "purchase_year": "👮 Please enter a valid 4-digit purchase year (e.g. 2024).",
+                "imei_number": "👮 IMEI must be a 15-digit number, or you can skip it by entering 'skip'.\nExample: 359872081726354 or skip"
             },
             "verification": {
-                "name": "⚠️ For official records, please enter the full name (at least a first name and a last name).\n\nExample:\nRahul Kumar",
-                "mobile": "⚠️ The mobile number appears incomplete.\n\nPlease provide a valid 10-digit Indian mobile number.\n\nExample:\n9876543210"
+                "name": "👮 As your citizen assistance officer, I want to help you complete this. Please enter a valid name (at least 2 letters):\nExample: Rahul Kumar or Raju",
+                "mobile": "👮 As your citizen assistance officer, I want to help you complete this. The mobile number appears incomplete.\n\nPlease provide a valid 10-digit Indian mobile number.\n\nExample:\n9876543210"
             },
             "certificate": {
-                "name": "⚠️ For official records, please enter the full name (at least a first name and a last name).\n\nExample:\nRahul Kumar",
-                "purpose": "⚠️ Could you please select a valid purpose?\n\nExamples:\n• Job Application\n• Passport\n• Visa\n• Higher Education\n• Government Service"
+                "name": "👮 As your citizen assistance officer, I want to help you complete this. Please enter a valid name (at least 2 letters):\nExample: Rahul Kumar or Raju",
+                "purpose": "👮 As your citizen assistance officer, I want to help you complete this. Could you please select a valid purpose?\n\nExamples:\n• Job Application\n• Passport\n• Visa\n• Higher Education\n• Government Service"
             },
             "event": {
-                "date": "⚠️ Please provide a valid date in DD/MM/YYYY format:\nExample: 15/08/2026",
-                "expected_attendance": "⚠️ Please enter a valid number for expected attendance:\nExample: 500"
+                "date": "👮 As your citizen assistance officer, I want to help you complete this. Please provide a valid date in DD/MM/YYYY format:\nExample: 15/08/2026",
+                "expected_attendance": "👮 As your citizen assistance officer, I want to help you complete this. Please enter a valid number for expected attendance:\nExample: 500"
             }
         }
-        return errors.get(workflow, {}).get(field_name, "⚠️ Invalid input. Please check and enter again:")
+        return errors.get(workflow, {}).get(field_name, "⚠️ I may not have understood correctly. Could you please provide that information in a different way?")
+
 
     def render_presubmission_review_screen(self, session: WorkflowSession) -> dict:
-        review_data = ""
-        checklist = ""
+        name_valid = validate_name(session.fullName)
+        mobile_valid = validate_mobile(session.mobileNumber)
+        location_valid = bool(session.city or session.district)
+        address_valid = bool(session.addressLine1)
+        
+        fields = self.get_workflow_fields(session)
+        fields_complete = all(session.data.get(f["name"]) for f in fields)
+        
+        # Calculate checkbox readiness
+        applicant_ok = bool(session.fullName and session.mobileNumber)
+        subject_ok = fields_complete
+        contact_ok = validate_mobile(session.mobileNumber)
+        address_ok = bool(session.addressLine1)
+        location_ok = bool(session.city or session.district)
+        required_ok = fields_complete
+        ready_ok = applicant_ok and subject_ok and contact_ok and address_ok and location_ok and required_ok
+        
+        checklist = (
+            f"{'[x]' if applicant_ok else '[ ]'} Applicant Information Complete\n"
+            f"{'[x]' if subject_ok else '[ ]'} Subject Information Complete\n"
+            f"{'[x]' if contact_ok else '[ ]'} Contact Details Valid\n"
+            f"{'[x]' if address_ok else '[ ]'} Address Complete\n"
+            f"{'[x]' if location_ok else '[ ]'} Location Confirmed\n"
+            f"{'[x]' if required_ok else '[ ]'} Required Fields Complete\n"
+            f"{'[x]' if ready_ok else '[ ]'} Ready for Submission"
+        )
+        
+        # 1. Applicant Details section
+        address_display = f"{session.addressLine1}"
+        if session.addressLine2:
+            address_display += f", {session.addressLine2}"
+        if session.pincode:
+            address_display += f" - {session.pincode}"
+            
+        applicant_details = (
+            f"👤 **Applicant Profile Details:**\n"
+            f"- Name: **{session.fullName}**\n"
+            f"- Mobile: **{session.mobileNumber}**\n"
+            f"- Location: **{session.city or 'Lucknow'}**\n"
+            f"- Address: **{address_display or 'Not provided'}**\n"
+        )
+        
+        # 2. Subject / Details section
+        subject_details = ""
+        service_details = f"📋 **Service Type:** {session.workflow.capitalize()}\n"
         
         if session.workflow == "complaint":
-            review_data = (
-                f"District: **{session.city or 'Lucknow'}**\n"
-                f"Complaint Type: **{session.data.get('complaint_type')}**\n"
-                f"Incident Location: **{session.data.get('incident_location')}**\n"
-                f"Incident Date: **{session.data.get('incident_time')}**\n"
-                f"Description: **{session.data.get('incident_description')}**"
+            subject_details = (
+                f"📝 **Complaint & Incident Details:**\n"
+                f"- Complaint Type: **{session.data.get('complaint_type')}**\n"
+                f"- Incident Location: **{session.data.get('incident_location')}**\n"
+                f"- Incident Date: **{session.data.get('incident_time')}**\n"
+                f"- Description: **{session.data.get('incident_description')}**"
             )
-            checklist = (
-                "✓ Name Valid\n"
-                "✓ Mobile Number Valid\n"
-                "✓ Location Valid\n"
-                "✓ Complaint Details Complete\n"
-                "✓ Ready for Submission"
-            )
+            if session.data.get("complaint_type") == "Lost Mobile / Theft":
+                imei_val = session.data.get("imei_number")
+                if not imei_val or imei_val.strip().lower() in ["skip", "skip / छोड़ें", "chodein", "none", "not available", "i don't know", "no"]:
+                    imei_val = "Not Provided"
+                subject_details += (
+                    f"\n\n📱 **Device Information**\n"
+                    f"- Brand: **{session.data.get('mobile_brand')}**\n"
+                    f"- Model: **{session.data.get('mobile_model')}**\n"
+                    f"- Color: **{session.data.get('mobile_color')}**\n"
+                    f"- Purchase Year: **{session.data.get('purchase_year')}**\n"
+                    f"- IMEI: **{imei_val}**"
+                )
         elif session.workflow == "verification":
-            review_data = (
-                f"Verification Type: **{session.data.get('verification_type')}**\n"
-                f"Candidate Name: **{session.data.get('name')}**\n"
-                f"Candidate Mobile: **{session.data.get('mobile')}**\n"
-                f"Candidate Address: **{session.data.get('address')}**\n"
-                f"Property Details: **{session.data.get('property_details')}**"
-            )
-            checklist = (
-                "✓ Candidate Name Valid\n"
-                "✓ Candidate Mobile Valid\n"
-                "✓ Property Address Valid\n"
-                "✓ Verification Details Complete\n"
-                "✓ Ready for Submission"
+            subject_details = (
+                f"🔍 **Candidate Details (Subject):**\n"
+                f"- Verification Type: **{session.data.get('verification_type')}**\n"
+                f"- Candidate Full Name: **{session.data.get('name')}**\n"
+                f"- Candidate Mobile Number: **{session.data.get('mobile')}**\n"
+                f"- Candidate Permanent Address: **{session.data.get('address')}**\n"
+                f"- Residing Property Details: **{session.data.get('property_details')}**"
             )
         elif session.workflow == "certificate":
-            review_data = (
-                f"Applicant Name: **{session.data.get('name')}**\n"
-                f"Applicant Address: **{session.data.get('address')}**\n"
-                f"District: **{session.data.get('district')}**\n"
-                f"Purpose: **{session.data.get('purpose')}**"
-            )
-            checklist = (
-                "✓ Applicant Name Valid\n"
-                "✓ District Valid\n"
-                "✓ Purpose Valid\n"
-                "✓ Character Certificate Details Complete\n"
-                "✓ Ready for Submission"
+            subject_details = (
+                f"📜 **Certificate Request Details:**\n"
+                f"- Subject Name: **{session.data.get('name')}**\n"
+                f"- Subject Address: **{session.data.get('address')}**\n"
+                f"- Applying District: **{session.data.get('district')}**\n"
+                f"- Certificate Purpose: **{session.data.get('purpose')}**"
             )
         elif session.workflow == "event":
-            review_data = (
-                f"Request Type: **{session.data.get('event_type')}**\n"
-                f"Event Name: **{session.data.get('event_name')}**\n"
-                f"Location: **{session.data.get('location')}**\n"
-                f"Date: **{session.data.get('date')}**\n"
-                f"Attendance: **{session.data.get('expected_attendance')}**"
+            subject_details = (
+                f"🎭 **Event Permission Request Details:**\n"
+                f"- Request Type: **{session.data.get('event_type')}**\n"
+                f"- Event Name: **{session.data.get('event_name')}**\n"
+                f"- Event Location/Route: **{session.data.get('location')}**\n"
+                f"- Scheduled Date: **{session.data.get('date')}**\n"
+                f"- Expected Attendance: **{session.data.get('expected_attendance')}**"
             )
-            checklist = (
-                "✓ Event Name Valid\n"
-                "✓ Date Valid\n"
-                "✓ Expected Attendance Valid\n"
-                "✓ Event Permission Details Complete\n"
-                "✓ Ready for Submission"
-            )
-
+            
         review_screen = (
             f"👮 **Please review your application.**\n\n"
-            f"Name: **{session.fullName}**\n"
-            f"Mobile: **{session.mobileNumber}**\n"
-            f"{review_data}\n\n"
-            f"**Validation Status**\n\n"
-            f"{checklist}\n\n"
-            f"Would you like to submit this application?\n\n"
-            f"- [Submit Application](option:Submit Application)\n"
-            f"- [Modify Details](option:Modify Details)"
+            f"{applicant_details}\n"
+            f"{service_details}\n"
+            f"{subject_details}\n\n"
+            f"**Validation Status**\n"
+            f"```\n"
+            f"{checklist}\n"
+            f"```\n"
         )
+        
+        if ready_ok:
+            review_screen += (
+                f"Would you like to submit this application?\n\n"
+                f"- [Submit Application](option:Submit Application)\n"
+                f"- [Modify Details](option:Modify Details)"
+            )
+            sugs = ["Submit Application", "Modify Details"]
+        else:
+            review_screen += (
+                f"⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.\n\n"
+                f"- [Modify Details](option:Modify Details)"
+            )
+            sugs = ["Modify Details"]
+            
         return {
             "intercepted": True,
             "response": review_screen,
-            "suggestions": ["Submit Application", "Modify Details"]
+            "suggestions": sugs
         }
 
     def run_citizen_verification_flow(self, message: str, session: WorkflowSession, gemini_client=None) -> dict:
         clean_msg = message.strip().lower()
+
+        # Extract location if possible from free text
+        loc_extracted = extract_location(message)
+        if loc_extracted:
+            session.city = loc_extracted
+            session.district = loc_extracted
 
         if gemini_client:
             extracted = gemini_client.extract_citizen_data(message)
@@ -609,22 +1056,59 @@ class WorkflowEngine:
             if norm and validate_mobile(norm):
                 session.mobileNumber = norm
 
-        # Check corrections
-        is_corr = self.handle_profile_correction(session, message)
-        if is_corr:
-            session.step = "CONFIRM_PROFILE"
-            return self.render_confirmation_card(session)
+        # Check corrections (only if not in modify mode to prevent interference)
+        step_str = str(session.step)
+        if not step_str.startswith("MODIFY_"):
+            is_corr = self.handle_profile_correction(session, message)
+            if is_corr:
+                session.step = "IDENTIFY_ADDRESS"
+                return {
+                    "intercepted": True,
+                    "response": f"👮 I found your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                    "suggestions": []
+                }
 
         # State Machine steps
-        step_str = str(session.step)
         if step_str == "IDENTIFY_NAME":
-            if validate_name(message):
-                session.fullName = message.strip()
+            valid, confidence = validate_name_confidence(message)
+            if valid:
+                if confidence < 0.80:
+                    session.step = "CONFIRM_NAME"
+                    session.data["pending_name"] = message.strip()
+                    return {
+                        "intercepted": True,
+                        "response": f"Is '{message.strip()}' your correct full name?",
+                        "suggestions": ["Confirm Name", "Change Name"]
+                    }
+                else:
+                    session.fullName = message.strip().title()
+                    if len(session.fullName.split()) == 1:
+                        session.data["name_suggest_flag"] = True
             else:
                 return {
                     "intercepted": True,
-                    "response": "👮 For official records, please enter your full name.\n\nExample:\nRahul Kumar\nRahul Verma",
+                    "response": "I may not have understood correctly. Could you please provide that information in a different way?\nExample: Rahul Kumar or Raju",
                     "suggestions": []
+                }
+        elif step_str == "CONFIRM_NAME":
+            if clean_msg in ["confirm", "yes", "correct", "confirm name", "option:confirm", "option:yes", "option:confirm name"]:
+                session.fullName = session.data.get("pending_name", "").strip().title()
+                if len(session.fullName.split()) == 1:
+                    session.data["name_suggest_flag"] = True
+                session.data.pop("pending_name", None)
+            elif clean_msg in ["change", "no", "change name", "option:no", "option:change name"]:
+                session.step = "IDENTIFY_NAME"
+                session.data.pop("pending_name", None)
+                return {
+                    "intercepted": True,
+                    "response": "Understood. Please enter your name again:",
+                    "suggestions": []
+                }
+            else:
+                return {
+                    "intercepted": True,
+                    "response": f"Is '{session.data.get('pending_name')}' your correct full name?\n\n- [Confirm Name](option:Confirm Name)\n- [Change Name](option:Change Name)",
+                    "suggestions": ["Confirm Name", "Change Name"]
                 }
         elif step_str == "IDENTIFY_MOBILE":
             if validate_mobile(message):
@@ -639,15 +1123,62 @@ class WorkflowEngine:
             if len(message.strip()) >= 3:
                 session.city = message.strip()
                 session.district = message.strip()
+                session.step = "IDENTIFY_ADDRESS"
+                return {
+                    "intercepted": True,
+                    "response": f"👮 I set your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                    "suggestions": []
+                }
             else:
                 return {
                     "intercepted": True,
-                    "response": "👮 I couldn't understand that location. Please tell me your city, district, or area:",
+                    "response": "I may not have understood correctly. Could you please provide that information in a different way?",
                     "suggestions": []
                 }
+        elif step_str == "CONFIRM_AUTO_LOCATION":
+            if clean_msg in ["confirm", "yes", "correct", "option:confirm", "option:yes", "option:confirm details"]:
+                session.step = "IDENTIFY_ADDRESS"
+                return {
+                    "intercepted": True,
+                    "response": f"👮 I found your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                    "suggestions": []
+                }
+            elif clean_msg in ["change location", "no", "option:change location", "option:no", "option:modify details"]:
+                session.city = ""
+                session.district = ""
+                session.step = "IDENTIFY_LOCATION"
+                return {
+                    "intercepted": True,
+                    "response": "Understood. Please tell me your city, district, or area:",
+                    "suggestions": []
+                }
+            else:
+                extracted = extract_location(message)
+                if extracted:
+                    session.city = extracted
+                    session.district = extracted
+                    session.step = "IDENTIFY_ADDRESS"
+                    return {
+                        "intercepted": True,
+                        "response": f"👮 I found your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                        "suggestions": []
+                    }
+                else:
+                    return {
+                        "intercepted": True,
+                        "response": "👮 Please confirm your location or choose to change it:\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+                        "suggestions": ["Confirm", "Change Location"]
+                    }
+        elif step_str == "IDENTIFY_ADDRESS":
+            parsed = parse_full_address(message)
+            session.addressLine1 = parsed["addressLine1"]
+            session.addressLine2 = parsed["addressLine2"] or ""
+            session.pincode = parsed["pincode"] or ""
+            session.step = "CONFIRM_PROFILE"
         elif step_str == "CONFIRM_PROFILE":
-            if clean_msg in ["yes", "correct", "confirm details", "option:yes", "option:confirm details"]:
+            if clean_msg in ["yes", "correct", "confirm details", "option:yes", "option:confirm details", "confirm"]:
                 session.isConfirmed = True
+                session.profileConfirmed = True
                 
                 db_action = {
                     "type": "citizen",
@@ -655,19 +1186,27 @@ class WorkflowEngine:
                         "fullName": session.fullName,
                         "mobileNumber": session.mobileNumber,
                         "email": session.email or None,
+                        "addressLine1": session.addressLine1 or None,
+                        "addressLine2": session.addressLine2 or None,
                         "city": session.city or None,
                         "district": session.district or None,
                         "state": session.state_name,
+                        "pincode": session.pincode or None,
                         "latitude": session.latitude,
                         "longitude": session.longitude,
                         "isConfirmed": True
                     }
                 }
 
+                first_name = session.fullName.split()[0] if session.fullName else ""
                 success_txt = (
-                    f"✓ Profile verified.\n\n"
-                    f"Thank you, {session.fullName}.\n"
-                    f"Let's continue with your request."
+                    f"👮 Citizen Profile Verified\n\n"
+                    f"Name: {session.fullName}\n"
+                    f"Mobile: {session.mobileNumber}\n"
+                    f"Location: {session.city or session.district or 'Lucknow'}, {session.state_name}\n\n"
+                    f"✓ Your details have been recorded successfully.\n\n"
+                    f"Thank you, {first_name}.\n\n"
+                    f"Let's continue with your {session.workflow}."
                 )
 
                 # Initialize main active workflow step
@@ -675,14 +1214,132 @@ class WorkflowEngine:
                 fields = self.workflow_fields[session.workflow]
                 next_field = fields[0]
                 session.step = 1
+                session.currentExpectedField = next_field["name"]
                 q_text = self._format_question(session.workflow, next_field, session.language, 1)
+
+                db_action_list = [db_action]
+                log_audit(session, "profile_confirmed", {
+                    "fullName": session.fullName,
+                    "mobileNumber": session.mobileNumber,
+                    "city": session.city,
+                    "addressLine1": session.addressLine1
+                }, db_action_list)
 
                 return {
                     "intercepted": True,
                     "response": success_txt + "\n\n" + q_text,
                     "suggestions": next_field["suggestions"],
-                    "db_action": db_action
+                    "db_action": db_action_list
                 }
+            elif clean_msg in ["no", "modify", "option:modify details", "modify details"]:
+                session.step = "MODIFY_PROFILE_INPUT"
+                return {
+                    "intercepted": True,
+                    "response": "Understood. Please describe the changes you would like to make (e.g. \"My name is Mohan Singh\", \"Change my number to 9876543210\", \"I live in Kanpur\"):",
+                    "suggestions": []
+                }
+        elif step_str == "MODIFY_PROFILE_SELECT":
+            choice = clean_msg
+            if "name" in choice or "1" in choice:
+                session.step = "MODIFY_PROFILE_INPUT"
+                session.currentExpectedField = "fullName"
+                return {
+                    "intercepted": True,
+                    "response": "Please enter your correct full name:",
+                    "suggestions": []
+                }
+            elif "mobile" in choice or "2" in choice or "number" in choice:
+                session.step = "MODIFY_PROFILE_INPUT"
+                session.currentExpectedField = "mobileNumber"
+                return {
+                    "intercepted": True,
+                    "response": "Please enter your correct mobile number:",
+                    "suggestions": []
+                }
+            elif "location" in choice or "3" in choice:
+                session.step = "MODIFY_PROFILE_INPUT"
+                session.currentExpectedField = "city"
+                return {
+                    "intercepted": True,
+                    "response": "Please enter your correct location (city/district):",
+                    "suggestions": []
+                }
+            elif "address" in choice or "4" in choice:
+                session.step = "MODIFY_PROFILE_INPUT"
+                session.currentExpectedField = "addressLine1"
+                return {
+                    "intercepted": True,
+                    "response": "Please enter your complete address:",
+                    "suggestions": []
+                }
+            else:
+                return {
+                    "intercepted": True,
+                    "response": "I may not have understood correctly. Could you please select a valid option to modify:\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+                    "suggestions": ["1", "2", "3", "4"]
+                }
+        elif step_str == "MODIFY_PROFILE_INPUT":
+            # Extract fields directly from natural language input
+            updated = False
+            db_action_list = []
+            
+            # 1. Phone number check
+            phone_matches = re.findall(r"(?:mobile|number|phone|change mobile to|change number to)\s+(?:is\s+)?((?:\+91[\s-]?)?[6-9]\d{9}|\b[6-9]\d{9}\b)", message, re.IGNORECASE)
+            if not phone_matches:
+                # Fallback to direct 10-digit number match in message
+                phone_matches = re.findall(r"(?:\+91[\s-]?)?[6-9]\d{9}|\b[6-9]\d{9}\b", message)
+            if phone_matches:
+                norm = normalize_mobile(phone_matches[0])
+                if norm and validate_mobile(norm):
+                    session.mobileNumber = norm
+                    log_audit(session, "profile_field_modified", {"field": "mobileNumber", "value": session.mobileNumber}, db_action_list)
+                    updated = True
+
+            # 2. Name check
+            name_matches = re.search(r"(?:name is|change name to|my name is)\s+([a-zA-Z\u0900-\u097F\s'-]+)", message, re.IGNORECASE)
+            if name_matches and name_matches.group(1):
+                potential_name = name_matches.group(1).strip()
+                if validate_name(potential_name):
+                    session.fullName = potential_name
+                    log_audit(session, "profile_field_modified", {"field": "fullName", "value": session.fullName}, db_action_list)
+                    updated = True
+
+            # 3. Location check
+            loc_matches = re.search(r"(?:live in|change location to|change my location to|district is|location is|my district is)\s+([a-zA-Z\u0900-\u097F\s'-]+)", message, re.IGNORECASE)
+            if not loc_matches:
+                # Try generic location extraction from words
+                extracted_loc = extract_location(message)
+                if extracted_loc:
+                    session.city = extracted_loc
+                    session.district = extracted_loc
+                    log_audit(session, "profile_field_modified", {"field": "city", "value": session.city}, db_action_list)
+                    updated = True
+            elif loc_matches and loc_matches.group(1):
+                potential_loc = loc_matches.group(1).strip()
+                if len(potential_loc) >= 3:
+                    session.city = potential_loc
+                    session.district = potential_loc
+                    log_audit(session, "profile_field_modified", {"field": "city", "value": session.city}, db_action_list)
+                    updated = True
+
+            # 4. If address is explicitly entered
+            if not updated and len(message.strip()) > 15:
+                parsed = parse_full_address(message)
+                session.addressLine1 = parsed["addressLine1"]
+                session.addressLine2 = parsed["addressLine2"] or ""
+                session.pincode = parsed["pincode"] or ""
+                log_audit(session, "profile_field_modified", {"field": "address", "value": message}, db_action_list)
+                updated = True
+
+            if not updated:
+                return {
+                    "intercepted": True,
+                    "response": "I didn't capture the updated details. Could you please specify clearly? (e.g. \"My name is Mohan Singh\", \"Change my number to 9876543210\", \"I live in Kanpur\")",
+                    "suggestions": []
+                }
+
+            session.step = "CONFIRM_PROFILE"
+            return self.render_confirmation_card(session)
 
         # Check for missing inputs
         if not session.fullName:
@@ -695,9 +1352,13 @@ class WorkflowEngine:
 
         if not session.mobileNumber:
             session.step = "IDENTIFY_MOBILE"
+            prompt_text = f"Thank you, {session.fullName}.\n\nCould you please share your mobile number?"
+            if session.data.get("name_suggest_flag"):
+                prompt_text = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + prompt_text
+                session.data["name_suggest_flag"] = False
             return {
                 "intercepted": True,
-                "response": f"Thank you, {session.fullName}.\n\nCould you please share your mobile number?",
+                "response": prompt_text,
                 "suggestions": []
             }
 
@@ -705,6 +1366,12 @@ class WorkflowEngine:
             if session.latitude and session.longitude:
                 session.city = "Lucknow"
                 session.district = "Lucknow"
+                session.step = "CONFIRM_AUTO_LOCATION"
+                return {
+                    "intercepted": True,
+                    "response": "👮 I found your location as: Lucknow\n\nIs this correct?",
+                    "suggestions": ["Confirm", "Change Location"]
+                }
             else:
                 session.step = "IDENTIFY_LOCATION"
                 return {
@@ -712,6 +1379,14 @@ class WorkflowEngine:
                     "response": "I couldn't determine your location automatically.\n\nCould you please tell me your city, district, or area?",
                     "suggestions": []
                 }
+
+        if not session.addressLine1:
+            session.step = "IDENTIFY_ADDRESS"
+            return {
+                "intercepted": True,
+                "response": f"👮 I set your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                "suggestions": []
+            }
 
         session.step = "CONFIRM_PROFILE"
         return self.render_confirmation_card(session)
@@ -748,6 +1423,31 @@ class WorkflowEngine:
                     "en": "Could you briefly describe what happened?",
                     "hi": "क्या आप संक्षेप में बता सकते हैं कि क्या हुआ था?",
                     "hinglish": "Kya aap short mein describe kar sakte hain ki kya हुआ था?"
+                },
+                "mobile_brand": {
+                    "en": "What is the **Mobile Brand**?\n- [Samsung](option:Samsung)\n- [Apple](option:Apple)\n- [Xiaomi](option:Xiaomi)\n- [Realme](option:Realme)\n- [OnePlus](option:OnePlus)\n- [Vivo](option:Vivo)\n- [Oppo](option:Oppo)",
+                    "hi": "मोबाइल का **ब्रांड** क्या है?\n- [Samsung](option:Samsung)\n- [Apple](option:Apple)\n- [Xiaomi](option:Xiaomi)\n- [Realme](option:Realme)\n- [OnePlus](option:OnePlus)\n- [Vivo](option:Vivo)\n- [Oppo](option:Oppo)",
+                    "hinglish": "Mobile ka **Brand** kya hai?\n- [Samsung](option:Samsung)\n- [Apple](option:Apple)\n- [Xiaomi](option:Xiaomi)\n- [Realme](option:Realme)\n- [OnePlus](option:OnePlus)\n- [Vivo](option:Vivo)\n- [Oppo](option:Oppo)"
+                },
+                "mobile_model": {
+                    "en": "What is the **Mobile Model**?\nExample: Galaxy A54, iPhone 14",
+                    "hi": "मोबाइल का **मॉडल** क्या है?\nउदाहरण: Galaxy A54, iPhone 14",
+                    "hinglish": "Mobile ka **Model** kya hai?\nExample: Galaxy A54, iPhone 14"
+                },
+                "mobile_color": {
+                    "en": "What is the **Color** of the mobile phone?",
+                    "hi": "मोबाइल फोन का **रंग** क्या है?",
+                    "hinglish": "Mobile phone ka **Color** kya hai?"
+                },
+                "purchase_year": {
+                    "en": "What is the **Purchase Year** of the mobile?\nExample: 2024",
+                    "hi": "मोबाइल **किस वर्ष में खरीदा** गया था?\nउदाहरण: 2024",
+                    "hinglish": "Mobile ka **Purchase Year** kya hai?\nExample: 2024"
+                },
+                "imei_number": {
+                    "en": "Do you know your IMEI number?\n\nYou can usually find it:\n• On the phone box\n• On the purchase invoice\n• By dialing *#06# if the device is available\n\nIf you do not have it, type:\n**Skip**",
+                    "hi": "क्या आप अपना IMEI नंबर जानते हैं?\n\nआप इसे पा सकते हैं:\n• फोन के बॉक्स पर\n• खरीद चालान (invoice) पर\n• यदि डिवाइस उपलब्ध है, तो *#06# डायल करके\n\nयदि आपके पास यह नहीं है, तो टाइप करें:\n**Skip**",
+                    "hinglish": "Do you know your IMEI number?\n\nAap isse find kar sakte hain:\n• Phone box par\n• Purchase invoice par\n• Dial *#06# agar device available hai\n\nAgar aapke paas nahi hai, toh type karein:\n**Skip**",
                 }
             },
             "verification": {
@@ -849,20 +1549,20 @@ class WorkflowEngine:
     def _finalize_workflow(self, session: WorkflowSession) -> dict:
         workflow = session.workflow
         data = session.data
-        lang = session.language
         citizen_id = session.citizenId or "default-citizen-id"
         
-        # Clear state
-        session.workflow = None
-        session.step = 0
-        session.data = {}
+        # Set state
+        session.currentWorkflowState = "APPLICATION_SUBMITTED"
+        session.applicationConfirmed = True
         
         year = 2026
         random_id = random.randint(100000, 999999)
         db_action = None
+        db_action_list = []
         
         if workflow == "complaint":
-            ref_num = f"UP-CMP-{year}-{random_id}"
+            ref_num = f"UP-CMP-{year}-{random_id:06d}"
+            session.referenceNumber = ref_num
             details = f"Location: {data.get('incident_location')} | Time: {data.get('incident_time')} | Desc: {data.get('incident_description')}"
             db_action = {
                 "type": "complaint",
@@ -870,16 +1570,31 @@ class WorkflowEngine:
                     "type": data.get("complaint_type"),
                     "details": details,
                     "refNum": ref_num,
-                    "citizenId": citizen_id
+                    "citizenId": citizen_id,
+                    "mobileBrand": data.get("mobile_brand"),
+                    "mobileModel": data.get("mobile_model"),
+                    "mobileColor": data.get("mobile_color"),
+                    "purchaseYear": int(data.get("purchase_year")) if str(data.get("purchase_year")).isdigit() else None,
+                    "imeiNumber": data.get("imei_number") if data.get("imei_number") and data.get("imei_number").strip().lower() not in ["skip", "skip / छोड़ें", "chodein", "none", "not available", "i don't know", "no"] else "Not Provided"
                 }
             }
-            resp = {
-                "en": f"✅ Your request has been recorded successfully.\n\nReference Number:\n{ref_num}\n\nPlease save this number for future tracking.\n\nIs there anything else I can help you with today?",
-                "hi": f"✅ आपका अनुरोध सफलतापूर्वक दर्ज कर लिया गया है।\n\nसंदर्भ संख्या:\n{ref_num}\n\nकृपया भविष्य में ट्रैकिंग के लिए इस नंबर को सुरक्षित रखें।\n\nक्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?",
-                "hinglish": f"✅ Aapka request successfully record ho gaya hai.\n\nReference Number:\n{ref_num}\n\nPlease future tracking ke liye is number ko save kar lein.\n\nIs there anything else I can help you with today?"
-            }
+            # Format date dynamically
+            current_date = datetime.now().strftime("%d/%m/%Y")
+            resp_str = (
+                f"👮 **Complaint Registered Successfully**\n\n"
+                f"Reference Number:\n**{ref_num}**\n\n"
+                f"Complaint Type:\n**{data.get('complaint_type')}**\n\n"
+                f"Status:\n**Submitted**\n\n"
+                f"Date:\n**{current_date}**\n\n"
+                f"You can use this reference number to track your complaint.\n\n"
+                f"- [Track Application](option:Track Application)\n"
+                f"- [Download Receipt](option:Download Receipt)\n"
+                f"- [Start New Request](option:Start New Request)"
+            )
+            sugs = ["Track Application", "Download Receipt", "Start New Request"]
         elif workflow == "verification":
-            ref_num = f"UP-VER-{year}-{random_id}"
+            ref_num = f"UP-TV-{year}-{random_id:06d}"
+            session.referenceNumber = ref_num
             db_action = {
                 "type": "verification",
                 "data": {
@@ -892,13 +1607,21 @@ class WorkflowEngine:
                     "citizenId": citizen_id
                 }
             }
-            resp = {
-                "en": f"✅ Your request has been recorded successfully.\n\nReference Number:\n{ref_num}\n\nPlease save this number for future tracking.\n\nIs there anything else I can help you with today?",
-                "hi": f"✅ आपका अनुरोध सफलतापूर्वक दर्ज कर लिया गया है।\n\nसंदर्भ संख्या:\n{ref_num}\n\nकृपया भविष्य में ट्रैकिंग के लिए इस नंबर को सुरक्षित रखें।\n\nक्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?",
-                "hinglish": f"✅ Aapka request successfully record ho gaya hai.\n\nReference Number:\n{ref_num}\n\nPlease future tracking ke liye is number ko save kar lein.\n\nIs there anything else I can help you with today?"
-            }
+            resp_str = (
+                f"👮 **Verification Request Registered Successfully**\n\n"
+                f"Reference Number:\n**{ref_num}**\n\n"
+                f"Verification Type:\n**{data.get('verification_type')}**\n\n"
+                f"Candidate Name:\n**{data.get('name')}**\n\n"
+                f"Status:\n**Submitted**\n\n"
+                f"You can use this reference number to track your application.\n\n"
+                f"- [Track Application](option:Track Application)\n"
+                f"- [Download Receipt](option:Download Receipt)\n"
+                f"- [Start New Request](option:Start New Request)"
+            )
+            sugs = ["Track Application", "Download Receipt", "Start New Request"]
         elif workflow == "certificate":
-            ref_num = f"UP-CER-{year}-{random_id}"
+            ref_num = f"UP-CC-{year}-{random_id:06d}"
+            session.referenceNumber = ref_num
             db_action = {
                 "type": "certificate",
                 "data": {
@@ -910,13 +1633,19 @@ class WorkflowEngine:
                     "citizenId": citizen_id
                 }
             }
-            resp = {
-                "en": f"✅ Your request has been recorded successfully.\n\nReference Number:\n{ref_num}\n\nPlease save this number for future tracking.\n\nIs there anything else I can help you with today?",
-                "hi": f"✅ आपका अनुरोध सफलतापूर्वक दर्ज कर लिया गया है।\n\nसंदर्भ संख्या:\n{ref_num}\n\nकृपया भविष्य में ट्रैकिंग के लिए इस नंबर को सुरक्षित रखें।\n\nक्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?",
-                "hinglish": f"✅ Aapka request successfully record ho gaya hai.\n\nReference Number:\n{ref_num}\n\nPlease future tracking ke liye is number ko save kar lein.\n\nIs there anything else I can help you with today?"
-            }
+            resp_str = (
+                f"👮 **Character Certificate Requested Successfully**\n\n"
+                f"Reference Number:\n**{ref_num}**\n\n"
+                f"Status:\n**Submitted**\n\n"
+                f"You can use this reference number to track your application.\n\n"
+                f"- [Track Application](option:Track Application)\n"
+                f"- [Download Receipt](option:Download Receipt)\n"
+                f"- [Start New Request](option:Start New Request)"
+            )
+            sugs = ["Track Application", "Download Receipt", "Start New Request"]
         elif workflow == "event":
-            ref_num = f"UP-EVP-{year}-{random_id}"
+            ref_num = f"UP-EP-{year}-{random_id:06d}"
+            session.referenceNumber = ref_num
             db_action = {
                 "type": "event",
                 "data": {
@@ -929,24 +1658,41 @@ class WorkflowEngine:
                     "citizenId": citizen_id
                 }
             }
-            resp = {
-                "en": f"✅ Your request has been recorded successfully.\n\nReference Number:\n{ref_num}\n\nPlease save this number for future tracking.\n\nIs there anything else I can help you with today?",
-                "hi": f"✅ आपका अनुरोध सफलतापूर्वक दर्ज कर लिया गया है।\n\nसंदर्भ संख्या:\n{ref_num}\n\nकृपया भविष्य में ट्रैकिंग के लिए इस नंबर को सुरक्षित रखें।\n\nक्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?",
-                "hinglish": f"✅ Aapka request successfully record ho gaya hai.\n\nReference Number:\n{ref_num}\n\nPlease future tracking ke liye is number ko save kar lein.\n\nIs there anything else I can help you with today?"
-            }
-        elif workflow == "tracking":
-            ref_num = data.get("reference_number", "").upper()
-            statuses = ["Submitted", "Under Review", "Pending Verification", "Approved", "Rejected"]
-            status = statuses[hash(ref_num) % len(statuses)]
-            resp = {
-                "en": f"🔍 **Application Status for `{ref_num}`:**\n\n- **Status:** **{status}**\n- **Details:** Simulated status for Rakku prototype.",
-                "hi": f"🔍 **आवेदन स्थिति `{ref_num}`:**\n\n- **स्थिति:** **{status}**",
-                "hinglish": f"🔍 **Application status for `{ref_num}`:**\n\n- **Status:** **{status}**"
-            }
- 
+            resp_str = (
+                f"👮 **Event Permission Requested Successfully**\n\n"
+                f"Reference Number:\n**{ref_num}**\n\n"
+                f"Status:\n**Submitted**\n\n"
+                f"You can use this reference number to track your application.\n\n"
+                f"- [Track Application](option:Track Application)\n"
+                f"- [Download Receipt](option:Download Receipt)\n"
+                f"- [Start New Request](option:Start New Request)"
+            )
+            sugs = ["Track Application", "Download Receipt", "Start New Request"]
+        else:
+            # Fallback formatting for other services
+            ref_num = f"UP-{workflow[:3].upper()}-{year}-{random_id:06d}"
+            session.referenceNumber = ref_num
+            resp_str = (
+                f"👮 **Request Registered Successfully**\n\n"
+                f"Reference Number:\n**{ref_num}**\n\n"
+                f"Status:\n**Submitted**\n\n"
+                f"- [Track Application](option:Track Application)\n"
+                f"- [Download Receipt](option:Download Receipt)\n"
+                f"- [Start New Request](option:Start New Request)"
+            )
+            sugs = ["Track Application", "Download Receipt", "Start New Request"]
+            
+        if db_action:
+            db_action_list.append(db_action)
+            
+        log_audit(session, "workflow_submitted", {
+            "workflow": workflow,
+            "referenceNumber": ref_num
+        }, db_action_list)
+
         return {
             "intercepted": True,
-            "response": resp[lang],
-            "suggestions": ["Track Application", "New Request", "File Complaint"],
-            "db_action": db_action
+            "response": resp_str,
+            "suggestions": sugs,
+            "db_action": db_action_list
         }

@@ -41,7 +41,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     suggestions: list[str] = []
-    db_action: dict | None = None
+    db_action: dict | list[dict] | None = None
     state: dict | None = None
 
 @app.post("/chat/message", response_model=ChatResponse)

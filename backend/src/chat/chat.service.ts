@@ -20,9 +20,12 @@ interface CitizenState {
   fullName: string;
   mobileNumber: string;
   email: string;
+  addressLine1?: string;
+  addressLine2?: string;
   city: string;
   district: string;
   state: string;
+  pincode?: string;
   latitude: number | null;
   longitude: number | null;
   isConfirmed: boolean;
@@ -31,6 +34,10 @@ interface CitizenState {
 interface ChatSessionState {
   workflow: 'complaint' | 'verification' | 'certificate' | 'event' | 'tracking' | null;
   step: string;
+  currentWorkflowState?: string;
+  serviceType?: string | null;
+  applicationData?: Record<string, any>;
+  referenceNumber?: string;
   data: Record<string, any>;
   language: 'en' | 'hi' | 'hinglish';
   languageSelected: boolean;
@@ -40,17 +47,17 @@ interface ChatSessionState {
 const TRANSLATIONS = {
   en: {
     cancel: "Current request has been cancelled. How else can I assist you?",
-    invalidStep: "I couldn't understand that. Let's restart the workflow.",
+    invalidStep: "I may not have understood correctly. Could you please provide that information in a different way?",
     upcopApp: "\n\n*Need more official services? Download the official **UPCOP Mobile App** from the [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice) to access 27+ citizen services directly.*",
   },
   hi: {
     cancel: "वर्तमान अनुरोध रद्द कर दिया गया है। मैं आपकी और क्या सहायता कर सकता हूँ?",
-    invalidStep: "मुझे समझ नहीं आया। फिर से प्रयास करते हैं।",
+    invalidStep: "मुझे शायद ठीक से समझ नहीं आया। क्या आप कृपया वह जानकारी किसी अन्य तरीके से प्रदान कर सकते हैं?",
     upcopApp: "\n\n*अधिक आधिकारिक सेवाओं के लिए, कृपया [गूगल प्ले स्टोर](https://play.google.com/store/apps/details?id=com.up.uppolice) से आधिकारिक **UPCOP मोबाइल ऐप** डाउनलोड करें।* ",
   },
   hinglish: {
     cancel: "Request cancel kar di gayi hai. Aapko aur kis cheez me help chahiye?",
-    invalidStep: "Mujhe samajh nahi aaya. Fir se try karte hain.",
+    invalidStep: "Mujhe shayad thik se samajh nahi aaya. Kya aap please wo information kisi aur tarike se de sakte hain?",
     upcopApp: "\n\n*Baaki official services ke liye, official **UPCOP App** download karein: [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice).* ",
   },
 };
@@ -99,13 +106,20 @@ export class ChatService {
         fullName: '',
         mobileNumber: '',
         email: '',
+        addressLine1: '',
+        addressLine2: '',
         city: '',
         district: '',
         state: 'Uttar Pradesh',
+        pincode: '',
         latitude: null,
         longitude: null,
         isConfirmed: false,
       },
+      currentWorkflowState: 'START',
+      serviceType: null,
+      applicationData: {},
+      referenceNumber: '',
     };
   }
 
@@ -162,14 +176,22 @@ export class ChatService {
       );
 
       const responseData = response.data;
-      
-      // If AI service returns updated state, capture it
+
       if (responseData && responseData.state) {
         Object.assign(state, responseData.state);
       }
 
       if (responseData && responseData.db_action) {
-        await this.executeDbAction(responseData.db_action);
+        const dbResult = await this.executeDbAction(responseData.db_action);
+        if (dbResult && dbResult.id) {
+          state.citizen.id = dbResult.id;
+          if (responseData.state && responseData.state.citizen) {
+            responseData.state.citizen.id = dbResult.id;
+          }
+        }
+        if (dbResult && dbResult.trackingResponse) {
+          responseData.response = dbResult.trackingResponse;
+        }
       }
 
       if (responseData && responseData.response) {
@@ -193,23 +215,53 @@ export class ChatService {
       await this.saveSession(sessionId, state);
       return localResult;
     }
-  }
+  }  private async executeDbAction(dbAction: any): Promise<any> {
+    if (!dbAction) return null;
+    const formatLongDate = (date: any): string => {
+      if (!date) return '';
+      const d = new Date(date);
+      const day = d.getDate();
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
+    };
 
-  private async executeDbAction(dbAction: { type: string; data: Record<string, any> }) {
     try {
+      if (Array.isArray(dbAction)) {
+        let citizenResult = null;
+        for (const action of dbAction) {
+          const res = await this.executeDbAction(action);
+          if (action && action.type === 'citizen') {
+            citizenResult = res;
+          }
+        }
+        return citizenResult;
+      }
       this.logger.log(`Executing DB Action: ${dbAction.type}`);
       switch (dbAction.type) {
+        case 'audit_log':
+          await this.prisma.auditLog.create({
+            data: {
+              sessionId: dbAction.data.sessionId || 'unknown',
+              eventType: dbAction.data.eventType,
+              eventData: dbAction.data.eventData || {},
+            },
+          });
+          break;
         case 'citizen':
           const citizen = await this.prisma.citizen.upsert({
-            where: { id: dbAction.data.id || 'new-id' },
+            where: { id: (dbAction.data.id && dbAction.data.id !== 'default-citizen-id' && dbAction.data.id !== 'new-id') ? dbAction.data.id : 'new-id' },
             update: {
               fullName: dbAction.data.fullName,
               mobileNumber: dbAction.data.mobileNumber,
               email: dbAction.data.email,
               addressLine1: dbAction.data.addressLine1,
+              addressLine2: dbAction.data.addressLine2,
               city: dbAction.data.city,
               district: dbAction.data.district,
               state: dbAction.data.state,
+              pincode: dbAction.data.pincode,
               latitude: dbAction.data.latitude,
               longitude: dbAction.data.longitude,
               isConfirmed: dbAction.data.isConfirmed,
@@ -219,9 +271,11 @@ export class ChatService {
               mobileNumber: dbAction.data.mobileNumber,
               email: dbAction.data.email,
               addressLine1: dbAction.data.addressLine1,
+              addressLine2: dbAction.data.addressLine2,
               city: dbAction.data.city,
               district: dbAction.data.district,
               state: dbAction.data.state,
+              pincode: dbAction.data.pincode,
               latitude: dbAction.data.latitude,
               longitude: dbAction.data.longitude,
               isConfirmed: dbAction.data.isConfirmed,
@@ -229,15 +283,37 @@ export class ChatService {
           });
           return citizen;
         case 'complaint':
-          await this.complaintService.createComplaint(
+          const comp = await this.complaintService.createComplaint(
             dbAction.data.type,
             dbAction.data.details,
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+          await this.prisma.complaint.update({
+            where: { referenceNumber: dbAction.data.refNum },
+            data: {
+              mobileBrand: dbAction.data.mobileBrand || null,
+              mobileModel: dbAction.data.mobileModel || null,
+              mobileColor: dbAction.data.mobileColor || null,
+              purchaseYear: dbAction.data.purchaseYear || null,
+              imeiNumber: dbAction.data.imeiNumber || null,
+            }
+          });
+          await this.prisma.trackingRecord.create({
+            data: {
+              referenceNumber: dbAction.data.refNum,
+              serviceType: 'Complaint Registration',
+              entityId: comp.id,
+              citizenId: dbAction.data.citizenId && dbAction.data.citizenId !== 'default-citizen-id' ? dbAction.data.citizenId : null,
+              currentStatus: 'SUBMITTED',
+              statusHistory: [
+                { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+              ] as any,
+            }
+          });
           break;
         case 'verification':
-          await this.verificationService.createVerification(
+          const ver = await this.verificationService.createVerification(
             dbAction.data.type,
             dbAction.data.name,
             dbAction.data.address,
@@ -246,9 +322,21 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+          await this.prisma.trackingRecord.create({
+            data: {
+              referenceNumber: dbAction.data.refNum,
+              serviceType: `${dbAction.data.type} Verification`,
+              entityId: ver.id,
+              citizenId: dbAction.data.citizenId && dbAction.data.citizenId !== 'default-citizen-id' ? dbAction.data.citizenId : null,
+              currentStatus: 'SUBMITTED',
+              statusHistory: [
+                { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+              ] as any,
+            }
+          });
           break;
         case 'certificate':
-          await this.certificateService.createCertificate(
+          const cert = await this.certificateService.createCertificate(
             dbAction.data.name,
             dbAction.data.address,
             dbAction.data.district,
@@ -256,9 +344,21 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+          await this.prisma.trackingRecord.create({
+            data: {
+              referenceNumber: dbAction.data.refNum,
+              serviceType: 'Character Certificate',
+              entityId: cert.id,
+              citizenId: dbAction.data.citizenId && dbAction.data.citizenId !== 'default-citizen-id' ? dbAction.data.citizenId : null,
+              currentStatus: 'SUBMITTED',
+              statusHistory: [
+                { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+              ] as any,
+            }
+          });
           break;
         case 'event':
-          await this.eventService.createEventPermission(
+          const evt = await this.eventService.createEventPermission(
             dbAction.data.type,
             dbAction.data.name,
             dbAction.data.location,
@@ -267,12 +367,42 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+          await this.prisma.trackingRecord.create({
+            data: {
+              referenceNumber: dbAction.data.refNum,
+              serviceType: dbAction.data.type,
+              entityId: evt.id,
+              citizenId: dbAction.data.citizenId && dbAction.data.citizenId !== 'default-citizen-id' ? dbAction.data.citizenId : null,
+              currentStatus: 'SUBMITTED',
+              statusHistory: [
+                { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+              ] as any,
+            }
+          });
           break;
+        case 'track_query':
+          const trackInfo = await this.trackingService.track(dbAction.data.referenceNumber);
+          if (!trackInfo) {
+            const errorResponses = {
+              en: `❌ No application found matching reference number \`${dbAction.data.referenceNumber}\`. Please check and try again.`,
+              hi: `❌ संदर्भ संख्या \`${dbAction.data.referenceNumber}\` से मेल खाता कोई आवेदन नहीं मिला। कृपया जांचें और पुनः प्रयास करें।`,
+              hinglish: `❌ \`${dbAction.data.referenceNumber}\` reference number ka koi application nahi mila. Please check karke fir se try karein.`,
+            };
+            return { trackingResponse: errorResponses[dbAction.data.language || 'en'] };
+          }
+          const responses = {
+            en: `Application Details\n\nReference Number:\n${trackInfo.referenceNumber}\n\nService:\n${trackInfo.serviceType}\n\nCurrent Status:\n${trackInfo.status}\n\nSubmitted On:\n${formatLongDate(trackInfo.createdAt)}\n\nLast Updated:\n${formatLongDate(trackInfo.updatedAt)}${trackInfo.timeline}`,
+            hi: `Application Details\n\nReference Number:\n${trackInfo.referenceNumber}\n\nService:\n${trackInfo.serviceType}\n\nCurrent Status:\n${trackInfo.status}\n\nSubmitted On:\n${formatLongDate(trackInfo.createdAt)}\n\nLast Updated:\n${formatLongDate(trackInfo.updatedAt)}${trackInfo.timeline}`,
+            hinglish: `Application Details\n\nReference Number:\n${trackInfo.referenceNumber}\n\nService:\n${trackInfo.serviceType}\n\nCurrent Status:\n${trackInfo.status}\n\nSubmitted On:\n${formatLongDate(trackInfo.createdAt)}\n\nLast Updated:\n${formatLongDate(trackInfo.updatedAt)}${trackInfo.timeline}`,
+          };
+          return { trackingResponse: responses[dbAction.data.language || 'en'] };
       }
     } catch (error) {
       this.logger.error(`Failed to execute DB action: ${error.message}`);
     }
+    return null;
   }
+
 
   private async handleLocalFallback(
     message: string,
@@ -427,7 +557,7 @@ export class ChatService {
   }
 
   private detectWorkflowIntent(cleanMsg: string): ChatSessionState['workflow'] {
-    if (cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत') || cleanMsg.includes('lost') || cleanMsg.includes('wallet') || cleanMsg.includes('pocket')) {
+    if (cleanMsg.includes('complaint') || cleanMsg.includes('stolen') || cleanMsg.includes('shikayat') || cleanMsg.includes('चोरी') || cleanMsg.includes('शिकायत') || cleanMsg.includes('lost') || cleanMsg.includes('wallet') || cleanMsg.includes('pocket') || cleanMsg.includes('chori') || cleanMsg.includes('chora') || cleanMsg.includes('kho') || cleanMsg.includes('gum') || cleanMsg.includes('fraud') || cleanMsg.includes('scam')) {
       return 'complaint';
     }
     if (cleanMsg.includes('tenant') || cleanMsg.includes('verification') || cleanMsg.includes('satyapan') || cleanMsg.includes('किरायेदार') || cleanMsg.includes('सत्यापन')) {
@@ -465,42 +595,125 @@ export class ChatService {
     }
 
     // Natural Language Corrections check
-    const isCorrection = this.handleProfileCorrection(state, message);
-    if (isCorrection) {
-      return this.renderConfirmationCard(state);
-    }
-
-    // State Machine Steps
-    if (state.step === 'IDENTIFY_NAME') {
-      if (this.validationService.validateName(message)) {
-        state.citizen.fullName = message.trim();
-      } else {
+    const stepStr = String(state.step);
+    if (!stepStr.startsWith('MODIFY_') && stepStr !== 'IDENTIFY_ADDRESS' && stepStr !== 'CONFIRM_PROFILE') {
+      const isCorrection = this.handleProfileCorrection(state, message);
+      if (isCorrection) {
+        state.step = 'IDENTIFY_ADDRESS';
         return {
-          response: "👮 I may not have captured your name correctly.\n\nPlease enter your full name (alphabets only):",
+          response: `👮 I found your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
           suggestions: [],
         };
       }
-    } else if (state.step === 'IDENTIFY_MOBILE') {
+    }
+
+    // State Machine Steps
+    if (stepStr === 'IDENTIFY_NAME') {
+      const confRes = this.validationService.validateNameConfidence(message);
+      if (confRes.valid) {
+        if (confRes.confidence < 0.80) {
+          state.step = 'CONFIRM_NAME';
+          state.data.pendingName = message.trim();
+          return {
+            response: `Is '${message.trim()}' your correct full name?`,
+            suggestions: ['Confirm Name', 'Change Name'],
+          };
+        } else {
+          state.citizen.fullName = message.trim();
+          if (state.citizen.fullName.split(/\s+/).length === 1) {
+            state.data.nameSuggestFlag = true;
+          }
+        }
+      } else {
+        return {
+          response: "I may not have understood correctly. Could you please provide that information in a different way?\nExample: Rahul Kumar or Raju",
+          suggestions: [],
+        };
+      }
+    } else if (stepStr === 'CONFIRM_NAME') {
+      if (['confirm', 'yes', 'correct', 'confirm name', 'option:confirm', 'option:yes', 'option:confirm name'].includes(cleanMsg)) {
+        state.citizen.fullName = (state.data.pendingName || '').trim();
+        if (state.citizen.fullName.split(/\s+/).length === 1) {
+          state.data.nameSuggestFlag = true;
+        }
+        delete state.data.pendingName;
+      } else if (['change', 'no', 'change name', 'option:no', 'option:change name'].includes(cleanMsg)) {
+        state.step = 'IDENTIFY_NAME';
+        delete state.data.pendingName;
+        return {
+          response: "Understood. Please enter your name again:",
+          suggestions: [],
+        };
+      } else {
+        return {
+          response: `Is '${state.data.pendingName}' your correct full name?\n\n- [Confirm Name](option:Confirm Name)\n- [Change Name](option:Change Name)`,
+          suggestions: ['Confirm Name', 'Change Name'],
+        };
+      }
+    } else if (stepStr === 'IDENTIFY_MOBILE') {
       if (this.validationService.validateMobile(message)) {
         state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
       } else {
         return {
-          response: "👮 Please provide a valid 10-digit mobile number:",
+          response: "👮 The mobile number appears incomplete. Please provide a valid 10-digit Indian mobile number.",
           suggestions: [],
         };
       }
-    } else if (state.step === 'IDENTIFY_LOCATION') {
+    } else if (stepStr === 'IDENTIFY_LOCATION') {
       if (message.trim().length >= 3) {
         state.citizen.city = message.trim();
         state.citizen.district = message.trim();
+        state.step = 'IDENTIFY_ADDRESS';
+        return {
+          response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+          suggestions: [],
+        };
       } else {
         return {
-          response: "👮 I couldn't understand that location. Please tell me your city, district, or area:",
+          response: "I may not have understood correctly. Could you please provide that information in a different way?",
           suggestions: [],
         };
       }
-    } else if (state.step === 'CONFIRM_PROFILE') {
-      if (cleanMsg === 'yes' || cleanMsg === 'correct' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:confirm details') || cleanMsg.includes('confirm')) {
+    } else if (stepStr === 'CONFIRM_AUTO_LOCATION') {
+      if (['confirm', 'yes', 'correct', 'option:confirm', 'option:yes', 'option:confirm details'].includes(cleanMsg)) {
+        state.step = 'IDENTIFY_ADDRESS';
+        return {
+          response: `👮 I found your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+          suggestions: [],
+        };
+      } else if (['change location', 'no', 'option:change location', 'option:no', 'option:modify details'].includes(cleanMsg)) {
+        state.citizen.city = "";
+        state.citizen.district = "";
+        state.step = 'IDENTIFY_LOCATION';
+        return {
+          response: "Understood. Please tell me your city, district, or area:",
+          suggestions: [],
+        };
+      } else {
+        const ext = this.validationService.extractCitizenData(message);
+        if (ext.location) {
+          state.citizen.city = ext.location;
+          state.citizen.district = ext.location;
+          state.step = 'IDENTIFY_ADDRESS';
+          return {
+            response: `👮 I found your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+            suggestions: [],
+          };
+        } else {
+          return {
+            response: "👮 Please confirm your location or choose to change it:\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+            suggestions: ['Confirm', 'Change Location'],
+          };
+        }
+      }
+    } else if (stepStr === 'IDENTIFY_ADDRESS') {
+      const parsed = this.validationService.parseFullAddress(message);
+      state.citizen.addressLine1 = parsed.addressLine1;
+      state.citizen.addressLine2 = parsed.addressLine2 || '';
+      state.citizen.pincode = parsed.pincode || '';
+      state.step = 'CONFIRM_PROFILE';
+    } else if (stepStr === 'CONFIRM_PROFILE') {
+      if (cleanMsg === 'yes' || cleanMsg === 'correct' || cleanMsg.includes('option:yes') || cleanMsg.includes('confirm details') || cleanMsg === 'confirm') {
         state.citizen.isConfirmed = true;
         
         // Save Citizen to Database
@@ -510,9 +723,12 @@ export class ChatService {
               fullName: state.citizen.fullName,
               mobileNumber: state.citizen.mobileNumber,
               email: state.citizen.email || null,
+              addressLine1: state.citizen.addressLine1 || null,
+              addressLine2: state.citizen.addressLine2 || null,
               city: state.citizen.city || null,
               district: state.citizen.district || null,
               state: state.citizen.state || "Uttar Pradesh",
+              pincode: state.citizen.pincode || null,
               latitude: state.citizen.latitude || null,
               longitude: state.citizen.longitude || null,
               isConfirmed: true,
@@ -532,29 +748,128 @@ Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}, ${stat
 ✓ Profile verification complete.
 Let's continue with your request.`;
 
+        this.logger.log(`[PROFILE_VERIFIED] Profile verification complete for: ${state.citizen.fullName}`);
+
         // Direct transition to actual service workflow
         state.step = '1';
         let res: any;
         if (state.workflow === 'complaint') {
-          // Pre-populate complaint auto-detection if applicable
-          res = this.runComplaintWorkflow(state, "");
+          res = await this.runComplaintWorkflow(state, "");
         } else if (state.workflow === 'verification') {
-          res = this.runVerificationWorkflow(state, "");
+          res = await this.runVerificationWorkflow(state, "");
         } else if (state.workflow === 'certificate') {
-          res = this.runCertificateWorkflow(state, "");
+          res = await this.runCertificateWorkflow(state, "");
         } else if (state.workflow === 'event') {
-          res = this.runEventWorkflow(state, "");
+          res = await this.runEventWorkflow(state, "");
         }
+
+        if (res) {
+          this.logger.log(`[WORKFLOW_RESUMED] Resumed workflow: ${state.workflow}`);
+          return {
+            response: successText + "\n\n" + res.response,
+            suggestions: res.suggestions,
+          };
+        } else {
+          this.logger.warn(`[WORKFLOW_NOT_FOUND] No pending workflow to resume.`);
+          state.step = 'START';
+          return {
+            response: successText + "\n\nHow would you like me to help you today?",
+            suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          };
+        }
+      } else if (cleanMsg.includes('change') || cleanMsg.includes('modify') || cleanMsg === 'no') {
+        state.step = 'MODIFY_PROFILE_SELECT';
         return {
-          response: successText + "\n\n" + res.response,
-          suggestions: res.suggestions,
-        };
-      } else if (cleanMsg.includes('change') || cleanMsg.includes('modify')) {
-        return {
-          response: "Which field would you like to update? (e.g. type 'Change name to Amit Kumar' or 'Change mobile to 9999999999')",
-          suggestions: ['Change name', 'Change mobile number'],
+          response: "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+          suggestions: ['1', '2', '3', '4'],
         };
       }
+    } else if (stepStr === 'MODIFY_PROFILE_SELECT') {
+      const choice = cleanMsg;
+      if (choice.includes('name') || choice === '1') {
+        state.step = 'MODIFY_PROFILE_INPUT';
+        state.data.currentExpectedField = 'fullName';
+        return {
+          response: "Please enter your correct full name:",
+          suggestions: [],
+        };
+      } else if (choice.includes('mobile') || choice === '2' || choice.includes('number')) {
+        state.step = 'MODIFY_PROFILE_INPUT';
+        state.data.currentExpectedField = 'mobileNumber';
+        return {
+          response: "Please enter your correct mobile number:",
+          suggestions: [],
+        };
+      } else if (choice.includes('location') || choice === '3') {
+        state.step = 'MODIFY_PROFILE_INPUT';
+        state.data.currentExpectedField = 'city';
+        return {
+          response: "Please enter your correct location (city/district):",
+          suggestions: [],
+        };
+      } else if (choice.includes('address') || choice === '4') {
+        state.step = 'MODIFY_PROFILE_INPUT';
+        state.data.currentExpectedField = 'addressLine1';
+        return {
+          response: "Please enter your complete address:",
+          suggestions: [],
+        };
+      } else {
+        return {
+          response: "I may not have understood correctly. Could you please select a valid option to modify:\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+          suggestions: ['1', '2', '3', '4'],
+        };
+      }
+    } else if (stepStr === 'MODIFY_PROFILE_INPUT') {
+      const field = state.data.currentExpectedField || '';
+      if (field === 'fullName') {
+        const confRes = this.validationService.validateNameConfidence(message);
+        if (confRes.valid) {
+          state.citizen.fullName = message.trim();
+          state.step = 'CONFIRM_PROFILE';
+        } else {
+          return {
+            response: "I may not have understood correctly. Could you please provide a valid name?\nExample: Rahul Kumar or Raju",
+            suggestions: [],
+          };
+        }
+      } else if (field === 'mobileNumber') {
+        if (this.validationService.validateMobile(message)) {
+          state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
+          state.step = 'CONFIRM_PROFILE';
+        } else {
+          return {
+            response: "I may not have understood correctly. Could you please provide a valid 10-digit mobile number?",
+            suggestions: [],
+          };
+        }
+      } else if (field === 'city') {
+        const ext = this.validationService.extractCitizenData(message);
+        const loc = ext.location || message.trim();
+        if (loc.length >= 3) {
+          state.citizen.city = loc;
+          state.citizen.district = loc;
+          state.step = 'IDENTIFY_ADDRESS';
+          return {
+            response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+            suggestions: [],
+          };
+        } else {
+          return {
+            response: "I may not have understood correctly. Could you please provide a valid location (city or district)?",
+            suggestions: [],
+          };
+        }
+      } else if (field === 'addressLine1') {
+        const parsed = this.validationService.parseFullAddress(message);
+        state.citizen.addressLine1 = parsed.addressLine1;
+        state.citizen.addressLine2 = parsed.addressLine2 || '';
+        state.citizen.pincode = parsed.pincode || '';
+        state.step = 'CONFIRM_PROFILE';
+      }
+
+      delete state.data.currentExpectedField;
+      return this.renderConfirmationCard(state);
     }
 
     // Evaluate what is missing next
@@ -568,8 +883,13 @@ Let's continue with your request.`;
 
     if (!state.citizen.mobileNumber) {
       state.step = 'IDENTIFY_MOBILE';
+      let promptText = `Thank you, ${state.citizen.fullName}.\n\nCould you please share your mobile number?`;
+      if (state.data.nameSuggestFlag) {
+        promptText = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + promptText;
+        delete state.data.nameSuggestFlag;
+      }
       return {
-        response: `Thank you, ${state.citizen.fullName}.\n\nCould you please share your mobile number?`,
+        response: promptText,
         suggestions: [],
       };
     }
@@ -579,6 +899,11 @@ Let's continue with your request.`;
       if (state.citizen.latitude && state.citizen.longitude) {
         state.citizen.city = "Lucknow";
         state.citizen.district = "Lucknow";
+        state.step = 'CONFIRM_AUTO_LOCATION';
+        return {
+          response: "👮 I found your location as: Lucknow\n\nIs this correct?",
+          suggestions: ['Confirm', 'Change Location'],
+        };
       } else {
         state.step = 'IDENTIFY_LOCATION';
         return {
@@ -586,6 +911,14 @@ Let's continue with your request.`;
           suggestions: [],
         };
       }
+    }
+
+    if (!state.citizen.addressLine1) {
+      state.step = 'IDENTIFY_ADDRESS';
+      return {
+        response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+        suggestions: [],
+      };
     }
 
     // If everything is collected, show confirmation card
@@ -616,26 +949,32 @@ Let's continue with your request.`;
       }
     }
 
-    // "I live in Kanpur" / "Change location to Varanasi"
-    const locMatches = message.match(/(?:live in|change location to|change my location to)\s+([a-zA-Z\s'-]+)/i);
-    if (locMatches && locMatches[1]) {
-      const potentialLoc = locMatches[1].trim();
-      if (potentialLoc.length >= 3) {
-        state.citizen.city = potentialLoc;
-        state.citizen.district = potentialLoc;
-        return true;
-      }
+    // "I live in Kanpur" / "Change location to Varanasi" / Hindi / Hinglish patterns
+    const ext = this.validationService.extractCitizenData(message);
+    if (ext.location) {
+      state.citizen.city = ext.location;
+      state.citizen.district = ext.location;
+      return true;
     }
 
     return false;
   }
 
   private renderConfirmationCard(state: ChatSessionState): { response: string; suggestions: string[] } {
+    let addressDisplay = state.citizen.addressLine1 || '';
+    if (state.citizen.addressLine2) {
+      addressDisplay += `, ${state.citizen.addressLine2}`;
+    }
+    if (state.citizen.pincode) {
+      addressDisplay += ` - ${state.citizen.pincode}`;
+    }
+
     const response = `👮 **Please review your details:**
 
 * **Name:** ${state.citizen.fullName}
 * **Mobile Number:** ${state.citizen.mobileNumber}
 * **Location:** ${state.citizen.city || state.citizen.district || 'Lucknow'}, ${state.citizen.state}
+* **Address:** ${addressDisplay || 'Not provided'}
 
 Is everything correct?
 
@@ -648,8 +987,29 @@ Is everything correct?
     };
   }
 
+  private calculateReadiness(session: ChatSessionState, requiredFields: string[]): { score: number; checklist: string; valid: boolean } {
+    const nameValid = this.validationService.validateName(session.citizen.fullName);
+    const mobileValid = this.validationService.validateMobile(session.citizen.mobileNumber);
+    const locationValid = !!(session.citizen.city || session.citizen.district);
+    const fieldsComplete = requiredFields.every(f => session.data[f] !== undefined && session.data[f] !== null && session.data[f] !== "");
+    
+    let score = 0;
+    if (nameValid) score += 25;
+    if (mobileValid) score += 25;
+    if (locationValid) score += 25;
+    if (fieldsComplete) score += 25;
+    
+    const checklist = `${nameValid ? '✓' : '✗'} Profile Valid\n` +
+                      `${mobileValid ? '✓' : '✗'} Mobile Valid\n` +
+                      `${locationValid ? '✓' : '✗'} Location Confirmed\n` +
+                      `${fieldsComplete ? '✓' : '✗'} Required Fields Complete\n\n` +
+                      `Readiness Score: ${score}`;
+                      
+    return { score, checklist, valid: score === 100 };
+  }
+
   // --- Complaint Workflow ---
-  private runComplaintWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
+  private async runComplaintWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
@@ -676,23 +1036,40 @@ Is everything correct?
     };
 
     if (step === 'REVIEW') {
-      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+      const readiness = this.calculateReadiness(session, ['type', 'location', 'time', 'description']);
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
+        if (!readiness.valid) {
+          return {
+            response: "⚠️ **Cannot Submit:** Some validations are still missing. Could you please provide the information in a different way or modify details?",
+            suggestions: ["Modify Details"]
+          };
+        }
         session.workflow = null;
         session.step = 'START';
         const fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
         const resNum = `UP-CMP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-        this.complaintService.createComplaint(session.data.type, fullDetails, resNum, session.citizen.id);
+        const record = await this.complaintService.createComplaint(session.data.type, fullDetails, resNum, session.citizen.id);
+        await this.prisma.trackingRecord.create({
+          data: {
+            referenceNumber: resNum,
+            serviceType: 'Complaint Registration',
+            entityId: record.id,
+            citizenId: session.citizen.id && session.citizen.id !== 'default-citizen-id' ? session.citizen.id : null,
+            currentStatus: 'SUBMITTED',
+            statusHistory: [
+              { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+            ] as any,
+          }
+        });
         session.data = {};
         return {
           response: getCompletionMessage(resNum, lang),
           suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
-        session.step = '2';
-        session.data = {};
         return {
-          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
-          suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
+          response: "I may not have understood correctly. Could you please provide that information in a different way? You can correct details by typing e.g., 'Change location to Noida' or 'Change mobile to 9876543210'.",
+          suggestions: ['Submit Application'],
         };
       }
     }
@@ -724,7 +1101,7 @@ Is everything correct?
     if (step === '4') {
       if (!this.validationService.validateDate(msg, true)) {
         return {
-          response: "⚠️ The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
+          response: "👮 As your citizen assistance officer, I'm here to help. The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
         };
       }
       session.data.time = msg;
@@ -737,13 +1114,15 @@ Is everything correct?
     if (step === '5') {
       if (!this.validationService.validateConsistency(session.citizen.city, msg)) {
         return {
-          response: "⚠️ I noticed a location contradiction in your details relative to your registered location. Please verify and confirm details again.",
+          response: "👮 As your citizen assistance officer, I noticed a location contradiction in your details relative to your registered location. Please verify and confirm details again.",
         };
       }
       session.data.description = msg;
       session.step = 'REVIEW';
 
-      const reviewScreen = `👮 **Please review your application.**
+      const readiness = this.calculateReadiness(session, ['type', 'location', 'time', 'description']);
+
+      let reviewScreen = `👮 **Please review your application.**
 
 Name: **${session.citizen.fullName}**
 Mobile: **${session.citizen.mobileNumber}**
@@ -755,20 +1134,27 @@ Description: **${session.data.description}**
 
 **Validation Status**
 
-✓ Name Valid
-✓ Mobile Number Valid
-✓ Location Valid
-✓ Complaint Details Complete
-✓ Ready for Submission
+${readiness.checklist}
 
-Would you like to submit this application?
+`;
+
+      let sugs: string[];
+      if (readiness.valid) {
+        reviewScreen += `Would you like to submit this application?
 
 - [Submit Application](option:Submit Application)
 - [Modify Details](option:Modify Details)`;
+        sugs = ['Submit Application', 'Modify Details'];
+      } else {
+        reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.
+
+- [Modify Details](option:Modify Details)`;
+        sugs = ['Modify Details'];
+      }
 
       return {
         response: reviewScreen,
-        suggestions: ['Submit Application', 'Modify Details'],
+        suggestions: sugs,
       };
     }
 
@@ -776,7 +1162,7 @@ Would you like to submit this application?
   }
 
   // --- Verification Workflow ---
-  private runVerificationWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
+  private async runVerificationWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
@@ -806,11 +1192,11 @@ Would you like to submit this application?
     };
 
     if (step === 'REVIEW') {
-      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         session.workflow = null;
         session.step = 'START';
-        const resNum = `UP-VER-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-        this.verificationService.createVerification(
+        const resNum = `UP-TV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        const record = await this.verificationService.createVerification(
           session.data.type,
           session.data.name,
           session.data.address,
@@ -819,6 +1205,18 @@ Would you like to submit this application?
           resNum,
           session.citizen.id,
         );
+        await this.prisma.trackingRecord.create({
+          data: {
+            referenceNumber: resNum,
+            serviceType: `${session.data.type} Verification`,
+            entityId: record.id,
+            citizenId: session.citizen.id && session.citizen.id !== 'default-citizen-id' ? session.citizen.id : null,
+            currentStatus: 'SUBMITTED',
+            statusHistory: [
+              { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+            ] as any,
+          }
+        });
         session.data = {};
         return {
           response: getCompletionMessage(resNum, lang),
@@ -913,7 +1311,7 @@ Would you like to submit this application?
   }
 
   // --- Character Certificate Workflow ---
-  private runCertificateWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
+  private async runCertificateWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
@@ -940,11 +1338,11 @@ Would you like to submit this application?
     };
 
     if (step === 'REVIEW') {
-      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         session.workflow = null;
         session.step = 'START';
-        const resNum = `UP-CER-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-        this.certificateService.createCertificate(
+        const resNum = `UP-CC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        const record = await this.certificateService.createCertificate(
           session.data.name,
           session.data.address,
           session.data.district,
@@ -952,6 +1350,18 @@ Would you like to submit this application?
           resNum,
           session.citizen.id,
         );
+        await this.prisma.trackingRecord.create({
+          data: {
+            referenceNumber: resNum,
+            serviceType: 'Character Certificate',
+            entityId: record.id,
+            citizenId: session.citizen.id && session.citizen.id !== 'default-citizen-id' ? session.citizen.id : null,
+            currentStatus: 'SUBMITTED',
+            statusHistory: [
+              { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+            ] as any,
+          }
+        });
         session.data = {};
         return {
           response: getCompletionMessage(resNum, lang),
@@ -1042,7 +1452,7 @@ Would you like to submit this application?
   }
 
   // --- Event Permission Workflow ---
-  private runEventWorkflow(session: ChatSessionState, msg: string): { response: string; suggestions?: string[] } {
+  private async runEventWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
@@ -1072,11 +1482,11 @@ Would you like to submit this application?
     };
 
     if (step === 'REVIEW') {
-      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('option:submit application') || cleanMsg.includes('confirm')) {
+      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         session.workflow = null;
         session.step = 'START';
-        const resNum = `UP-EVP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
-        this.eventService.createEventPermission(
+        const resNum = `UP-EP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        const record = await this.eventService.createEventPermission(
           session.data.type,
           session.data.name,
           session.data.location,
@@ -1085,6 +1495,18 @@ Would you like to submit this application?
           resNum,
           session.citizen.id,
         );
+        await this.prisma.trackingRecord.create({
+          data: {
+            referenceNumber: resNum,
+            serviceType: session.data.type,
+            entityId: record.id,
+            citizenId: session.citizen.id && session.citizen.id !== 'default-citizen-id' ? session.citizen.id : null,
+            currentStatus: 'SUBMITTED',
+            statusHistory: [
+              { status: 'SUBMITTED', timestamp: new Date().toISOString() }
+            ] as any,
+          }
+        });
         session.data = {};
         return {
           response: getCompletionMessage(resNum, lang),
@@ -1188,6 +1610,53 @@ Would you like to submit this application?
       hi: "कृपया ट्रैकिंग के लिए अपनी आवेदन संदर्भ संख्या प्रदान करें (उदा. UP-CMP-2026-123456):",
       hinglish: "Please track karne ke liye apna Application Reference Number batayein (jaise UP-CMP-2026-123456):",
     };
+
+    const refMatch = msg.toUpperCase().match(/\bUP-[A-Z0-9-]+\b/);
+    if (refMatch) {
+      const refNum = refMatch[0];
+      session.workflow = null;
+      session.step = 'START';
+
+      const trackInfo = await this.trackingService.track(refNum);
+      if (!trackInfo) {
+        const errorResponses = {
+          en: `❌ No application found matching reference number \`${refNum}\`. Please check and try again.`,
+          hi: `❌ संदर्भ संख्या \`${refNum}\` से मेल खाता कोई आवेदन नहीं मिला। कृपया जांचें और पुनः प्रयास करें।`,
+          hinglish: `❌ \`${refNum}\` reference number ka koi application nahi mila. Please check karke fir se try karein.`,
+        };
+        return {
+          response: errorResponses[lang],
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+        };
+      }
+
+      const statusDesc = {
+        'Submitted': 'The application has been successfully filed and is in queue.',
+        'Under Review': 'The local police desk is auditing the credentials.',
+        'Pending Verification': 'A local beat officer is assigned for address physical check.',
+        'Approved': 'Verification is cleared and the final certificate/status is ready.',
+        'Rejected': 'Application rejected due to invalid details or failed inspection.',
+      };
+
+      const statusEmojis = {
+        'Submitted': '📋',
+        'Under Review': '🔍',
+        'Pending Verification': '🏠',
+        'Approved': '✅',
+        'Rejected': '❌',
+      };
+
+      const responses = {
+        en: `🔍 **Application Tracking Details:**\n\n- **Reference Number:** \`${trackInfo.referenceNumber}\`\n- **Service:** ${trackInfo.serviceType}\n- **Current Status:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **Last Updated:** ${trackInfo.updatedAt.toLocaleString()}\n\n*Status Info:* ${statusDesc[trackInfo.status] || 'Processing.'}`,
+        hi: `🔍 **आवेदन ट्रैकिंग विवरण:**\n\n- **संदर्भ संख्या:** \`${trackInfo.referenceNumber}\`\n- **सेवा:** ${trackInfo.serviceType}\n- **वर्तमान स्थिति:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **अंतिम अपडेट:** ${trackInfo.updatedAt.toLocaleString()}`,
+        hinglish: `🔍 **Application tracking status:**\n\n- **Reference Number:** \`${trackInfo.referenceNumber}\`\n- **Service:** ${trackInfo.serviceType}\n- **Current Status:** ${statusEmojis[trackInfo.status] || ''} **${trackInfo.status}**\n- **Last Updated:** ${trackInfo.updatedAt.toLocaleString()}`,
+      };
+
+      return {
+        response: responses[lang],
+        suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+      };
+    }
 
     if (step === 1) {
       session.step = '2';
