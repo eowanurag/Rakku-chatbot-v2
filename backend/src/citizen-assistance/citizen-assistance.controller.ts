@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Query, Body, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Query, Body, BadRequestException, Logger } from '@nestjs/common';
 import { HelplineService } from './helpline.service';
 import { PoliceStationService } from './police-station.service';
 import { AnalyticsService } from './analytics.service';
 
 @Controller('citizen-assistance')
 export class CitizenAssistanceController {
+  private readonly logger = new Logger(CitizenAssistanceController.name);
+
   constructor(
     private readonly helplineService: HelplineService,
     private readonly policeStationService: PoliceStationService,
@@ -20,16 +22,32 @@ export class CitizenAssistanceController {
   getNearestPoliceStation(
     @Query('lat') latStr?: string,
     @Query('lng') lngStr?: string,
+    @Query('city') cityQuery?: string,
   ) {
+    if (cityQuery) {
+      this.analyticsService.trackPoliceStationSearch();
+      return this.policeStationService.findByCity(cityQuery);
+    }
+
     if (!latStr || !lngStr) {
-      throw new BadRequestException('Query parameters "lat" and "lng" are required.');
+      this.logger.warn('Location lookup requested but coordinates (lat/lng) are missing.');
+      return {
+        success: false,
+        reason: 'LOCATION_NOT_AVAILABLE',
+        message: 'Please provide your city or area.',
+      };
     }
 
     const lat = parseFloat(latStr);
     const lng = parseFloat(lngStr);
 
     if (isNaN(lat) || isNaN(lng)) {
-      throw new BadRequestException('Query parameters "lat" and "lng" must be numbers.');
+      this.logger.warn(`Invalid coordinate formats received: lat="${latStr}", lng="${lngStr}"`);
+      return {
+        success: false,
+        reason: 'LOCATION_NOT_AVAILABLE',
+        message: 'Please provide your city or area.',
+      };
     }
 
     this.analyticsService.trackPoliceStationSearch();
@@ -65,6 +83,21 @@ export class CitizenAssistanceController {
         if (value) {
           this.analyticsService.trackLanguage(value);
         }
+        break;
+      case 'location_permission_denied':
+        this.logger.warn('Telemetry: Location permission denied by citizen.');
+        break;
+      case 'geolocation_timeout':
+        this.logger.warn('Telemetry: Geolocation timeout encountered.');
+        break;
+      case 'manual_search_used':
+        this.logger.log(`Telemetry: Manual search used for location: "${value || 'unknown'}"`);
+        break;
+      case 'demo_mode_triggered':
+        this.logger.warn('Telemetry: Empty database encountered. Demo Mode active.');
+        break;
+      case 'police_station_api_failure':
+        this.logger.error(`Telemetry: Police Station Lookup API failure: "${value || 'unknown'}"`);
         break;
       default:
         throw new BadRequestException(`Unknown metric type: ${type}`);

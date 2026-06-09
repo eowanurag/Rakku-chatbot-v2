@@ -16,6 +16,8 @@ import {
 import DOMPurify from "dompurify";
 import { ChatService } from "../../services/api";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
+
 interface Message {
   role: "user" | "assistant";
   text: string;
@@ -38,6 +40,7 @@ function ChatContent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [waitingForManualLocation, setWaitingForManualLocation] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([
     "🚔 File a Complaint",
     "🏠 Tenant Verification",
@@ -55,6 +58,72 @@ function ChatContent() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  // --- Police Station Helpers ---
+  const trackTelemetry = async (type: string, value?: string) => {
+    try {
+      await fetch(`${BACKEND_URL}/citizen-assistance/analytics/track`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, value }),
+      });
+    } catch (e) {
+      console.warn('Telemetry send failed:', e);
+    }
+  };
+
+  const formatStationMessage = (data: any, source: string): string => {
+    const demoTag = data.demoMode ? '\n⚠️ *(Demo Mode — data may not be real)*' : '';
+    return (
+      `🚔 **Nearest Police Station Found** *(${source})*:\n\n` +
+      `- **Name:** **${data.station.name}**\n` +
+      `- **Address:** ${data.station.address}\n` +
+      `- **Phone Number:** [${data.station.phone}](tel:${data.station.phone})\n` +
+      `- **Distance:** **${data.distanceKm} km** away\n\n` +
+      `👉 [Open in Google Maps](${data.mapsUrl})${demoTag}`
+    );
+  };
+
+  const searchByCity = async (cityText: string): Promise<void> => {
+    setLoading(true);
+    trackTelemetry('manual_search_used', cityText);
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/citizen-assistance/police-stations/nearest?city=${encodeURIComponent(cityText)}`
+      );
+      const data = await res.json();
+      if (data.success && data.station) {
+        if (data.demoMode) trackTelemetry('demo_mode_triggered');
+        setMessages((prev) => [...prev, { role: 'assistant', text: formatStationMessage(data, 'Manual Search') }]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            text:
+              `😔 I couldn't find a police station matching **"${cityText}"**.\n\n` +
+              `Please try a city name like:\n` +
+              `- Lucknow\n- Kanpur\n- Noida\n- Varanasi\n- Ghaziabad\n- Prayagraj\n\n` +
+              `Or type **cancel** to go back.`,
+          },
+        ]);
+        setWaitingForManualLocation(true); // keep waiting for another attempt
+      }
+    } catch (e: any) {
+      trackTelemetry('police_station_api_failure', e?.message || 'unknown');
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text:
+            '👮 I\'m sorry — the police station service is temporarily unavailable.\n\n' +
+            'Please try again in a moment, or call **112** for emergencies.',
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initialize Session ID and request location coordinates
   useEffect(() => {
@@ -133,64 +202,152 @@ function ChatContent() {
     const userText = textToSend;
     setInput("");
 
-    const cleanLower = userText.toLowerCase().trim();
-    if (cleanLower.includes('nearest police station') || cleanLower.includes('police station near me') || cleanLower.includes('closest station') || cleanLower === 'find police station') {
-      setLoading(true);
-      setMessages((prev) => [...prev, { role: "user", text: userText }]);
-      
-      if (typeof window === "undefined" || !navigator.geolocation) {
+    // --- Intercept: Manual location input when waiting ---
+    if (waitingForManualLocation) {
+      setMessages((prev) => [...prev, { role: 'user', text: userText }]);
+      setWaitingForManualLocation(false);
+
+      if (userText.toLowerCase().trim() === 'cancel') {
         setMessages((prev) => [
           ...prev,
-          {
-            role: "assistant",
-            text: "❌ Geolocation is not supported by your browser.",
-          },
+          { role: 'assistant', text: '👮 Police station search cancelled. How else can I help you?' },
         ]);
-        setLoading(false);
         return;
       }
-      
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            
-            const res = await fetch(`/api/citizen-assistance/police-stations/nearest?lat=${lat}&lng=${lng}`);
-            if (res.ok) {
-              const data = await res.json();
-              const stationMsg = `🚔 **Nearest Police Station Found:**\n\n` +
-                `- **Name:** **${data.station.name}**\n` +
-                `- **Address:** ${data.station.address}\n` +
-                `- **Phone Number:** [${data.station.phone}](tel:${data.station.phone})\n` +
-                `- **Distance:** **${data.distanceKm} km** away\n\n` +
-                `👉 [Open in Google Maps](${data.mapsUrl})`;
-              
-              setMessages((prev) => [...prev, { role: "assistant", text: stationMsg }]);
-            } else {
-              setMessages((prev) => [...prev, { role: "assistant", text: "❌ Failed to fetch nearest police station." }]);
-            }
-          } catch (e) {
-            setMessages((prev) => [...prev, { role: "assistant", text: "❌ Error occurred while searching for police station." }]);
-          } finally {
-            setLoading(false);
+
+      await searchByCity(userText);
+      return;
+    }
+
+    const cleanLower = userText.toLowerCase().trim();
+
+    // --- Police Station trigger keywords ---
+    const isPoliceStationQuery =
+      cleanLower.includes('nearest police station') ||
+      cleanLower.includes('police station near me') ||
+      cleanLower.includes('closest station') ||
+      cleanLower.includes('find police station') ||
+      cleanLower === '📍 find police station';
+
+    if (isPoliceStationQuery) {
+      setMessages((prev) => [...prev, { role: 'user', text: userText }]);
+      setLoading(true);
+
+      // Step A: Try GPS with a 10-second timeout
+      const gpsResult = await new Promise<{ success: boolean; lat?: number; lng?: number; reason?: string }>(
+        (resolve) => {
+          if (typeof window === 'undefined' || !navigator.geolocation) {
+            resolve({ success: false, reason: 'unsupported' });
+            return;
           }
-        },
-        (error) => {
+
+          const timeoutId = setTimeout(() => {
+            resolve({ success: false, reason: 'timeout' });
+          }, 10000);
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              clearTimeout(timeoutId);
+              resolve({
+                success: true,
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            (error) => {
+              clearTimeout(timeoutId);
+              const reason =
+                error.code === error.PERMISSION_DENIED
+                  ? 'denied'
+                  : error.code === error.TIMEOUT
+                    ? 'timeout'
+                    : 'unavailable';
+              resolve({ success: false, reason });
+            },
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+          );
+        }
+      );
+
+      // Step B: If GPS succeeded, call the API with coords
+      if (gpsResult.success && gpsResult.lat && gpsResult.lng) {
+        try {
+          const res = await fetch(
+            `${BACKEND_URL}/citizen-assistance/police-stations/nearest?lat=${gpsResult.lat}&lng=${gpsResult.lng}`
+          );
+          const data = await res.json();
+
+          if (data.success && data.station) {
+            if (data.demoMode) trackTelemetry('demo_mode_triggered');
+            setMessages((prev) => [...prev, { role: 'assistant', text: formatStationMessage(data, 'GPS') }]);
+          } else {
+            // Structured error from backend → fall through to manual
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: 'assistant',
+                text:
+                  '👮 I couldn\'t find a police station near your GPS coordinates.\n\n' +
+                  'Please enter your **area, city, or district** so I can search manually.\n\n' +
+                  '**Examples:** Gomti Nagar, Lucknow · Sector 62, Noida · Varanasi',
+              },
+            ]);
+            setWaitingForManualLocation(true);
+          }
+        } catch (e: any) {
+          trackTelemetry('police_station_api_failure', e?.message || 'unknown');
           setMessages((prev) => [
             ...prev,
             {
-              role: "assistant",
-              text: `❌ Location access denied or unavailable. Falling back to default Hazratganj Central Station:\n\n` +
-                `🚔 **Hazratganj Police Station**\n` +
-                `- **Address:** Hazratganj, Lucknow, Uttar Pradesh 226001\n` +
-                `- **Phone:** [0522-2200201](tel:0522-2200201)\n\n` +
-                `👉 [Open in Google Maps](https://www.google.com/maps/search/?api=1&query=26.8467,80.9462)`,
+              role: 'assistant',
+              text:
+                '👮 I couldn\'t reach the police station service right now.\n\n' +
+                'Please enter your **area, city, or district** and I\'ll try a manual search.\n\n' +
+                '**Examples:** Lucknow · Kanpur · Noida',
             },
           ]);
-          setLoading(false);
+          setWaitingForManualLocation(true);
         }
-      );
+        setLoading(false);
+        return;
+      }
+
+      // Step C: GPS failed — fire telemetry and ask for manual input
+      if (gpsResult.reason === 'denied') {
+        trackTelemetry('location_permission_denied');
+      } else if (gpsResult.reason === 'timeout') {
+        trackTelemetry('geolocation_timeout');
+      }
+
+      // Also check if we have coords from the initial page-load geolocation
+      if (coords?.latitude && coords?.longitude) {
+        try {
+          const res = await fetch(
+            `${BACKEND_URL}/citizen-assistance/police-stations/nearest?lat=${coords.latitude}&lng=${coords.longitude}`
+          );
+          const data = await res.json();
+          if (data.success && data.station) {
+            if (data.demoMode) trackTelemetry('demo_mode_triggered');
+            setMessages((prev) => [...prev, { role: 'assistant', text: formatStationMessage(data, 'Saved Location') }]);
+            setLoading(false);
+            return;
+          }
+        } catch { /* fall through to manual prompt */ }
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text:
+            '👮 I couldn\'t access your location automatically.\n\n' +
+            'Please tell me your **area, city, or district** so I can find the nearest police station for you.\n\n' +
+            '**Examples:**\n- Gomti Nagar, Lucknow\n- Sector 62, Noida\n- Varanasi\n- Kanpur\n\n' +
+            'Or type **cancel** to go back.',
+        },
+      ]);
+      setWaitingForManualLocation(true);
+      setLoading(false);
       return;
     }
     
