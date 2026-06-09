@@ -13,6 +13,7 @@ import {
   ChevronRight, 
   CornerDownLeft 
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import { ChatService } from "../../services/api";
 
 interface Message {
@@ -370,7 +371,7 @@ function ChatContent() {
                         ? "bubble-assistant glow-gold/5" 
                         : "bubble-user"
                     }`}>
-                      {msg.text.split("\n").map((line, lIdx) => {
+                      {(typeof window !== "undefined" ? DOMPurify.sanitize(msg.text) : msg.text).split("\n").map((line, lIdx) => {
                         // For simplicity, if we have markdown bullets, indent them
                         const isBullet = line.trim().startsWith("-") || line.trim().startsWith("👉") || line.trim().startsWith("•");
 

@@ -213,7 +213,7 @@ export class ValidationService {
 
     // 4. Location Extraction Patterns (including Hindi/Hinglish)
     const locationPatterns = [
-      /(?:i live in|change location to|my location is|live in|location is|i am in|change my location to|my district is|district is)\s+([a-zA-Z\u0900-\u097F\s'-]+)/i,
+      /(?:i live in|change location to|move location to|my location is|live in|location is|i am in|change my location to|my district is|district is)\s+([a-zA-Z\u0900-\u097F\s'-]+)/i,
       /([a-zA-Z\u0900-\u097F]+)\s+(?:me\s+rehta|me\s+rehti|mein\s+rehta|mein\s+rehti|me\s+rahta|me\s+rahti)/i,
       /([a-zA-Z\u0900-\u097F]+)\s*(?:में रहता|में रहती|मे रहता|मे रहती)/
     ];
@@ -243,5 +243,31 @@ export class ValidationService {
     }
 
     return data;
+  }
+
+  sanitizeInput(text: string): string {
+    if (!text) return '';
+    let clean = text;
+    // Remove scripts, script tags, iframe, object, embed, svg tags, event handlers, javascript: links
+    clean = clean.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    clean = clean.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+    clean = clean.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '');
+    clean = clean.replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '');
+    clean = clean.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '');
+    
+    // Remove HTML tags in general, keeping text
+    clean = clean.replace(/<\/?\w+[^>]*>/g, ''); 
+    
+    // Remove javascript: and javascript event handlers like onload, onerror, etc.
+    clean = clean.replace(/javascript:/gi, '');
+    clean = clean.replace(/\bon\w+\s*=\s*(['"]?)[^\s>]*\1/gi, '');
+    clean = clean.replace(/\bon\w+\s*=/gi, '');
+    
+    return clean.trim() || '[Invalid Input]';
+  }
+
+  sanitizeOutput(text: string): string {
+    if (!text) return '';
+    return this.sanitizeInput(text);
   }
 }
