@@ -8,25 +8,27 @@ datasource db {
 }
 
 model Citizen {
-  id            String                 @id @default(cuid())
-  fullName      String
-  mobileNumber  String
-  email         String?
-  addressLine1  String?
-  addressLine2  String?
-  city          String?
-  district      String?
-  state         String?
-  pincode       String?
-  latitude      Float?
-  longitude     Float?
-  isConfirmed   Boolean                @default(false)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  certificates  CharacterCertificate[]
-  complaints    Complaint[]
-  permissions   EventPermission[]
-  verifications Verification[]
+  id                   String                 @id @default(cuid())
+  fullName             String
+  mobileNumber         String
+  email                String?
+  addressLine1         String?
+  addressLine2         String?
+  city                 String?
+  district             String?
+  state                String?
+  pincode              String?
+  latitude             Float?
+  longitude            Float?
+  locality             String?
+  nearestPoliceStation String?
+  isConfirmed          Boolean                @default(false)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  certificates         CharacterCertificate[]
+  complaints           Complaint[]
+  permissions          EventPermission[]
+  verifications        Verification[]
 }
 
 model Complaint {
@@ -135,5 +137,107 @@ model TrackingRecord {
   statusHistory     Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model ConversationInsight {
+  id              String   @id @default(uuid())
+  sessionId       String
+  citizenId       String?
+  workflowType    String?
+  detectedIntent  String
+  confidenceScore Float
+  language        String
+  resolved        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model ConversationSentiment {
+  id           String   @id @default(uuid())
+  sessionId    String
+  sentiment    String
+  emotion      String
+  workflowType String?
+  createdAt    DateTime @default(now())
+}
+
+model Feedback {
+  id           String   @id @default(uuid())
+  sessionId    String
+  citizenId    String?
+  workflowType String?
+  rating       Int
+  comments     String?
+  createdAt    DateTime @default(now())
+}
+
+model UnansweredQuestion {
+  id        String   @id @default(uuid())
+  question  String   @unique
+  language  String
+  frequency Int      @default(1)
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model IntentTrainingData {
+  id             String   @id @default(uuid())
+  phrase         String
+  language       String
+  detectedIntent String
+  verifiedIntent String?
+  confidence     Float
+  createdAt      DateTime @default(now())
+}
+
+model WorkflowAnalytics {
+  id           String   @id @default(uuid())
+  workflowType String
+  stepName     String
+  completed    Boolean  @default(false)
+  abandoned    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model CitizenPreference {
+  id                String   @id @default(uuid())
+  citizenId         String   @unique
+  preferredLanguage String
+  preferredDistrict String?
+  lastWorkflow      String?
+  lastVisit         DateTime @default(now())
+  createdAt         DateTime @default(now())
+}
+
+model KnowledgeCategory {
+  id       String             @id @default(uuid())
+  name     String             @unique
+  articles KnowledgeArticle[]
+}
+
+model KnowledgeArticle {
+  id              String            @id @default(uuid())
+  categoryId      String
+  title           String
+  content         String
+  language        String
+  helpfulCount    Int               @default(0)
+  notHelpfulCount Int               @default(0)
+  updatedAt       DateTime          @updatedAt
+  category        KnowledgeCategory @relation(fields: [categoryId], references: [id])
+}
+
+model LearningEvent {
+  id        String   @id @default(uuid())
+  eventType String
+  severity  String
+  details   Json
+  createdAt DateTime @default(now())
+}
+
+model AggregatedMetric {
+  id        String   @id @default(uuid())
+  metricKey String
+  value     Json
+  createdAt DateTime @default(now())
 }
 

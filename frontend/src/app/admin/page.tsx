@@ -150,14 +150,24 @@ export default function AdminPage() {
           </p>
         </div>
         
-        <button
-          onClick={loadData}
-          disabled={loading}
-          className="btn-primary self-start md:self-center px-4 py-2 text-xs font-semibold rounded-lg shadow-md border flex items-center space-x-2"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          <span>Refresh Records</span>
-        </button>
+        <div className="flex flex-wrap gap-2.5 self-start md:self-center">
+          <a
+            href="/admin-intelligence"
+            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-2 active:scale-95 cursor-pointer border border-amber-600/30"
+          >
+            <span>💡</span>
+            <span>Intelligence & Feedback</span>
+          </a>
+
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="btn-primary px-4 py-2 text-xs font-semibold rounded-lg shadow-md border flex items-center space-x-2"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            <span>Refresh Records</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats Board */}

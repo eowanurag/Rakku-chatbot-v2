@@ -219,6 +219,38 @@ We have recently integrated the following digital citizen officer features:
    * Stales and handles natural language corrections during citizen profile identification.
    * Automatically resumes the pending workflow (e.g. Complaint, Verification, Certificate, Event) without resetting states or printing `undefined` outputs. Includes a safety fallback asking the user how they would like to be assisted if no workflow matches.
 
+
+## Self-Learning & Citizen Intelligence Platform
+
+Rakku has been upgraded to a continuously improving Citizen Intelligence Platform. Rather than automatically self-modifying its prompts or workflows, Rakku logs citizen interactions, feedback, sentiments, and intent patterns to generate actionable insights and recommendations for administrators.
+
+### 1. Database Analytics Schema
+The Postgres database (`schema.prisma`) incorporates the following metrics and analytics models:
+- **`ConversationInsight`**: Tracks query classification accuracy, intent confidence scores, and preferred user languages.
+- **`ConversationSentiment`**: Logs sentiment metrics (positive, neutral, negative) mapped to conversation sessions.
+- **`Feedback`**: Stores citizen satisfaction ratings (thumbs up/down) and qualitative feedback.
+- **`UnansweredQuestion`**: Captures user queries that couldn't be answered to build new RAG knowledge articles.
+- **`IntentTrainingData`**: Collects suggested training phrases for admin review.
+- **`WorkflowAnalytics`**: Monitors workflow starts, steps completed, drop-offs, and completion times.
+- **`CitizenPreference`**: Records preferred languages and districts by session.
+- **`KnowledgeCategory` & `KnowledgeArticle`**: Admin-managed RAG database supporting categories and status controls.
+- **`LearningEvent`**: Audit trail of admin actions (e.g., publishing articles, modifying intents).
+- **`AggregatedMetric`**: Aggregates daily key metrics (total conversations, average sentiment, resolution rates).
+
+### 2. NestJS Intelligence API Routes
+- **`GET /api/intelligence/metrics`**: Returns current high-level analytics (sentiment distribution, satisfaction rate, intent accuracy).
+- **`GET /api/intelligence/dashboard`**: Returns detailed metrics including top intents, drop-off rates by workflow, preferred languages/districts, and unresolved questions.
+- **`POST /api/intelligence/feedback`**: Stores direct citizen rating (`👍 Yes` or `👎 No`) with feedback comment.
+- **`POST /api/intelligence/aggregate`**: Triggers calculations for aggregated daily reporting metrics.
+- **`POST /api/intelligence/knowledge`**: Interface to add categories and articles for learning validation.
+
+### 3. Admin Intelligence Portal
+Accessible at `/admin-intelligence`, the dashboard provides a modern web interface displaying:
+- **Interactive Metrics Cards**: Conversational volumes, satisfaction rates, and average confidence scores.
+- **Drop-off Analysis**: Funnel representation of slot-filling progress to isolate where citizens abandon workflows.
+- **Unresolved & Hindi/Hinglish Query Reviews**: Visual listing of queries that require additional database or intent training.
+- **District and Language Hotspots**: Insights on which geographic regions (UP Districts) and language preferences dominate citizen engagement.
+
 ## Local Setup (Manual Run)
 
 If you don't have Docker installed, you can start the Node.js services directly. 

@@ -34,6 +34,7 @@ import { ValidationService } from './chat/validation.service';
 // Knowledge
 import { KnowledgeController } from './knowledge/knowledge.controller';
 import { KnowledgeService } from './knowledge/knowledge.service';
+import { IntelligenceService } from './citizen-assistance/intelligence.service';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { KnowledgeService } from './knowledge/knowledge.service';
     ChatService,
     ValidationService,
     KnowledgeService,
+    IntelligenceService,
   ],
 })
 export class AppModule {}

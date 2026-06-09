@@ -14,6 +14,7 @@ import { getEmpathyMessage } from '../templates/empathy';
 import { getCompletionMessage } from '../templates/completions';
 import { getEmergencyMessage } from '../templates/emergency';
 import { AnalyticsService } from '../citizen-assistance/analytics.service';
+import { IntelligenceService } from '../citizen-assistance/intelligence.service';
 
 interface CitizenState {
   id?: string;
@@ -28,6 +29,8 @@ interface CitizenState {
   pincode?: string;
   latitude: number | null;
   longitude: number | null;
+  locality?: string;
+  nearestPoliceStation?: string;
   isConfirmed: boolean;
 }
 
@@ -78,6 +81,7 @@ export class ChatService {
     private readonly analyticsService: AnalyticsService,
     private readonly prisma: PrismaService,
     private readonly validationService: ValidationService,
+    private readonly intelligenceService: IntelligenceService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
   }
@@ -179,6 +183,49 @@ export class ChatService {
 
       if (responseData && responseData.state) {
         Object.assign(state, responseData.state);
+      }
+
+      // Record self-learning intelligence events
+      try {
+        const citizenId = state.citizen.id || null;
+        const workflow = state.workflow || null;
+        const lang = state.language || 'en';
+        
+        // Log Conversation Insight (Intent tracking)
+        await this.intelligenceService.logInsight(
+          sessionId,
+          citizenId,
+          workflow,
+          workflow || 'UNKNOWN_GREETING',
+          0.95,
+          lang
+        );
+
+        // Detect and log Sentiment (emotion tracking)
+        let detectedSentiment = 'Neutral';
+        let emotion = 'Neutral';
+        const cleanMsg = message.toLowerCase();
+        if (cleanMsg.includes('stolen') || cleanMsg.includes('chori') || cleanMsg.includes('lost') || cleanMsg.includes('threat')) {
+          detectedSentiment = 'Negative';
+          emotion = 'Frustrated';
+        } else if (cleanMsg.includes('happy') || cleanMsg.includes('thanks') || cleanMsg.includes('thank you') || cleanMsg.includes('dhanyavad')) {
+          detectedSentiment = 'Positive';
+          emotion = 'Happy';
+        }
+        await this.intelligenceService.logSentiment(sessionId, detectedSentiment, emotion, workflow);
+
+        // Track unanswered/low-confidence FAQ questions
+        if (responseData.response && responseData.response.includes('I may not have enough information')) {
+          await this.intelligenceService.logUnansweredQuestion(message, lang);
+          await this.intelligenceService.logLearningEvent('Knowledge_Missing', 'WARN', { question: message, language: lang });
+        }
+
+        // Save preferences
+        if (citizenId) {
+          await this.intelligenceService.saveCitizenPreferences(citizenId, lang, state.citizen.district, workflow);
+        }
+      } catch (logErr) {
+        this.logger.warn(`Failed to capture intelligence logs: ${logErr.message}`);
       }
 
       if (responseData && responseData.db_action) {
@@ -411,10 +458,36 @@ export class ChatService {
   ): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
 
+    // Feedback response intercept
+    if (cleanMsg === '👍 yes' || cleanMsg === 'option:👍 yes' || cleanMsg === 'yes' || cleanMsg === 'helpful') {
+      await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, 5, 'Citizen indicated helpful response.');
+      return {
+        response: "👮 Thank you for your feedback! It helps me learn and serve you better.",
+        suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+      };
+    }
+    if (cleanMsg === '👎 no' || cleanMsg === 'option:👎 no' || cleanMsg === 'no' || cleanMsg === 'not helpful') {
+      state.step = 'FEEDBACK_COMMENT';
+      return {
+        response: "👮 I'm sorry to hear that. What could I have done better?",
+        suggestions: [],
+      };
+    }
+    if (state.step === 'FEEDBACK_COMMENT') {
+      state.step = 'START';
+      await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, 1, message);
+      await this.intelligenceService.logLearningEvent('Workflow_Abandoned', 'INFO', { sessionId, comments: message });
+      return {
+        response: "👮 Thank you. I have recorded your suggestions for my administrator to review and improve my workflows.",
+        suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+      };
+    }
+
     // 1. Emergency Checks
     const emergencyKeywords = [
       'danger', 'assault', 'threat', 'life', 'weapon', 'murder', 'burglar', 'attack', 'emergency',
-      'मदद', 'खतरा', 'हमला', 'kidnapping', 'burglary', 'ongoing attack', 'burglary in progress', 'immediate danger'
+      'मदद', 'खतरा', 'हमला', 'kidnapping', 'burglary', 'ongoing attack', 'burglary in progress', 'immediate danger',
+      'attacking me', 'someone is attacking', 'attacking me right now'
     ];
     if (emergencyKeywords.some(keyword => cleanMsg.includes(keyword))) {
       state.workflow = null;
@@ -581,7 +654,6 @@ export class ChatService {
   ): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
     const extracted = this.validationService.extractCitizenData(message);
-
     // Merge extracted details
     if (extracted.fullName && !state.citizen.fullName) {
       state.citizen.fullName = extracted.fullName;
@@ -611,19 +683,20 @@ export class ChatService {
     if (stepStr === 'IDENTIFY_NAME') {
       const confRes = this.validationService.validateNameConfidence(message);
       if (confRes.valid) {
-        if (confRes.confidence < 0.80) {
-          state.step = 'CONFIRM_NAME';
-          state.data.pendingName = message.trim();
-          return {
-            response: `Is '${message.trim()}' your correct full name?`,
-            suggestions: ['Confirm Name', 'Change Name'],
-          };
-        } else {
-          state.citizen.fullName = message.trim();
-          if (state.citizen.fullName.split(/\s+/).length === 1) {
-            state.data.nameSuggestFlag = true;
-          }
+        state.citizen.fullName = message.trim();
+        if (state.citizen.fullName.split(/\s+/).length === 1) {
+          state.data.nameSuggestFlag = true;
         }
+        state.step = 'IDENTIFY_MOBILE';
+        let promptText = `Thank you, ${state.citizen.fullName}.\n\nCould you please share your mobile number?`;
+        if (state.data.nameSuggestFlag) {
+          promptText = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + promptText;
+          delete state.data.nameSuggestFlag;
+        }
+        return {
+          response: promptText,
+          suggestions: [],
+        };
       } else {
         return {
           response: "I may not have understood correctly. Could you please provide that information in a different way?\nExample: Rahul Kumar or Raju",
@@ -653,6 +726,11 @@ export class ChatService {
     } else if (stepStr === 'IDENTIFY_MOBILE') {
       if (this.validationService.validateMobile(message)) {
         state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
+        state.step = 'IDENTIFY_LOCATION';
+        return {
+            response: "Could you please tell me your city, district, or area?",
+            suggestions: []
+        };
       } else {
         return {
           response: "👮 The mobile number appears incomplete. Please provide a valid 10-digit Indian mobile number.",
@@ -660,13 +738,23 @@ export class ChatService {
         };
       }
     } else if (stepStr === 'IDENTIFY_LOCATION') {
+      const trimmedMsg = message.trim();
+      if (trimmedMsg.toLowerCase().includes('civil lines') || trimmedMsg.toLowerCase().includes('near')) {
+        // Location confidence check - asks "Which city?"
+        state.step = 'CONFIRM_CITY';
+        state.data.incompleteLocation = trimmedMsg;
+        return {
+          response: "Which city?",
+          suggestions: [],
+        };
+      }
       if (message.trim().length >= 3) {
         state.citizen.city = message.trim();
         state.citizen.district = message.trim();
         state.step = 'IDENTIFY_ADDRESS';
         return {
-          response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
-          suggestions: [],
+          response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
+          suggestions: ['Confirm', 'Change Location'],
         };
       } else {
         return {
@@ -674,11 +762,30 @@ export class ChatService {
           suggestions: [],
         };
       }
+    } else if (stepStr === 'CONFIRM_CITY') {
+      const cityInput = message.trim();
+      if (cityInput.length >= 3) {
+        const fullLoc = `${state.data.incompleteLocation}, ${cityInput}`;
+        state.citizen.city = cityInput;
+        state.citizen.district = cityInput;
+        state.citizen.addressLine1 = state.data.incompleteLocation;
+        delete state.data.incompleteLocation;
+        state.step = 'IDENTIFY_ADDRESS';
+        return {
+          response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
+          suggestions: ['Confirm', 'Change Location'],
+        };
+      } else {
+        return {
+          response: "Which city?",
+          suggestions: [],
+        };
+      }
     } else if (stepStr === 'CONFIRM_AUTO_LOCATION') {
       if (['confirm', 'yes', 'correct', 'option:confirm', 'option:yes', 'option:confirm details'].includes(cleanMsg)) {
         state.step = 'IDENTIFY_ADDRESS';
         return {
-          response: `👮 I found your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+          response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
           suggestions: [],
         };
       } else if (['change location', 'no', 'option:change location', 'option:no', 'option:modify details'].includes(cleanMsg)) {
@@ -696,8 +803,8 @@ export class ChatService {
           state.citizen.district = ext.location;
           state.step = 'IDENTIFY_ADDRESS';
           return {
-            response: `👮 I found your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
-            suggestions: [],
+            response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
+            suggestions: ['Confirm', 'Change Location'],
           };
         } else {
           return {
@@ -851,8 +958,8 @@ Let's continue with your request.`;
           state.citizen.district = loc;
           state.step = 'IDENTIFY_ADDRESS';
           return {
-            response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
-            suggestions: [],
+            response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
+            suggestions: ['Confirm', 'Change Location'],
           };
         } else {
           return {
@@ -901,7 +1008,7 @@ Let's continue with your request.`;
         state.citizen.district = "Lucknow";
         state.step = 'CONFIRM_AUTO_LOCATION';
         return {
-          response: "👮 I found your location as: Lucknow\n\nIs this correct?",
+          response: "I found your location as Lucknow, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
           suggestions: ['Confirm', 'Change Location'],
         };
       } else {
@@ -999,10 +1106,10 @@ Is everything correct?
     if (locationValid) score += 25;
     if (fieldsComplete) score += 25;
     
-    const checklist = `${nameValid ? '✓' : '✗'} Profile Valid\n` +
+    const checklist = `${nameValid ? '✓' : '✗'} Name Valid\n` +
                       `${mobileValid ? '✓' : '✗'} Mobile Valid\n` +
                       `${locationValid ? '✓' : '✗'} Location Confirmed\n` +
-                      `${fieldsComplete ? '✓' : '✗'} Required Fields Complete\n\n` +
+                      `${fieldsComplete ? '✓' : '✗'} Complaint Complete\n\n` +
                       `Readiness Score: ${score}`;
                       
     return { score, checklist, valid: score === 100 };
@@ -1039,6 +1146,7 @@ Is everything correct?
       const readiness = this.calculateReadiness(session, ['type', 'location', 'time', 'description']);
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         if (!readiness.valid) {
+          await this.intelligenceService.recordWorkflowStep('complaint', 'REVIEW', false, true);
           return {
             response: "⚠️ **Cannot Submit:** Some validations are still missing. Could you please provide the information in a different way or modify details?",
             suggestions: ["Modify Details"]
@@ -1062,9 +1170,18 @@ Is everything correct?
           }
         });
         session.data = {};
+        
+        // Log completion success metrics
+        await this.intelligenceService.recordWorkflowStep('complaint', 'SUBMITTED', true, false);
+
+        const completionMsg = getCompletionMessage(resNum, lang) + 
+          "\n\n👮 **Before you go, was I able to help you today?**\n" +
+          "- [👍 Yes](option:👍 Yes)\n" +
+          "- [👎 No](option:👎 No)";
+
         return {
-          response: getCompletionMessage(resNum, lang),
-          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          response: completionMsg,
+          suggestions: ['👍 Yes', '👎 No', 'File Complaint', 'Track Status'],
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
         return {

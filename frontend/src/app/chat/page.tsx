@@ -538,9 +538,9 @@ function ChatContent() {
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(sug)}
-                    className="px-3 py-1 bg-slate-800/80 hover:bg-slate-800 text-[11px] text-slate-300 border border-slate-700/80 hover:border-police-gold rounded-full transition-all flex items-center space-x-1.5 hover:text-white"
+                    className="px-3.5 py-1.5 bg-slate-800 border border-police-gold/30 text-[12px] font-medium text-slate-200 hover:text-white hover:bg-police-gold/15 hover:border-police-gold rounded-full transition-all flex items-center space-x-2 shadow-md hover:shadow-police-gold/10 active:scale-95 cursor-pointer"
                   >
-                    <span>✦</span>
+                    <span className="text-police-gold text-[10px]">✦</span>
                     <span className="truncate">{sug}</span>
                   </button>
                 ))}

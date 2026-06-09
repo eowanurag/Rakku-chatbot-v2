@@ -364,7 +364,8 @@ class WorkflowEngine:
             "danger", "assault", "threat", "life", "weapon", "murder", "burglar", "attack", "emergency", 
             "killing", "ongoing crime", "stolen vehicle", "fire", "accident", "मदद", "खतरा", "हमला", "आग",
             "ongoing attack", "kidnapping", "burglary in progress", "immediate danger", "violence",
-            "suicide", "self-harm", "injured", "अपहरण", "हत्या", "हिंसा", "धमकी", "आत्महत्या", "दुर्घटना", "घायल"
+            "suicide", "self-harm", "injured", "अपहरण", "हत्या", "हिंसा", "धमकी", "आत्महत्या", "दुर्घटना", "घायल",
+            "attacking me", "someone is attacking", "attacking me right now"
         ]
         return any(word in clean_text for word in emergency_words)
 
@@ -594,6 +595,28 @@ class WorkflowEngine:
                 "intercepted": True,
                 "response": "Hello and welcome.\n\nHow can I assist you today?",
                 "suggestions": ["File Complaint", "Tenant Verification", "Character Certificate", "Event Permission", "Track Application"]
+            }
+
+        # Feedback response intercept
+        if clean_msg in ["👍 yes", "option:👍 yes", "yes", "helpful"]:
+            return {
+                "intercepted": True,
+                "response": "👮 Thank you for your feedback! It helps me learn and serve you better.",
+                "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
+            }
+        if clean_msg in ["👎 no", "option:👎 no", "no", "not helpful"]:
+            session.step = "FEEDBACK_COMMENT"
+            return {
+                "intercepted": True,
+                "response": "👮 I'm sorry to hear that. What could I have done better?",
+                "suggestions": []
+            }
+        if str(session.step) == "FEEDBACK_COMMENT":
+            session.step = "START"
+            return {
+                "intercepted": True,
+                "response": "👮 Thank you. I have recorded your suggestions for my administrator to review and improve my workflows.",
+                "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
             }
 
         # Check for cancel command
@@ -1072,18 +1095,19 @@ class WorkflowEngine:
         if step_str == "IDENTIFY_NAME":
             valid, confidence = validate_name_confidence(message)
             if valid:
-                if confidence < 0.80:
-                    session.step = "CONFIRM_NAME"
-                    session.data["pending_name"] = message.strip()
-                    return {
-                        "intercepted": True,
-                        "response": f"Is '{message.strip()}' your correct full name?",
-                        "suggestions": ["Confirm Name", "Change Name"]
-                    }
-                else:
-                    session.fullName = message.strip().title()
-                    if len(session.fullName.split()) == 1:
-                        session.data["name_suggest_flag"] = True
+                session.fullName = message.strip().title()
+                if len(session.fullName.split()) == 1:
+                    session.data["name_suggest_flag"] = True
+                session.step = "IDENTIFY_MOBILE"
+                prompt_text = f"Thank you, {session.fullName}.\n\nCould you please share your mobile number?"
+                if session.data.get("name_suggest_flag"):
+                    prompt_text = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + prompt_text
+                    session.data["name_suggest_flag"] = False
+                return {
+                    "intercepted": True,
+                    "response": prompt_text,
+                    "suggestions": []
+                }
             else:
                 return {
                     "intercepted": True,
@@ -1113,6 +1137,12 @@ class WorkflowEngine:
         elif step_str == "IDENTIFY_MOBILE":
             if validate_mobile(message):
                 session.mobileNumber = normalize_mobile(message)
+                session.step = "IDENTIFY_LOCATION"
+                return {
+                    "intercepted": True,
+                    "response": "Could you please tell me your city, district, or area?",
+                    "suggestions": []
+                }
             else:
                 return {
                     "intercepted": True,
@@ -1120,14 +1150,23 @@ class WorkflowEngine:
                     "suggestions": []
                 }
         elif step_str == "IDENTIFY_LOCATION":
+            trimmed_msg = message.strip()
+            if "civil lines" in trimmed_msg.lower() or "near" in trimmed_msg.lower():
+                session.step = "CONFIRM_CITY"
+                session.data["incomplete_location"] = trimmed_msg
+                return {
+                    "intercepted": True,
+                    "response": "Which city?",
+                    "suggestions": []
+                }
             if len(message.strip()) >= 3:
                 session.city = message.strip()
                 session.district = message.strip()
                 session.step = "IDENTIFY_ADDRESS"
                 return {
                     "intercepted": True,
-                    "response": f"👮 I set your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
-                    "suggestions": []
+                    "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+                    "suggestions": ["Confirm", "Change Location"]
                 }
             else:
                 return {
@@ -1135,12 +1174,31 @@ class WorkflowEngine:
                     "response": "I may not have understood correctly. Could you please provide that information in a different way?",
                     "suggestions": []
                 }
+        elif step_str == "CONFIRM_CITY":
+            city_input = message.strip()
+            if len(city_input) >= 3:
+                session.city = city_input
+                session.district = city_input
+                session.addressLine1 = session.data.get("incomplete_location", "")
+                session.data.pop("incomplete_location", None)
+                session.step = "IDENTIFY_ADDRESS"
+                return {
+                    "intercepted": True,
+                    "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+                    "suggestions": ["Confirm", "Change Location"]
+                }
+            else:
+                return {
+                    "intercepted": True,
+                    "response": "Which city?",
+                    "suggestions": []
+                }
         elif step_str == "CONFIRM_AUTO_LOCATION":
             if clean_msg in ["confirm", "yes", "correct", "option:confirm", "option:yes", "option:confirm details"]:
                 session.step = "IDENTIFY_ADDRESS"
                 return {
                     "intercepted": True,
-                    "response": f"👮 I found your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                    "response": f"👮 I set your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
                     "suggestions": []
                 }
             elif clean_msg in ["change location", "no", "option:change location", "option:no", "option:modify details"]:
@@ -1160,8 +1218,8 @@ class WorkflowEngine:
                     session.step = "IDENTIFY_ADDRESS"
                     return {
                         "intercepted": True,
-                        "response": f"👮 I found your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
-                        "suggestions": []
+                        "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+                        "suggestions": ["Confirm", "Change Location"]
                     }
                 else:
                     return {
@@ -1369,7 +1427,7 @@ class WorkflowEngine:
                 session.step = "CONFIRM_AUTO_LOCATION"
                 return {
                     "intercepted": True,
-                    "response": "👮 I found your location as: Lucknow\n\nIs this correct?",
+                    "response": "I found your location as Lucknow, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
                     "suggestions": ["Confirm", "Change Location"]
                 }
             else:
@@ -1384,8 +1442,8 @@ class WorkflowEngine:
             session.step = "IDENTIFY_ADDRESS"
             return {
                 "intercepted": True,
-                "response": f"👮 I set your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
-                "suggestions": []
+                "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+                "suggestions": ["Confirm", "Change Location"]
             }
 
         session.step = "CONFIRM_PROFILE"
