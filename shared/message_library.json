@@ -1,0 +1,196 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-06-10",
+  "messages": {
+    "GREETING_WELCOME": {
+      "en": "👮 Welcome to Rakku.\n\nI'm here to help you access UP Police citizen services.\n\nHow may I assist you today?",
+      "hi": "👮 राक्कू (Rakku) में आपका स्वागत है।\n\nमैं उत्तर प्रदेश पुलिस नागरिक सेवाओं तक पहुँचने में आपकी सहायता करने के लिए यहाँ हूँ।\n\nआज मैं आपकी क्या सहायता कर सकता हूँ?",
+      "hinglish": "👮 Rakku mein aapka welcome hai.\n\nMain UP Police citizen services access karne mein aapki help karunga.\n\nMain aaj aapki kya help kar sakta hoon?"
+    },
+    "GREETING_LANG_SELECT": {
+      "en": "Please select your preferred language / कृपया अपनी पसंदीदा भाषा चुनें:",
+      "hi": "कृपया अपनी पसंदीदा भाषा चुनें / Please select your preferred language:",
+      "hinglish": "Please apni preferred language select karein / कृपया अपनी पसंदीदा भाषा चुनें:"
+    },
+    "GREETING_RESUME": {
+      "en": "👮 Welcome back. I see we have an active request in progress. Let's resume.",
+      "hi": "👮 आपका स्वागत है। मुझे आपका एक सक्रिय अनुरोध प्रगति पर दिख रहा है। चलिए इसे जारी रखते हैं।",
+      "hinglish": "👮 Welcome back. Aapka ek active request chal raha hai. Chaliye wahan se resume karte hain."
+    },
+    "PROFILE_NAME_REQUEST": {
+      "en": "👮 I'll be happy to help you with this.\n\nBefore we begin, may I know your name so I can assist you properly?",
+      "hi": "👮 मुझे आपकी सहायता करने में खुशी होगी।\n\nशुरू करने से पहले, क्या मैं आपका नाम जान सकता हूँ ताकि मैं आपकी ठीक से सहायता कर सकूँ?",
+      "hinglish": "👮 Main isme aapki help karunga.\n\nShuru karne se pehle, kya main aapka naam jaan sakta hoon takki main aapko acche se assist kar sakoon?"
+    },
+    "PROFILE_MOBILE_REQUEST": {
+      "en": "Thank you, {name}.\n\nCould you please share your mobile number so we can contact you regarding this request if needed?",
+      "hi": "धन्यवाद, {name}।\n\nकृपया अपना मोबाइल नंबर बताइए ताकि आवश्यकता पड़ने पर हम आपसे इस अनुरोध के संबंध में संपर्क कर सकें।",
+      "hinglish": "Thank you, {name}.\n\nApna mobile number batayein takki zarurat padne par hum aapse contact kar sakein."
+    },
+    "PROFILE_LOCATION_REQUEST": {
+      "en": "Could you please tell me your city, district, or area?",
+      "hi": "क्या आप कृपया मुझे अपना शहर, ज़िला या क्षेत्र बता सकते हैं?",
+      "hinglish": "Kya aap please apna city, district, ya area bata sakte hain?"
+    },
+    "PROFILE_ADDRESS_REQUEST": {
+      "en": "👮 I set your location as: {district}, Uttar Pradesh. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+      "hi": "👮 मैंने आपका स्थान दर्ज कर लिया है: {district}, उत्तर प्रदेश। क्या आप अपना पूरा पता भी प्रदान कर सकते हैं?\n(उदा: मकान नं. 24, सेक्टर बी, गोमती नगर, लखनऊ - 226010)",
+      "hinglish": "👮 Maine aapka location set kiya hai: {district}, Uttar Pradesh. Kya aap apna complete address bata sakte hain?\n(Jaise: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)"
+    },
+    "PROFILE_LOCATION_CONFIRM": {
+      "en": "I found your location as {district}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
+      "hi": "मुझे आपका स्थान {district}, उत्तर प्रदेश मिला है। क्या यह सही है?\n\n- [पुष्टि करें](option:Confirm)\n- [स्थान बदलें](option:Change Location)",
+      "hinglish": "Mujhe aapka location {district}, Uttar Pradesh mila hai. Kya ye sahi hai?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)"
+    },
+    "PROFILE_CONFIRM_SCREEN": {
+      "en": "👮 **Please review your details:**\n\n* **Name:** {name}\n* **Mobile Number:** {mobile}\n* **Location:** {district}, Uttar Pradesh\n* **Address:** {address}\n\nIs everything correct?\n\n- [Confirm Details](option:Confirm Details)\n- [Modify Details](option:Modify Details)",
+      "hi": "👮 **कृपया अपने विवरण की समीक्षा करें:**\n\n* **नाम:** {name}\n* **मोबाइल नंबर:** {mobile}\n* **स्थान:** {district}, उत्तर प्रदेश\n* **पता:** {address}\n\nक्या सब कुछ सही है?\n\n- [विवरण की पुष्टि करें](option:Confirm Details)\n- [विवरण बदलें](option:Modify Details)",
+      "hinglish": "👮 **Please apne details review karein:**\n\n* **Name:** {name}\n* **Mobile Number:** {mobile}\n* **Location:** {district}, Uttar Pradesh\n* **Address:** {address}\n\nKya sab sahi hai?\n\n- [Confirm Details](option:Confirm Details)\n- [Modify Details](option:Modify Details)"
+    },
+    "PROFILE_MODIFY_SELECT": {
+      "en": "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+      "hi": "आप किस प्रोफ़ाइल विवरण को बदलना चाहते हैं?\n\n- [1. पूरा नाम](option:1)\n- [2. मोबाइल नंबर](option:2)\n- [3. स्थान](option:3)\n- [4. पूरा पता](option:4)",
+      "hinglish": "Aap kaunsa profile detail modify karna chahte hain?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)"
+    },
+    "EXPLAIN_WHY_MOBILE": {
+      "en": "We request your mobile number so our verification officer or helpdesk can contact you directly if there are questions about your submission.",
+      "hi": "हम आपका मोबाइल नंबर मांगते हैं ताकि हमारे सत्यापन अधिकारी या हेल्पडेस्क जरूरत पड़ने पर आपसे सीधे संपर्क कर सकें।",
+      "hinglish": "Hum aapka mobile number isliye mangte hain takki verification officer ya helpdesk aapse contact kar sakein."
+    },
+    "EXPLAIN_WHY_LOCATION": {
+      "en": "Your location is used to automatically route your application to the nearest jurisdictional police station.",
+      "hi": "आपके स्थान का उपयोग आपके आवेदन को निकटतम क्षेत्राधिकार वाले पुलिस स्टेशन में भेजने के लिए किया जाता है।",
+      "hinglish": "Aapka location isliye chahiye takki aapka application sahi police station ko route kiya ja sake."
+    },
+    "EXPLAIN_WHY_ADDRESS": {
+      "en": "Your complete address is required to generate official documents, certificates, and record the exact area of jurisdiction.",
+      "hi": "आधिकारिक दस्तावेज और प्रमाण पत्र बनाने के लिए आपके पूरे पते की आवश्यकता होती है।",
+      "hinglish": "Official certificates aur documents generate karne ke liye complete address ki jarurat hoti hai."
+    },
+    "EXPLAIN_WHY_DOCUMENTS": {
+      "en": "Official identity and supporting documents are required to prevent fraudulent applications and complete verified police checks.",
+      "hi": "धोखाधड़ी को रोकने और पुलिस जांच पूरी करने के लिए आधिकारिक पहचान दस्तावेजों की आवश्यकता होती है।",
+      "hinglish": "Fraudulent applications ko rokne aur police checks clear karne ke liye documents zaroori hain."
+    },
+    "EMPATHY_LOST_MOBILE": {
+      "en": "👮 I'm sorry to hear that you've lost your mobile phone. I'll help you register the complaint. To begin, could you tell me the brand of the mobile phone?",
+      "hi": "👮 मुझे यह सुनकर खेद हुआ कि आपका मोबाइल फोन खो गया है। मैं शिकायत दर्ज करने में आपकी सहायता करूँगा। शुरू करने के लिए, क्या आप मोबाइल ब्रांड बता सकते हैं?",
+      "hinglish": "👮 Mujhe sunkar dukh hua ki aapka mobile phone kho gaya hai. Main complaint register karne mein help karunga. Shuru karne ke liye, mobile ka Brand batayein?"
+    },
+    "EMPATHY_THEFT": {
+      "en": "👮 I understand that experiencing a theft can be very frustrating. I'll assist you in recording the complaint details carefully.",
+      "hi": "👮 मैं समझ सकता हूँ कि चोरी की घटना बहुत परेशान करने वाली होती है। मैं शिकायत दर्ज करने में आपकी पूरी सहायता करूँगा।",
+      "hinglish": "👮 I understand ki chori ki wajah se aap pareshan hain. Main complaint register karne mein aapki puri help karunga."
+    },
+    "EMPATHY_CYBER_FRAUD": {
+      "en": "👮 Thank you for reporting this. Cyber financial scams require quick action. Let's record the transaction details promptly to proceed.",
+      "hi": "👮 इस रिपोर्ट के लिए धन्यवाद। साइबर वित्तीय धोखाधड़ी के मामलों में त्वरित कार्रवाई की आवश्यकता होती है। चलिए लेनदेन का विवरण जल्दी दर्ज करते हैं।",
+      "hinglish": "👮 Ye report karne ke liye thanks. Cyber fraud mein jaldi action lena zaroori hota hai. Chaliye transaction details note karte hain."
+    },
+    "EMPATHY_HARASSMENT": {
+      "en": "👮 I understand this situation is concerning. I'll help you lodge your complaint so the local authorities can review it immediately.",
+      "hi": "👮 मैं समझता हूँ कि यह स्थिति चिंताजनक है। मैं शिकायत दर्ज करने में आपकी सहायता करूँगा ताकि संबंधित अधिकारी तुरंत इसकी समीक्षा कर सकें।",
+      "hinglish": "👮 I understand ye situation concerning hai. Main complaint register karne mein help karunga takki authorities iski review kar sakein."
+    },
+    "EMPATHY_WOMEN_SAFETY": {
+      "en": "👮 Thank you for reaching out. Your safety is our highest priority.\n\n⚠️ **If you are in immediate danger, please dial 112 directly for UP Police Emergency Services.**\n\nOtherwise, I can assist you in providing the details for assistance.",
+      "hi": "👮 संपर्क करने के लिए धन्यवाद। आपकी सुरक्षा हमारी सर्वोच्च प्राथमिकता है।\n\n⚠️ **यदि आप किसी तत्काल खतरे में हैं, तो कृपया आपातकालीन सहायता के लिए सीधे 112 डायल करें।**\n\nअन्यथा, मैं सहायता के लिए विवरण दर्ज करने में आपकी मदद कर सकता हूँ।",
+      "hinglish": "👮 Contact karne ke liye thanks. Aapki safety sabse pehle hai.\n\n⚠️ **Agar aap kisi immediate danger mein hain, to please call 112 for emergency help.**\n\nNahi to, main details record karne mein aapki help kar sakta hoon."
+    },
+    "EMPATHY_DOCUMENT_LOSS": {
+      "en": "👮 Losing official documents is inconvenient. I'll help you register a lost document report to facilitate duplicates.",
+      "hi": "👮 आधिकारिक दस्तावेजों का खो जाना असुविधाजनक होता है। मैं खोए हुए दस्तावेज की रिपोर्ट दर्ज करने में आपकी मदद करूँगा ताकि आप दूसरी प्रति प्राप्त कर सकें।",
+      "hinglish": "👮 Official documents ka khona pareshani ki baat hai. Main report register karne mein help karunga takki aap duplicate copy le sakein."
+    },
+    "REVIEW_SCREEN_HEADER": {
+      "en": "👮 Thank you. I've collected all the required information.\n\nPlease take a moment to review the details below before submission.",
+      "hi": "👮 धन्यवाद। मैंने सभी आवश्यक जानकारी एकत्र कर ली है।\n\nकृपया सबमिट करने से पहले नीचे दिए गए विवरणों की समीक्षा करें।",
+      "hinglish": "👮 Thank you. Maine sabhi required information collect kar li hai.\n\nPlease submit karne se pehle details ko review kar lein."
+    },
+    "REVIEW_MODIFY_INTRO": {
+      "en": "No problem. Let's update the information.",
+      "hi": "कोई बात नहीं। चलिए जानकारी को अपडेट करते हैं।",
+      "hinglish": "No problem. Chaliye information ko update karte hain."
+    },
+    "SUCCESS_COMPLAINT": {
+      "en": "👮 Your complaint has been submitted successfully.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. The complaint is forwarded to the concerned police unit in **{district}**.\n2. An officer will review the details and initiate necessary inquiry.\n3. You can track status anytime using the reference number.",
+      "hi": "👮 आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है।\n\nसंदर्भ संख्या: **{referenceNumber}**\n\n**अगले कदम:**\n1. आपकी शिकायत **{district}** के संबंधित पुलिस स्टेशन को भेज दी गई है।\n2. एक पुलिस अधिकारी विवरण की समीक्षा करेंगे और जांच शुरू करेंगे।\n3. आप किसी भी समय अपनी संदर्भ संख्या से स्थिति ट्रैक कर सकते हैं।",
+      "hinglish": "👮 Aapki complaint successfully submit ho gayi hai.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. Complaint **{district}** ke concerned police station ko forward kar di gayi hai.\n2. Ek officer details review karke enquiry start karenge.\n3. Aap reference number se status track kar sakte hain."
+    },
+    "SUCCESS_VERIFICATION": {
+      "en": "👮 Your verification request has been submitted successfully.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. The details will be reviewed by the local police desk.\n2. A beat officer may visit the premises for physical address confirmation.\n3. You can track this verification status anytime.",
+      "hi": "👮 आपका सत्यापन अनुरोध सफलतापूर्वक सबमिट कर दिया गया है।\n\nसंदर्भ संख्या: **{referenceNumber}**\n\n**अगले कदम:**\n1. स्थानीय पुलिस डेस्क द्वारा विवरण की समीक्षा की जाएगी।\n2. भौतिक पते की पुष्टि के लिए एक बीट अधिकारी परिसर का दौरा कर सकते हैं।\n3. आप किसी भी समय सत्यापन की स्थिति को ट्रैक कर सकते हैं।",
+      "hinglish": "👮 Aapka verification request successfully submit ho gaya hai.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. Local police desk details review karega.\n2. Beat officer physical verification ke liye visit kar sakte hain.\n3. Aap status reference number se track kar sakte hain."
+    },
+    "SUCCESS_CERTIFICATE": {
+      "en": "👮 Your character certificate application has been submitted successfully.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. The verification records are routed to the district police office.\n2. Local police check for criminal record history.\n3. Approved certificate will be generated and ready for download.",
+      "hi": "👮 आपका चरित्र प्रमाण पत्र आवेदन सफलतापूर्वक सबमिट कर दिया गया है।\n\nसंदर्भ संख्या: **{referenceNumber}**\n\n**अगले कदम:**\n1. सत्यापन रिकॉर्ड ज़िला पुलिस कार्यालय को भेजे जाते हैं।\n2. स्थानीय पुलिस आपराधिक रिकॉर्ड इतिहास की जांच करती है।\n3. स्वीकृत प्रमाण पत्र जनरेट हो जाएगा और डाउनलोड के लिए तैयार होगा।",
+      "hinglish": "Aapka character certificate application successfully submit ho gaya hai.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. Application district police office ko route ki gayi hai.\n2. Local police criminal record check karegi.\n3. Approve hone par download ke liye certificate ready ho jayega."
+    },
+    "SUCCESS_EVENT": {
+      "en": "👮 Your event permission request has been submitted successfully.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. The request is routed to the circle officer / police division desk.\n2. Safety, crowd control, and route permissions are audited.\n3. Permission letter status will update here.",
+      "hi": "👮 आपका कार्यक्रम अनुमति अनुरोध सफलतापूर्वक सबमिट कर दिया गया है।\n\nसंदर्भ संख्या: **{referenceNumber}**\n\n**अगले कदम:**\n1. अनुरोध सर्कल अधिकारी / पुलिस प्रभाग डेस्क को भेजा जाता है।\n2. सुरक्षा, भीड़ नियंत्रण और मार्ग अनुमति की जांच की जाती है।\n3. अनुमति पत्र की स्थिति यहाँ अपडेट होगी।",
+      "hinglish": "👮 Aapka event permission request successfully submit ho gaya hai.\n\nReference Number: **{referenceNumber}**\n\n**Next Steps:**\n1. Request circle officer / police division desk ko forward kiya gaya hai.\n2. Safety aur crowd control check kiya jayega.\n3. Permission status yahan update ho jayegi."
+    },
+    "TRACKING_STATUS_SUBMITTED": {
+      "en": "📋 **Submitted**: Your application has been successfully filed and is in queue awaiting review.",
+      "hi": "📋 **जमा किया गया (Submitted)**: आपका आवेदन सफलतापूर्वक दर्ज कर लिया गया है और समीक्षा के लिए कतार में है।",
+      "hinglish": "📋 **Submitted**: Aapka application register ho chuka hai aur review ke liye queue mein hai."
+    },
+    "TRACKING_STATUS_REVIEW": {
+      "en": "🔍 **Under Review**: The concerned police department is currently reviewing your application credentials.",
+      "hi": "🔍 **समीक्षा के अधीन (Under Review)**: संबंधित पुलिस विभाग वर्तमान में आपके आवेदन के क्रेडेंशियल्स की समीक्षा कर रहा है।",
+      "hinglish": "🔍 **Under Review**: Concerned police department aapke details review kar raha hai."
+    },
+    "TRACKING_STATUS_APPROVED": {
+      "en": "✅ **Approved**: Your application has been approved and cleared by the department.",
+      "hi": "✅ **स्वीकृत (Approved)**: आपका आवेदन विभाग द्वारा स्वीकृत और स्वीकृत कर दिया गया है।",
+      "hinglish": "✅ **Approved**: Aapka application clear aur approve ho gaya hai."
+    },
+    "TRACKING_STATUS_REJECTED": {
+      "en": "❌ **Rejected**: Your application has been rejected. It may require corrections or additional information.",
+      "hi": "❌ **अस्वीकृत (Rejected)**: आपका आवेदन अस्वीकार कर दिया गया है। इसमें सुधार या अतिरिक्त जानकारी की आवश्यकता हो सकती है।",
+      "hinglish": "❌ **Rejected**: Aapka application reject ho gaya hai. Details modify karke check karein."
+    },
+    "ERROR_VALIDATION_MOBILE": {
+      "en": "👮 The mobile number appears incomplete.\n\nPlease provide a valid 10-digit Indian mobile number.\n\nExample:\n9876543210",
+      "hi": "👮 मोबाइल नंबर अधूरा प्रतीत होता है।\n\nकृपया 10 अंकों का एक वैध भारतीय मोबाइल नंबर दर्ज करें।\n\nउदाहरण:\n9876543210",
+      "hinglish": "👮 Mobile number incomplete lag raha hai.\n\nPlease ek valid 10-digit Indian mobile number share karein.\n\nExample:\n9876543210"
+    },
+    "ERROR_VALIDATION_NAME": {
+      "en": "👮 Please enter a valid name (at least 2 letters, with no special symbols or numbers):\nExample: Rahul Kumar or Raju",
+      "hi": "👮 कृपया एक वैध नाम दर्ज करें (कम से कम 2 अक्षर, बिना किसी विशेष प्रतीक या संख्या के):\nउदाहरण: राहुल कुमार या राजू",
+      "hinglish": "👮 Please ek valid name enter karein (minimum 2 letters, bina numbers ya symbols ke):\nExample: Rahul Kumar ya Raju"
+    },
+    "ERROR_TRACKING_NOT_FOUND": {
+      "en": "❌ No application found matching reference number `{referenceNumber}`. Please check the spelling and try again.",
+      "hi": "❌ संदर्भ संख्या `{referenceNumber}` से मेल खाता कोई आवेदन नहीं मिला। कृपया वर्तनी की जांच करें और पुनः प्रयास करें।",
+      "hinglish": "❌ `{referenceNumber}` reference number ka koi application nahi mila. Please format check karke try karein."
+    },
+    "ERROR_SYSTEM_FAILURE": {
+      "en": "⚠️ I've encountered an issue processing your request. Let's start over to make sure all details are recorded properly.",
+      "hi": "⚠️ मुझे आपके अनुरोध को संसाधित करने में समस्या आ रही है। आइए फिर से शुरू करें ताकि सभी विवरण ठीक से दर्ज हो सकें।",
+      "hinglish": "⚠️ Request process karne mein problem aayi hai. Chaliye phir se start karte hain takki details sahi se record ho sakein."
+    },
+    "FRUSTRATION_WHY_NEEDED": {
+      "en": "👮 As a digital assistant, I require this information to comply with official UP Police records guidelines and route your request to the appropriate division.",
+      "hi": "👮 नागरिक सहायक के रूप में, मुझे उत्तर प्रदेश पुलिस के आधिकारिक नियमों के अनुसार यह जानकारी चाहिए ताकि आपके आवेदन को सही विभाग में भेजा जा सके।",
+      "hinglish": "👮 UP Police guidelines ke mutabik ye information zaroori hai takki aapka application sahi division ko route ho sake."
+    },
+    "FRUSTRATION_DONT_KNOW": {
+      "en": "👮 That is no problem. If you do not have this information right now, we can skip it, leave it blank, or you can check and return later.",
+      "hi": "👮 कोई बात नहीं। यदि आपके पास अभी यह जानकारी नहीं है, तो हम इसे छोड़ सकते हैं, या आप बाद में आकर इसे पूरा कर सकते हैं।",
+      "hinglish": "👮 No problem. Agar aapko abhi ye details nahi pata, to hum isse skip kar sakte hain ya aap baad mein batayein."
+    },
+    "FRUSTRATION_ALREADY_TOLD": {
+      "en": "👮 Thank you for your patience. I have preserved the details you provided. Let's make sure we verify them correctly.",
+      "hi": "👮 आपके धैर्य के लिए धन्यवाद। मैंने आपके द्वारा प्रदान किए गए विवरण सुरक्षित रख लिए हैं। आइए सुनिश्चित करें कि हम उनकी सही पुष्टि कर रहे हैं।",
+      "hinglish": "👮 Thanks for your patience. Maine aapki details save kar li hain. Chaliye isse check kar lete hain."
+    },
+    "FRUSTRATION_EXPLAIN_TERM": {
+      "en": "👮 I am here to assist you. This is an official digital helpdesk. Let me know if you would like me to explain any step or field in detail.",
+      "hi": "👮 मैं यहाँ आपकी सहायता के लिए हूँ। यह एक आधिकारिक सहायता केंद्र है। मुझे बताएं कि क्या आप चाहते हैं कि मैं किसी कदम या क्षेत्र को विस्तार से समझाऊं।",
+      "hinglish": "👮 Main aapki help ke liye hoon. Agar aapko koi step samajh na aaye, to main detail mein explain kar sakta hoon."
+    }
+  }
+}

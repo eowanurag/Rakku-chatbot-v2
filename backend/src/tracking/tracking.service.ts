@@ -32,7 +32,7 @@ export class TrackingService {
   constructor(private prisma: PrismaService) {}
 
   async track(refNum: string): Promise<TrackingStatus | null> {
-    const refUpper = refNum.toUpperCase().trim();
+    const refUpper = refNum.trim().toUpperCase().replace(/\s+/g, '-').replace(/-+/g, '-');
     try {
       const record = await this.prisma.trackingRecord.findUnique({
         where: { referenceNumber: refUpper },

@@ -1,4 +1,12 @@
 {
+  "scripts": {
+    "validate-library": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/validate-message-library.ts",
+    "sync-library": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/sync-message-library.ts",
+    "test:library-validation": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/message_library_validation_test.ts",
+    "test:cx-audit": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/cx_audit_test.ts",
+    "test:frustration": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/citizen_frustration_test.ts",
+    "test:stability": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/stability_test.ts"
+  },
   "devDependencies": {
     "prisma": "^6.0.0"
   },

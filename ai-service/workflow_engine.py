@@ -56,6 +56,90 @@ def parse_full_address(text: str) -> dict:
         "pincode": pincode
     }
 
+MESSAGE_LIBRARY = None
+
+def load_message_library():
+    global MESSAGE_LIBRARY
+    try:
+        import json
+        import os
+        dir_path = os.path.dirname(os.path.abspath(__file__))
+        filePath = os.path.join(dir_path, 'message_library.json')
+        if os.path.exists(filePath):
+            with open(filePath, 'r', encoding='utf-8') as f:
+                MESSAGE_LIBRARY = json.load(f)
+                print(f"[LOAD] Loaded Message Library v{MESSAGE_LIBRARY.get('version')} from {filePath}")
+        else:
+            print(f"[ERROR] Message library file not found at {filePath}")
+    except Exception as e:
+        print(f"[ERROR] Failed to load message library: {e}")
+
+load_message_library()
+
+def format_message(key: str, lang: str, session, params: dict = None, db_action_list: list = None) -> str:
+    global MESSAGE_LIBRARY
+    if not MESSAGE_LIBRARY:
+        load_message_library()
+    
+    messages = MESSAGE_LIBRARY.get("messages", {}) if MESSAGE_LIBRARY else {}
+    msg_obj = messages.get(key)
+    
+    template = ""
+    final_lang = lang
+    
+    if not msg_obj:
+        log_missing_message(key, lang, session, db_action_list)
+        return key
+        
+    if lang in msg_obj and msg_obj[lang].strip() != "":
+        template = msg_obj[lang]
+    else:
+        log_missing_message(key, lang, session, db_action_list)
+        if lang == "hi":
+            if "hinglish" in msg_obj and msg_obj["hinglish"].strip() != "":
+                template = msg_obj["hinglish"]
+                final_lang = "hinglish"
+            elif "en" in msg_obj and msg_obj["en"].strip() != "":
+                template = msg_obj["en"]
+                final_lang = "en"
+        elif lang == "hinglish":
+            if "en" in msg_obj and msg_obj["en"].strip() != "":
+                template = msg_obj["en"]
+                final_lang = "en"
+                
+    if not template and "en" in msg_obj:
+        template = msg_obj["en"]
+        
+    if not template:
+        for k in msg_obj.keys():
+            if msg_obj[k] and msg_obj[k].strip() != "":
+                template = msg_obj[k]
+                break
+        if not template:
+            return key
+            
+    formatted = template
+    if params:
+        for k, v in params.items():
+            formatted = formatted.replace(f"{{{k}}}", str(v if v is not None else ""))
+            
+    return formatted
+
+def log_missing_message(key: str, language: str, session, db_action_list: list = None):
+    db_action = {
+        "type": "audit_log",
+        "data": {
+            "sessionId": session.citizenId or "unknown",
+            "eventType": "MISSING_MESSAGE",
+            "eventData": {
+                "key": key,
+                "language": language
+            }
+        }
+    }
+    if db_action_list is not None:
+        db_action_list.append(db_action)
+
 def log_audit(session, event_type: str, event_data: dict, db_action_list: list = None):
     timestamp = datetime.now().isoformat()
     import json
@@ -341,9 +425,9 @@ class WorkflowEngine:
                 {"name": "purchase_year", "label": "Purchase Year / खरीद का वर्ष (e.g. 2024)", "suggestions": []},
                 {"name": "imei_number", "label": "IMEI Number (optional) / आईएमईआई नंबर (वैकल्पिक)", "suggestions": ["Skip / छोड़ें"]}
             ]
-            for ef in extended_fields:
-                if not any(f["name"] == ef["name"] for f in fields):
-                    fields.append(ef)
+            if len(fields) > 0:
+                new_fields = [fields[0]] + extended_fields + fields[1:]
+                return new_fields
         return fields
 
 
@@ -491,6 +575,34 @@ class WorkflowEngine:
                 "suggestions": ["File Complaint", "Track Status"]
             }
 
+        # Check frustration first
+        if message:
+            frustration_key = None
+            if any(w in clean_msg for w in ['why do you need', 'why this', 'why is it required', 'why is this required', 'why needed', 'what will you do with']):
+                frustration_key = 'FRUSTRATION_WHY_NEEDED'
+            elif any(w in clean_msg for w in ["don't know", "dont know", "not sure", "no idea", "i do not know", "i dont know"]):
+                frustration_key = 'FRUSTRATION_DONT_KNOW'
+            elif any(w in clean_msg for w in ['already told', 'already given', 'already provided', 'said before', 'already shared']):
+                frustration_key = 'FRUSTRATION_ALREADY_TOLD'
+            elif any(w in clean_msg for w in ['explain', 'what is this', 'what does this mean', 'what is']):
+                frustration_key = 'FRUSTRATION_EXPLAIN_TERM'
+
+            if frustration_key:
+                db_action_list = []
+                frust_text = format_message(frustration_key, session.language, session, db_action_list=db_action_list)
+                # Re-prompt based on current step
+                reprompt_res = self.process_message("", session_id, gemini_client)
+                reprompt_text = reprompt_res.get("response", "")
+                # If there are db actions from the inner process_message, propagate them
+                if reprompt_res.get("db_action"):
+                    db_action_list.extend(reprompt_res.get("db_action"))
+                return {
+                    "intercepted": True,
+                    "response": f"{frust_text}\n\n{reprompt_text}",
+                    "suggestions": reprompt_res.get("suggestions", []),
+                    "db_action": db_action_list
+                }
+
         # Check if language is selected yet
         if not getattr(session, "language_selected", False):
             matched_lang = False
@@ -545,11 +657,11 @@ class WorkflowEngine:
         if clean_msg in ["modify details", "option:modify details", "modify"]:
             if session.currentWorkflowState == "PROFILE_CONFIRMATION" or session.currentWorkflowState == "PROFILE_COLLECTION":
                 session.currentWorkflowState = "PROFILE_CONFIRMATION"
-                session.step = "MODIFY_PROFILE_INPUT"
+                session.step = "MODIFY_PROFILE_SELECT"
                 return {
                     "intercepted": True,
-                    "response": "Understood. Please describe the changes you would like to make (e.g. \"My name is Mohan Singh\", \"Change my number to 9876543210\", \"I live in Kanpur\"):",
-                    "suggestions": []
+                    "response": "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+                    "suggestions": ["1", "2", "3", "4"]
                 }
             elif session.currentWorkflowState == "APPLICATION_REVIEW":
                 session.currentWorkflowState = "APPLICATION_MODIFICATION"
@@ -576,7 +688,7 @@ class WorkflowEngine:
                     "suggestions": ["Track Application", "Download Receipt", "Start New Request"]
                 }
 
-        if clean_msg in ["track application", "option:track application"]:
+        if clean_msg in ["track application", "option:track application", "track status", "track", "status"]:
             session.workflow = "tracking"
             session.step = 1
             session.currentWorkflowState = "SERVICE_COLLECTION"
@@ -598,26 +710,36 @@ class WorkflowEngine:
             }
 
         # Feedback response intercept
-        if clean_msg in ["👍 yes", "option:👍 yes", "yes", "helpful"]:
-            return {
-                "intercepted": True,
-                "response": "👮 Thank you for your feedback! It helps me learn and serve you better.",
-                "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
-            }
-        if clean_msg in ["👎 no", "option:👎 no", "no", "not helpful"]:
-            session.step = "FEEDBACK_COMMENT"
-            return {
-                "intercepted": True,
-                "response": "👮 I'm sorry to hear that. What could I have done better?",
-                "suggestions": []
-            }
-        if str(session.step) == "FEEDBACK_COMMENT":
-            session.step = "START"
-            return {
-                "intercepted": True,
-                "response": "👮 Thank you. I have recorded your suggestions for my administrator to review and improve my workflows.",
-                "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
-            }
+        step_str = str(session.step)
+        is_profile_step = session.currentWorkflowState in ["PROFILE_COLLECTION", "PROFILE_CONFIRMATION", "PROFILE_VERIFIED"] or step_str in [
+            'IDENTIFY_NAME', 'CONFIRM_NAME', 'IDENTIFY_MOBILE', 'IDENTIFY_LOCATION', 
+            'CONFIRM_CITY', 'CONFIRM_AUTO_LOCATION', 'IDENTIFY_ADDRESS', 'CONFIRM_PROFILE',
+            'MODIFY_PROFILE_SELECT', 'MODIFY_PROFILE_INPUT'
+        ]
+        is_workflow_active_step = session.step == 'REVIEW' or (
+            session.workflow and str(session.step) in ['1','2','3','4','5','6','2_brand','2_model','2_color','2_year','2_imei']
+        )
+        if not is_profile_step and not is_workflow_active_step:
+            if clean_msg in ["👍 yes", "option:👍 yes", "yes", "helpful"]:
+                return {
+                    "intercepted": True,
+                    "response": "👮 Thank you for your feedback! It helps me learn and serve you better.",
+                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
+                }
+            if clean_msg in ["👎 no", "option:👎 no", "no", "not helpful"]:
+                session.step = "FEEDBACK_COMMENT"
+                return {
+                    "intercepted": True,
+                    "response": "👮 I'm sorry to hear that. What could I have done better?",
+                    "suggestions": []
+                }
+            if step_str == "FEEDBACK_COMMENT":
+                session.step = "START"
+                return {
+                    "intercepted": True,
+                    "response": "👮 Thank you. I have recorded your suggestions for my administrator to review and improve my workflows.",
+                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
+                }
 
         # Check for cancel command
         if clean_msg in ["cancel", "radd", "रद्द", "exit", "stop", "option:cancel"]:
@@ -634,6 +756,13 @@ class WorkflowEngine:
         # Handle tracking lookup bypassing the workflow state machine
         if session.workflow == "tracking":
             ref_num = message.strip()
+            if ref_num.lower() in ["track status", "track application", "track", "status", "option:track status", "option:track application"]:
+                session.step = 1
+                return {
+                    "intercepted": True,
+                    "response": "Please provide your Application Reference Number for tracking (e.g. UP-CMP-2026-123456):",
+                    "suggestions": []
+                }
             # Reset tracking session state immediately
             session.workflow = None
             session.step = 0
@@ -827,6 +956,9 @@ class WorkflowEngine:
             if prev_field_name == "name" and len(message.strip().split()) == 1:
                 session.data["name_suggest_flag"] = True
  
+        # Recalculate fields list dynamically in case a field change (like complaint type) alters the fields list
+        fields = self.get_workflow_fields(session)
+
         # Prompt next field or transition to Review Screen
         if session.step < len(fields):
             next_field = fields[session.step]
@@ -879,7 +1011,8 @@ class WorkflowEngine:
                 return val_clean.isdigit() and len(val_clean) == 4
             if field_name == "imei_number":
                 val_clean = value.strip().lower()
-                if val_clean in ["skip", "skip / छोड़ें", "chodein", "option:skip / छोड़ें", "option:skip", "none", "not available", "i don't know", "no"]:
+                skip_vars = ["skip", "skip / छोड़ें", "chodein", "option:skip / छोड़ें", "option:skip", "none", "not available", "i don't know", "no", "na", "nahi", "n/a", "not provided", "no imei", "dont know", "don't know"]
+                if val_clean in skip_vars:
                     return True
                 return len(val_clean) == 15 and val_clean.isdigit()
         elif workflow == "verification":
@@ -984,7 +1117,8 @@ class WorkflowEngine:
             )
             if session.data.get("complaint_type") == "Lost Mobile / Theft":
                 imei_val = session.data.get("imei_number")
-                if not imei_val or imei_val.strip().lower() in ["skip", "skip / छोड़ें", "chodein", "none", "not available", "i don't know", "no"]:
+                skip_vars = ["skip", "skip / छोड़ें", "chodein", "none", "not available", "i don't know", "no", "na", "nahi", "n/a", "not provided", "no imei", "dont know", "don't know"]
+                if not imei_val or imei_val.strip().lower() in skip_vars:
                     imei_val = "Not Provided"
                 subject_details += (
                     f"\n\n📱 **Device Information**\n"
@@ -1290,11 +1424,11 @@ class WorkflowEngine:
                     "db_action": db_action_list
                 }
             elif clean_msg in ["no", "modify", "option:modify details", "modify details"]:
-                session.step = "MODIFY_PROFILE_INPUT"
+                session.step = "MODIFY_PROFILE_SELECT"
                 return {
                     "intercepted": True,
-                    "response": "Understood. Please describe the changes you would like to make (e.g. \"My name is Mohan Singh\", \"Change my number to 9876543210\", \"I live in Kanpur\"):",
-                    "suggestions": []
+                    "response": "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+                    "suggestions": ["1", "2", "3", "4"]
                 }
         elif step_str == "MODIFY_PROFILE_SELECT":
             choice = clean_msg

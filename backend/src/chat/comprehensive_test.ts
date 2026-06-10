@@ -86,7 +86,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("Lucknow", sess1);
     await chatService.sendMessage("Sector 7, Gomti Nagar, Lucknow - 226002", sess1);
     const confirmRes1 = await chatService.sendMessage("yes", sess1);
-    
+
     // Check database record
     const citizen = await prisma.citizen.findFirst({
       where: { mobileNumber: "9999000099" },
@@ -119,7 +119,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("english", sess2);
     await chatService.sendMessage("Tenant Verification", sess2);
     const hindiNameRes = await chatService.sendMessage("राज", sess2);
-    
+
     // Raj has length 3 and contains Hindi chars. Validate name expects name check to pass.
     const validHindi = validation.validateName("राज");
     if (!validHindi || hindiNameRes.response.includes("I may not have understood correctly")) {
@@ -149,7 +149,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("Tenant Verification", sess3);
     const hindiFullNameRes = await chatService.sendMessage("मोहन सिंह", sess3);
     const hasRejected = hindiFullNameRes.response.includes("I may not have understood correctly") || hindiFullNameRes.response.includes("Example");
-    
+
     if (hasRejected) {
       addBug(
         "TS-3",
@@ -176,7 +176,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("english", sess4);
     const hinglishRes = await chatService.sendMessage("Phone chori ho gaya", sess4);
     const state4 = await chatService.getOrCreateSession(sess4);
-    
+
     if (state4.workflow !== "complaint") {
       addBug(
         "TS-4",
@@ -207,12 +207,12 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("Lucknow", sess6);
     await chatService.sendMessage("Hazratganj, Lucknow", sess6);
     await chatService.sendMessage("yes", sess6);
-    
+
     // In local fallback state machine, lost mobile brand checks are omitted.
     // However, if the AI service fails, the fallback workflow doesn't prompt for IMEI.
     // This is an architectural gap between AI service and Local Fallback!
     const stepResponse = await chatService.sendMessage("Lost Mobile / Theft", sess6);
-    
+
     // In fallback mode, there is no hardware field collection!
     const fallbackLacksHardware = !stepResponse.response.includes("IMEI") && !stepResponse.response.includes("Brand");
     if (fallbackLacksHardware) {
@@ -243,7 +243,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("Lucknow", sess8);
     await chatService.sendMessage("Hazratganj, Lucknow", sess8);
     const modifyPrompt = await chatService.sendMessage("no", sess8); // triggers modify select
-    
+
     const modifySelectVisible = modifyPrompt.response.includes("modify") || modifyPrompt.response.includes("Name") || modifyPrompt.response.includes("Number");
     if (!modifySelectVisible) {
       addBug(
@@ -274,7 +274,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("9876543210", sess9);
     await chatService.sendMessage("Lucknow", sess9);
     await chatService.sendMessage("Change location to Kanpur", sess9);
-    
+
     const state9 = await chatService.getOrCreateSession(sess9);
     if (state9.citizen.city !== "Kanpur") {
       addBug(
@@ -302,8 +302,8 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("english", sess11);
     await chatService.sendMessage("Track status", sess11);
     const trackErrRes = await chatService.sendMessage("ABC123", sess11);
-    
-    const errorReturned = trackErrRes.response.includes("No application found") || trackErrRes.response.includes("not found") || trackErrRes.response.includes("check and try again");
+
+    const errorReturned = trackErrRes.response.includes("No application found") || trackErrRes.response.includes("not found") || trackErrRes.response.includes("check and try again") || trackErrRes.response.includes("format appears invalid") || trackErrRes.response.includes("invalid");
     if (!errorReturned) {
       addBug(
         "TS-11",
@@ -330,7 +330,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("english", sess12);
     const emergencyRes = await chatService.sendMessage("Someone is attacking me right now", sess12);
     const emergencySuccess = emergencyRes.response.includes("112") || emergencyRes.response.includes("Emergency");
-    
+
     if (!emergencySuccess) {
       addBug(
         "TS-12",
@@ -356,11 +356,11 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("hello", sess14);
     await chatService.sendMessage("हिंदी", sess14);
     const langRes = await chatService.sendMessage("मेरा मोबाइल चोरी हो गया", sess14);
-    
+
     // Check if response is localized using Unicode Hindi regex detection
     const isHindi = /[\u0900-\u097F]/.test(langRes.response);
     const state14 = await chatService.getOrCreateSession(sess14);
-    
+
     if (!isHindi || state14.language !== 'hi') {
       addBug(
         "TS-14",
@@ -386,7 +386,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("hello", sess18);
     await chatService.sendMessage("english", sess18);
     await chatService.sendMessage("My phone was stolen", sess18);
-    
+
     const sqlPayloads = [
       "'; DROP TABLE Citizen; --",
       "' OR '1'='1",
@@ -394,7 +394,7 @@ async function runBugDiscoveryAudit() {
       "' UNION SELECT * FROM Citizen --",
       "'; UPDATE Citizen SET fullName='Hacked';"
     ];
-    
+
     let sqlFailed = false;
     for (const sqlPayload of sqlPayloads) {
       await chatService.sendMessage(sqlPayload, sess18);
@@ -428,14 +428,14 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("hello", sess19);
     await chatService.sendMessage("english", sess19);
     await chatService.sendMessage("My phone was stolen", sess19);
-    
+
     const xssPayloads = [
       "<script>alert(1)</script>",
       "<img src=x onerror=alert(1)>",
       "<svg onload=alert(1)>",
       "<a href=\"javascript:alert(1)\">click</a>"
     ];
-    
+
     let xssFailed = false;
     for (const xssInput of xssPayloads) {
       const xssRes = await chatService.sendMessage(xssInput, sess19);
@@ -482,19 +482,19 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("Hazratganj Main Road", sess20);
     await chatService.sendMessage("15/07/2026", sess20);
     await chatService.sendMessage("Phone stolen from bag", sess20);
-    
+
     // Send submit three times rapidly
     const resA = await chatService.sendMessage("Submit Application", sess20);
     const resB = await chatService.sendMessage("Submit Application", sess20);
     const resC = await chatService.sendMessage("Submit Application", sess20);
-    
+
     const citizen20 = await prisma.citizen.findFirst({
       where: { mobileNumber: "9876543210" }
     });
     const trackingCount = await prisma.trackingRecord.count({
       where: { citizenId: citizen20 ? citizen20.id : "none" }
     });
-    
+
     if (trackingCount > 1) {
       addBug(
         "TS-20",
@@ -521,7 +521,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("english", sess21);
     await chatService.sendMessage("My phone was stolen", sess21);
     await chatService.sendMessage("Recovery User", sess21);
-    
+
     // Simulate browser reload and state recovery
     const recoveredState = await chatService.getOrCreateSession(sess21);
     if (recoveredState.step !== "IDENTIFY_MOBILE" || recoveredState.citizen.fullName !== "Recovery User") {
@@ -547,20 +547,20 @@ async function runBugDiscoveryAudit() {
     console.log("\n--- Running Test Suite 22 ---");
     const sessA = "sess-user-a-" + Math.random().toString(36).substring(7);
     const sessB = "sess-user-b-" + Math.random().toString(36).substring(7);
-    
+
     await chatService.sendMessage("hello", sessA);
     await chatService.sendMessage("english", sessA);
     await chatService.sendMessage("My phone was stolen", sessA);
     await chatService.sendMessage("Raj", sessA);
-    
+
     await chatService.sendMessage("hello", sessB);
     await chatService.sendMessage("english", sessB);
     await chatService.sendMessage("My phone was stolen", sessB);
     await chatService.sendMessage("Mohan", sessB);
-    
+
     const stateA = await chatService.getOrCreateSession(sessA);
     const stateB = await chatService.getOrCreateSession(sessB);
-    
+
     if (stateA.citizen.fullName === stateB.citizen.fullName) {
       addBug(
         "TS-22",
@@ -590,9 +590,9 @@ async function runBugDiscoveryAudit() {
       state.workflow = "complaint";
       state.step = "REVIEW";
       state.data = { type: "Lost Document", location: "Lucknow", time: "12/12/2025", description: "Lost file" };
-      state.citizen = { 
-        fullName: `User ${i}`, 
-        mobileNumber: `9000000${i.toString().padStart(3, '0')}`, 
+      state.citizen = {
+        fullName: `User ${i}`,
+        mobileNumber: `9000000${i.toString().padStart(3, '0')}`,
         email: '',
         addressLine1: '',
         addressLine2: '',
@@ -602,11 +602,11 @@ async function runBugDiscoveryAudit() {
         pincode: '',
         latitude: null,
         longitude: null,
-        isConfirmed: true 
+        isConfirmed: true
       };
       await chatService.saveSession(sess, state);
       const res = await chatService.sendMessage("yes", sess);
-      
+
       const match = res.response.match(/\bUP-CMP-2026-\d+\b/);
       if (match) {
         const ref = match[0];
@@ -646,7 +646,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("Lucknow", sess24);
     await chatService.sendMessage("Hazratganj, Lucknow", sess24);
     await chatService.sendMessage("yes", sess24);
-    
+
     // verification steps
     await chatService.sendMessage("Tenant Verification", sess24);
     await chatService.sendMessage("Mohan Singh", sess24);
@@ -654,7 +654,7 @@ async function runBugDiscoveryAudit() {
     await chatService.sendMessage("9111911191", sess24);
     await chatService.sendMessage("Flat 12, Lucknow", sess24);
     await chatService.sendMessage("yes", sess24);
-    
+
     // Check Citizen Table vs Verification table in database
     const applicant = await prisma.citizen.findFirst({
       where: { mobileNumber: "9000900090" }
@@ -662,7 +662,7 @@ async function runBugDiscoveryAudit() {
     const verificationRecord = await prisma.verification.findFirst({
       where: { name: "Mohan Singh" }
     });
-    
+
     if (applicant && verificationRecord && applicant.fullName === verificationRecord.name) {
       addBug(
         "TS-24",
@@ -688,11 +688,11 @@ async function runBugDiscoveryAudit() {
       orderBy: { createdAt: 'desc' },
       take: 20
     });
-    
+
     const eventTypes = auditLogs.map(l => l.eventType);
     const expectedEvents = ['PROFILE_UPDATE', 'LOCATION_CHANGE', 'WORKFLOW_CHANGE', 'APPLICATION_SUBMISSION'];
     const missingEvents = expectedEvents.filter(e => !eventTypes.includes(e));
-    
+
     if (missingEvents.length > 0) {
       addBug(
         "TS-25",
@@ -714,7 +714,7 @@ async function runBugDiscoveryAudit() {
     // COMPILE AUDIT REPORT
     // ----------------------------------------------------
     const auditReportPath = "C:\\Users\\acer\\.gemini\\antigravity-ide\\brain\\5b6999c6-5211-4276-b0e9-be105d6bffbb\\bug_discovery_report.md";
-    
+
     const reportMarkdown = `# Rakku QA Bug Discovery Report
 
 Generated on: ${new Date().toLocaleString()}

@@ -69,6 +69,7 @@ const TRANSLATIONS = {
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
   private aiServiceUrl: string;
+  private messageLibrary: any = null;
 
   constructor(
     private readonly httpService: HttpService,
@@ -84,6 +85,183 @@ export class ChatService {
     private readonly intelligenceService: IntelligenceService,
   ) {
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
+    this.loadMessageLibrary();
+  }
+
+  private loadMessageLibrary() {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(__dirname, 'message_library.json');
+      if (fs.existsSync(filePath)) {
+        this.messageLibrary = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        this.logger.log(`Loaded Message Library v${this.messageLibrary.version || 'unknown'} from ${filePath}`);
+      } else {
+        this.logger.error(`Message library file not found at ${filePath}`);
+      }
+    } catch (e) {
+      this.logger.error(`Failed to load message library: ${e.message}`);
+    }
+  }
+
+  formatMessage(
+    key: string,
+    lang: 'en' | 'hi' | 'hinglish',
+    sessionId: string,
+    params?: Record<string, any>
+  ): string {
+    if (!this.messageLibrary) {
+      this.loadMessageLibrary();
+    }
+    const messages = this.messageLibrary?.messages || {};
+    const msgObj = messages[key];
+
+    let template = '';
+    let finalLang = lang;
+
+    if (!msgObj) {
+      this.logMissingMessage(sessionId, key, lang);
+      return key;
+    }
+
+    if (msgObj[lang] && msgObj[lang].trim() !== '') {
+      template = msgObj[lang];
+    } else {
+      this.logMissingMessage(sessionId, key, lang);
+      if (lang === 'hi') {
+        if (msgObj['hinglish'] && msgObj['hinglish'].trim() !== '') {
+          template = msgObj['hinglish'];
+          finalLang = 'hinglish';
+        } else if (msgObj['en'] && msgObj['en'].trim() !== '') {
+          template = msgObj['en'];
+          finalLang = 'en';
+        }
+      } else if (lang === 'hinglish') {
+        if (msgObj['en'] && msgObj['en'].trim() !== '') {
+          template = msgObj['en'];
+          finalLang = 'en';
+        }
+      }
+    }
+
+    if (!template && msgObj['en']) {
+      template = msgObj['en'];
+    }
+
+    if (!template) {
+      const keys = Object.keys(msgObj);
+      for (const k of keys) {
+        if (msgObj[k] && msgObj[k].trim() !== '') {
+          template = msgObj[k];
+          break;
+        }
+      }
+      if (!template) return key;
+    }
+
+    let formatted = template;
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        formatted = formatted.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v ?? ''));
+      }
+    }
+
+    return formatted;
+  }
+
+  private async logMissingMessage(sessionId: string, key: string, language: string) {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          sessionId: sessionId || 'unknown',
+          eventType: 'MISSING_MESSAGE',
+          eventData: { key, language },
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to log missing message audit trail: ${e.message}`);
+    }
+  }
+
+  private async checkFrustration(
+    message: string,
+    state: ChatSessionState,
+    sessionId: string
+  ): Promise<{ response: string; suggestions?: string[] } | null> {
+    const cleanMsg = message.toLowerCase().trim();
+    let frustrationKey: string | null = null;
+
+    if (
+      cleanMsg.includes('why do you need') ||
+      cleanMsg.includes('why this') ||
+      cleanMsg.includes('why is it required') ||
+      cleanMsg.includes('why is this required') ||
+      cleanMsg.includes('why needed') ||
+      cleanMsg.includes('what will you do with')
+    ) {
+      frustrationKey = 'FRUSTRATION_WHY_NEEDED';
+    } else if (
+      cleanMsg.includes("don't know") ||
+      cleanMsg.includes("dont know") ||
+      cleanMsg.includes("not sure") ||
+      cleanMsg.includes("no idea") ||
+      cleanMsg.includes("i do not know") ||
+      cleanMsg.includes("i dont know")
+    ) {
+      frustrationKey = 'FRUSTRATION_DONT_KNOW';
+    } else if (
+      cleanMsg.includes('already told') ||
+      cleanMsg.includes('already given') ||
+      cleanMsg.includes('already provided') ||
+      cleanMsg.includes('said before') ||
+      cleanMsg.includes('already shared')
+    ) {
+      frustrationKey = 'FRUSTRATION_ALREADY_TOLD';
+    } else if (
+      cleanMsg.includes('explain') ||
+      cleanMsg.includes('what is this') ||
+      cleanMsg.includes('what does this mean') ||
+      cleanMsg.includes('what is')
+    ) {
+      frustrationKey = 'FRUSTRATION_EXPLAIN_TERM';
+    }
+
+    if (!frustrationKey) {
+      return null;
+    }
+
+    const frustrationText = this.formatMessage(frustrationKey, state.language || 'en', sessionId);
+
+    let reprompt: { response: string; suggestions?: string[] } = { response: '' };
+
+    if (!state.citizen.isConfirmed && state.workflow !== 'tracking') {
+      reprompt = await this.runCitizenIdentificationFlow(state, '');
+    } else {
+      switch (state.workflow) {
+        case 'complaint':
+          reprompt = await this.runComplaintWorkflow(state, '');
+          break;
+        case 'verification':
+          reprompt = await this.runVerificationWorkflow(state, '');
+          break;
+        case 'certificate':
+          reprompt = await this.runCertificateWorkflow(state, '');
+          break;
+        case 'event':
+          reprompt = await this.runEventWorkflow(state, '');
+          break;
+        case 'tracking':
+          reprompt = await this.runTrackingWorkflow(state, '');
+          break;
+        default:
+          reprompt = { response: 'How can I assist you today?' };
+      }
+    }
+
+    return {
+      response: `${frustrationText}\n\n${reprompt.response}`,
+      suggestions: reprompt.suggestions,
+    };
   }
 
   async getOrCreateSession(sessionId: string): Promise<ChatSessionState> {
@@ -153,7 +331,7 @@ export class ChatService {
     sessionId: string,
     latitude?: number,
     longitude?: number,
-  ): Promise<{ response: string; suggestions?: string[] }> {
+  ): Promise<{ response: string; suggestions?: string[]; _debug?: any }> {
     this.analyticsService.trackHelpRequest();
     
     // Sanitize incoming message input to prevent Stored XSS
@@ -161,6 +339,7 @@ export class ChatService {
 
     // Load session state
     const state = await this.getOrCreateSession(sessionId);
+    const stepBefore = String(state.step);
 
     // Update latitude and longitude if passed
     if (latitude !== undefined && latitude !== null) {
@@ -187,6 +366,9 @@ export class ChatService {
       if (responseData && responseData.state) {
         Object.assign(state, responseData.state);
       }
+
+      // Log workflow trace for FastAPI path
+      await this.logWorkflowTrace(sessionId, 'FASTAPI', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
 
       // Record self-learning intelligence events
       try {
@@ -260,15 +442,18 @@ export class ChatService {
 
       // Persist state to DB
       await this.saveSession(sessionId, state);
-      return responseData;
+      return { ...responseData, _debug: { activeEngine: 'FASTAPI', step: state.step, workflow: state.workflow } };
     } catch (e) {
       this.logger.warn(`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`);
+      await this.logWorkflowTrace(sessionId, 'FALLBACK', 'WORKFLOW_FALLBACK_USED', state.workflow, stepBefore, String(state.step), sanitizedMessage);
       const localResult = await this.handleLocalFallback(sanitizedMessage, sessionId, state);
       if (localResult && localResult.response) {
         localResult.response = this.validationService.sanitizeOutput(localResult.response);
       }
+      // Log fallback step transition
+      await this.logWorkflowTrace(sessionId, 'FALLBACK', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
       await this.saveSession(sessionId, state);
-      return localResult;
+      return { ...localResult, _debug: { activeEngine: 'FALLBACK', step: state.step, workflow: state.workflow } };
     }
   }  private async executeDbAction(dbAction: any): Promise<any> {
     if (!dbAction) return null;
@@ -466,15 +651,68 @@ export class ChatService {
   ): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
 
+    // Check frustration first
+    const frustrationRes = await this.checkFrustration(message, state, sessionId);
+    if (frustrationRes) {
+      return frustrationRes;
+    }
+
     const stepStr = String(state.step);
+    const stepBefore = stepStr;
     const isProfileStep = [
       'IDENTIFY_NAME', 'CONFIRM_NAME', 'IDENTIFY_MOBILE', 'IDENTIFY_LOCATION', 
       'CONFIRM_CITY', 'CONFIRM_AUTO_LOCATION', 'IDENTIFY_ADDRESS', 'CONFIRM_PROFILE',
       'MODIFY_PROFILE_SELECT', 'MODIFY_PROFILE_INPUT'
     ].includes(stepStr);
 
-    // Feedback response intercept
-    if (!isProfileStep) {
+    // Guard: Workflow active steps must never be intercepted by feedback flow
+    const isWorkflowActiveStep = stepStr === 'REVIEW' || (
+      state.workflow && ['1','2','3','4','5','6','2_brand','2_model','2_color','2_year','2_imei'].includes(stepStr)
+    );
+
+    // Parse action-based button payloads (Enhancement 2)
+    const actionPayload = this.parseAction(message);
+    if (actionPayload) {
+      const lang = state.language || 'en';
+      switch (actionPayload.action) {
+        case 'PROFILE_CONFIRM':
+          return this.runCitizenIdentificationFlow(state, 'yes');
+        case 'PROFILE_REJECT':
+        case 'MODIFY_PROFILE':
+          state.step = 'MODIFY_PROFILE_SELECT';
+          return {
+            response: "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+            suggestions: ['1', '2', '3', '4'],
+          };
+        case 'SUBMIT_APPLICATION':
+          // Route to the active workflow's REVIEW handler with submit intent
+          if (state.workflow && state.step === 'REVIEW') {
+            return this.handleWorkflowSubmit(state, sessionId);
+          }
+          break;
+        case 'CANCEL_APPLICATION':
+          state.workflow = null;
+          state.step = 'START';
+          state.data = {};
+          return {
+            response: TRANSLATIONS[lang].cancel,
+            suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
+          };
+        case 'TRACK_APPLICATION':
+          state.workflow = 'tracking';
+          state.step = 'START';
+          return this.runTrackingWorkflow(state, '');
+        case 'CHANGE_LANGUAGE':
+          state.languageSelected = false;
+          return {
+            response: WELCOME_MESSAGE,
+            suggestions: ['English', 'हिंदी', 'Hinglish'],
+          };
+      }
+    }
+
+    // Feedback response intercept — ONLY when NOT in a profile or active workflow step
+    if (!isProfileStep && !isWorkflowActiveStep) {
       if (cleanMsg === '👍 yes' || cleanMsg === 'option:👍 yes' || cleanMsg === 'yes' || cleanMsg === 'helpful') {
         await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, 5, 'Citizen indicated helpful response.');
         return {
@@ -623,6 +861,32 @@ export class ChatService {
         state.workflow = startsWf;
         state.languageSelected = true;
         this.analyticsService.trackLanguage(state.language);
+        // Auto-populate subtype (type) in state.data if matched in greeting
+        if (startsWf === 'complaint') {
+          if (cleanMsg.includes('mobile') || cleanMsg.includes('theft') || cleanMsg.includes('stolen') || cleanMsg.includes('chori') || cleanMsg.includes('गुम') || cleanMsg.includes('phone') || cleanMsg.includes('फ़ोन')) {
+            state.data.type = 'Lost Mobile / Theft';
+          } else if (cleanMsg.includes('document') || cleanMsg.includes('passport') || cleanMsg.includes('card') || cleanMsg.includes('dastavez')) {
+            state.data.type = 'Lost Document';
+          }
+        } else if (startsWf === 'verification') {
+          if (cleanMsg.includes('tenant') || cleanMsg.includes('rent') || cleanMsg.includes('kirayedar')) {
+            state.data.type = 'Tenant Verification';
+          } else if (cleanMsg.includes('pg')) {
+            state.data.type = 'PG Verification';
+          } else if (cleanMsg.includes('domestic') || cleanMsg.includes('help') || cleanMsg.includes('naukar')) {
+            state.data.type = 'Domestic Help Verification';
+          } else if (cleanMsg.includes('employee')) {
+            state.data.type = 'Employee Verification';
+          }
+        } else if (startsWf === 'event') {
+          if (cleanMsg.includes('permission') || cleanMsg.includes('event')) {
+            state.data.type = 'Event Permission';
+          } else if (cleanMsg.includes('procession')) {
+            state.data.type = 'Procession Request';
+          } else if (cleanMsg.includes('protest')) {
+            state.data.type = 'Protest Request';
+          }
+        }
       } else {
         return {
           response: WELCOME_MESSAGE,
@@ -650,6 +914,32 @@ export class ChatService {
       if (detectedWf) {
         state.workflow = detectedWf;
         state.step = 'START';
+        // Auto-populate subtype (type) in state.data if matched
+        if (detectedWf === 'complaint') {
+          if (cleanMsg.includes('mobile') || cleanMsg.includes('theft') || cleanMsg.includes('stolen') || cleanMsg.includes('chori') || cleanMsg.includes('गुम') || cleanMsg.includes('phone') || cleanMsg.includes('फ़ोन')) {
+            state.data.type = 'Lost Mobile / Theft';
+          } else if (cleanMsg.includes('document') || cleanMsg.includes('passport') || cleanMsg.includes('card') || cleanMsg.includes('dastavez')) {
+            state.data.type = 'Lost Document';
+          }
+        } else if (detectedWf === 'verification') {
+          if (cleanMsg.includes('tenant') || cleanMsg.includes('rent') || cleanMsg.includes('kirayedar')) {
+            state.data.type = 'Tenant Verification';
+          } else if (cleanMsg.includes('pg')) {
+            state.data.type = 'PG Verification';
+          } else if (cleanMsg.includes('domestic') || cleanMsg.includes('help') || cleanMsg.includes('naukar')) {
+            state.data.type = 'Domestic Help Verification';
+          } else if (cleanMsg.includes('employee')) {
+            state.data.type = 'Employee Verification';
+          }
+        } else if (detectedWf === 'event') {
+          if (cleanMsg.includes('permission') || cleanMsg.includes('event')) {
+            state.data.type = 'Event Permission';
+          } else if (cleanMsg.includes('procession')) {
+            state.data.type = 'Procession Request';
+          } else if (cleanMsg.includes('protest')) {
+            state.data.type = 'Protest Request';
+          }
+        }
       }
     }
 
@@ -716,6 +1006,9 @@ export class ChatService {
         res = { response: TRANSLATIONS[lang].invalidStep };
     }
 
+    // Enhancement 6: Dead-end detection
+    res = await this.validateWorkflowResponse(res, sessionId, state, stepBefore);
+
     if (empathyPrepend && res) {
       res.response = empathyPrepend + res.response;
     }
@@ -739,6 +1032,106 @@ export class ChatService {
       return 'tracking';
     }
     return null;
+  }
+
+  // --- Enhancement 1: Workflow Trace Logging ---
+  private async logWorkflowTrace(
+    sessionId: string,
+    engine: 'FASTAPI' | 'FALLBACK',
+    eventType: string,
+    workflow: string | null,
+    stepBefore: string,
+    stepAfter: string,
+    message: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.auditLog.create({
+        data: {
+          sessionId,
+          eventType,
+          eventData: {
+            engine,
+            workflow: workflow || 'NONE',
+            message: message.substring(0, 200),
+            stepBefore,
+            stepAfter,
+            timestamp: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (e) {
+      this.logger.warn(`Failed to log workflow trace: ${e.message}`);
+    }
+  }
+
+  // --- Enhancement 2: Action-Based Button Parsing ---
+  private parseAction(message: string): { action: string } | null {
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed && parsed.action) return parsed;
+    } catch { /* not JSON, ignore */ }
+    if (message.startsWith('action:')) {
+      return { action: message.substring(7).trim() };
+    }
+    return null;
+  }
+
+  // --- Enhancement 2: Action submit handler ---
+  private async handleWorkflowSubmit(
+    state: ChatSessionState,
+    sessionId: string,
+  ): Promise<{ response: string; suggestions?: string[] }> {
+    switch (state.workflow) {
+      case 'complaint':
+        return this.runComplaintWorkflow(state, 'Submit Application');
+      case 'verification':
+        return this.runVerificationWorkflow(state, 'Submit Application');
+      case 'certificate':
+        return this.runCertificateWorkflow(state, 'Submit Application');
+      case 'event':
+        return this.runEventWorkflow(state, 'Submit Application');
+      default:
+        return { response: 'No active workflow to submit.', suggestions: ['File Complaint', 'Track Status'] };
+    }
+  }
+
+  private normalizeReferenceNumber(input: string): string {
+    return input.trim().toUpperCase().replace(/\s+/g, '-').replace(/-+/g, '-');
+  }
+
+  private isValidReferenceFormat(ref: string): boolean {
+    const normalized = this.normalizeReferenceNumber(ref);
+    return /^UP-(CMP|TV|CC|EP)-\d{4}-\d{4,6}$/.test(normalized);
+  }
+
+  // --- Enhancement 6: Dead-End Detection ---
+  private async validateWorkflowResponse(
+    result: { response: string; suggestions?: string[] } | null,
+    sessionId: string,
+    state: ChatSessionState,
+    stepBefore: string,
+  ): Promise<{ response: string; suggestions?: string[] }> {
+    const isDeadEnd = !result
+      || !result.response
+      || result.response === 'undefined'
+      || result.response === 'null'
+      || result.response === 'Invalid step'
+      || result.response.trim() === '';
+
+    if (isDeadEnd) {
+      await this.logWorkflowTrace(
+        sessionId, 'FALLBACK', 'WORKFLOW_FAILED',
+        state.workflow, stepBefore, String(state.step),
+        `Dead-end detected: response=${result?.response}`
+      );
+
+      state.step = 'START';
+      return {
+        response: "👮 I encountered an issue processing your request. Let me help you start over.\n\nHow can I assist you today?",
+        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
+      };
+    }
+    return result;
   }
 
   private async runCitizenIdentificationFlow(
@@ -781,7 +1174,8 @@ export class ChatService {
           state.data.nameSuggestFlag = true;
         }
         state.step = 'IDENTIFY_MOBILE';
-        let promptText = `Thank you, ${state.citizen.fullName}.\n\nCould you please share your mobile number?`;
+        const lang = state.language || 'en';
+        let promptText = this.formatMessage('PROFILE_MOBILE_REQUEST', lang, '', { name: state.citizen.fullName });
         if (state.data.nameSuggestFlag) {
           promptText = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + promptText;
           delete state.data.nameSuggestFlag;
@@ -1080,18 +1474,14 @@ Let's continue with your request.`;
     if (!state.citizen.fullName) {
       state.step = 'IDENTIFY_NAME';
       return {
-        response: isHi ? "शुरू करने से पहले, क्या मैं आपका पूरा नाम जान सकता हूँ?" :
-                  isHinglish ? "Shuru karne se pehle, kya main aapka full name jaan sakta hoon?" :
-                  "Before we begin, may I know your full name?",
+        response: this.formatMessage('PROFILE_NAME_REQUEST', lang, ''),
         suggestions: [],
       };
     }
 
     if (!state.citizen.mobileNumber) {
       state.step = 'IDENTIFY_MOBILE';
-      let promptText = isHi ? `धन्यवाद, ${state.citizen.fullName}।\n\nक्या आप कृपया अपना मोबाइल नंबर साझा कर सकते हैं?` :
-                       isHinglish ? `Thank you, ${state.citizen.fullName}.\n\nKya aap please apna mobile number share kar sakte hain?` :
-                       `Thank you, ${state.citizen.fullName}.\n\nCould you please share your mobile number?`;
+      let promptText = this.formatMessage('PROFILE_MOBILE_REQUEST', lang, '', { name: state.citizen.fullName });
       if (state.data.nameSuggestFlag) {
         promptText = (isHi ? "*(विनम्र सुझाव: आधिकारिक रिकॉर्ड के लिए उपनाम के साथ पूरा नाम प्रदान करने की सिफारिश की जाती है, लेकिन हम आगे बढ़ सकते हैं।)*\n\n" :
                       isHinglish ? "*(Polite Suggestion: Official records ke liye surname ke sath full name dena recommended hai, but hum aage badh sakte hain.)*\n\n" :
@@ -1304,6 +1694,10 @@ Is everything correct?
     }
 
     if (step === '1') {
+      if (session.data.type) {
+        session.step = '2';
+        return this.runComplaintWorkflow(session, session.data.type);
+      }
       session.step = '2';
       return {
         response: prompts[lang][0],
@@ -1318,10 +1712,10 @@ Is everything correct?
       const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('गुम') || cleanMsgLower.includes('चोरी') || cleanMsgLower.includes('stolen');
       if (isMobileTheft) {
         session.step = '2_brand';
+        // Use centralized empathy message that includes brand prompt
+        session.data.empathyShown = true;
         return {
-          response: lang === 'hi' ? "आपके खोए हुए मोबाइल का Brand क्या है (जैसे Apple, Samsung, OnePlus)?" :
-                    lang === 'hinglish' ? "Lost mobile ka Brand kya hai (jaise Apple, Samsung, OnePlus)?" :
-                    "What is the Brand of your lost mobile (e.g. Apple, Samsung, OnePlus)?",
+          response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
           suggestions: ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Realme', 'Vivo']
         };
       }
@@ -1369,16 +1763,18 @@ Is everything correct?
       session.data.year = msg;
       session.step = '2_imei';
       return {
-        response: lang === 'hi' ? "कृपया फ़ोन का 15-अंकीय IMEI नंबर दर्ज करें। (यदि आप इसे नहीं जानते हैं, तो आप 'skip' टाइप कर सकते हैं):" :
-                  lang === 'hinglish' ? "Please phone ka 15-digit IMEI number enter karein. (Agar aapko nahi pata, toh 'skip' type kar sakte hain):" :
-                  "Please enter the 15-digit IMEI number of the phone. (If you don't know it, you can type 'skip'):",
+        response: lang === 'hi' ? "कृपया फ़ोन का 15-अंकीय IMEI नंबर दर्ज करें। आप इसे फ़ोन के बॉक्स, खरीद चालान (invoice), या अपने फ़ोन पर *#06# डायल करके पा सकते हैं। (यदि उपलब्ध नहीं है, तो आप 'skip' या 'no' टाइप कर सकते हैं):" :
+                  lang === 'hinglish' ? "Please phone ka 15-digit IMEI number enter karein. Aap ise phone ke box, purchase invoice, ya dialer pe *#06# dial karke dundh sakte hain. (Agar available nahi hai, toh 'skip'/'no' type kar sakte hain):" :
+                  "Please enter the 15-digit IMEI number of the phone. You can find this on your phone's retail box, purchase invoice, or by dialing *#06# on your device. (If not available, you can type 'skip' or 'no'):",
         suggestions: ['skip']
       };
     }
 
     if (step === '2_imei') {
       const cleanImei = msg.trim().toLowerCase();
-      if (cleanImei !== 'skip' && !/^\d{15}$/.test(cleanImei)) {
+      const skipVariations = ['skip', 'no', 'not available', 'na', 'nahi', 'none', 'not known', 'n/a'];
+      const isSkip = skipVariations.includes(cleanImei);
+      if (!isSkip && !/^\d{15}$/.test(cleanImei)) {
         return {
           response: lang === 'hi' ? "कृपया एक मान्य 15-अंकीय IMEI नंबर दर्ज करें या 'skip' टाइप करें:" :
                     lang === 'hinglish' ? "Please standard 15-digit IMEI number enter karein ya 'skip' likhein:" :
@@ -1386,7 +1782,8 @@ Is everything correct?
           suggestions: ['skip']
         };
       }
-      session.data.imei = cleanImei === 'skip' ? null : cleanImei;
+      session.data.imei = isSkip ? null : cleanImei;
+      session.data.imeiStatus = isSkip ? 'SKIPPED' : 'PROVIDED';
       session.step = '3';
       return {
         response: prompts[lang][1],
@@ -1434,19 +1831,18 @@ Complaint Type: **${session.data.type}**
 `;
 
       if (session.data.brand) {
+        reviewScreen += `\n📱 **Device Information**\n`;
         reviewScreen += `Brand: **${session.data.brand}**\n`;
-      }
-      if (session.data.model) {
-        reviewScreen += `Model: **${session.data.model}**\n`;
-      }
-      if (session.data.color) {
-        reviewScreen += `Color: **${session.data.color}**\n`;
-      }
-      if (session.data.year) {
-        reviewScreen += `Manufacturing/Purchase Year: **${session.data.year}**\n`;
-      }
-      if (session.data.imei) {
-        reviewScreen += `IMEI: **${session.data.imei}**\n`;
+        if (session.data.model) {
+          reviewScreen += `Model: **${session.data.model}**\n`;
+        }
+        if (session.data.color) {
+          reviewScreen += `Color: **${session.data.color}**\n`;
+        }
+        if (session.data.year) {
+          reviewScreen += `Manufacturing/Purchase Year: **${session.data.year}**\n`;
+        }
+        reviewScreen += `IMEI: **${session.data.imei || 'Not Provided'}**\n`;
       }
 
       reviewScreen += `Incident Location: **${session.data.location}**
@@ -1934,19 +2330,18 @@ Complaint Type: **${state.data.type}**
 `;
 
       if (state.data.brand) {
+        reviewScreen += `\n📱 **Device Information**\n`;
         reviewScreen += `Brand: **${state.data.brand}**\n`;
-      }
-      if (state.data.model) {
-        reviewScreen += `Model: **${state.data.model}**\n`;
-      }
-      if (state.data.color) {
-        reviewScreen += `Color: **${state.data.color}**\n`;
-      }
-      if (state.data.year) {
-        reviewScreen += `Manufacturing/Purchase Year: **${state.data.year}**\n`;
-      }
-      if (state.data.imei) {
-        reviewScreen += `IMEI: **${state.data.imei}**\n`;
+        if (state.data.model) {
+          reviewScreen += `Model: **${state.data.model}**\n`;
+        }
+        if (state.data.color) {
+          reviewScreen += `Color: **${state.data.color}**\n`;
+        }
+        if (state.data.year) {
+          reviewScreen += `Manufacturing/Purchase Year: **${state.data.year}**\n`;
+        }
+        reviewScreen += `IMEI: **${state.data.imei || 'Not Provided'}**\n`;
       }
 
       reviewScreen += `Incident Location: **${state.data.location}**
@@ -2070,9 +2465,21 @@ Would you like to submit this application?
       hinglish: "Please track karne ke liye apna Application Reference Number batayein (jaise UP-CMP-2026-123456):",
     };
 
-    const refMatch = msg.toUpperCase().match(/\bUP-[A-Z0-9-]+\b/);
+    const normalizedMsg = this.normalizeReferenceNumber(msg);
+    const refMatch = normalizedMsg.match(/UP-[A-Z0-9-]+/);
     if (refMatch) {
       const refNum = refMatch[0];
+      if (!this.isValidReferenceFormat(refNum)) {
+        const invalidResponses = {
+          en: `⚠️ The reference number format appears invalid. Please check and try again (e.g., UP-CMP-2026-123456).`,
+          hi: `⚠️ संदर्भ संख्या का प्रारूप अमान्य प्रतीत होता है। कृपया जांचें और पुनः प्रयास करें (उदा. UP-CMP-2026-123456)।`,
+          hinglish: `⚠️ Reference number format invalid lag raha hai. Please check karke fir se try karein (jaise UP-CMP-2026-123456).`,
+        };
+        return {
+          response: invalidResponses[lang],
+          suggestions: ['Track Status', 'File Complaint'],
+        };
+      }
       session.workflow = null;
       session.step = 'START';
 
@@ -2123,15 +2530,27 @@ Would you like to submit this application?
     }
 
     if (step === 2) {
+      const normalizedRef = this.normalizeReferenceNumber(msg);
+      if (!this.isValidReferenceFormat(normalizedRef)) {
+        const invalidResponses = {
+          en: `⚠️ The reference number format appears invalid. Please check and try again (e.g., UP-CMP-2026-123456).`,
+          hi: `⚠️ संदर्भ संख्या का प्रारूप अमान्य प्रतीत होता है। कृपया जांचें और पुनः प्रयास करें (उदा. UP-CMP-2026-123456)।`,
+          hinglish: `⚠️ Reference number format invalid lag raha hai. Please check karke fir se try karein (jaise UP-CMP-2026-123456).`,
+        };
+        return {
+          response: invalidResponses[lang],
+          suggestions: ['Track Status', 'File Complaint'],
+        };
+      }
       session.workflow = null;
       session.step = 'START';
 
-      const trackInfo = await this.trackingService.track(msg);
+      const trackInfo = await this.trackingService.track(normalizedRef);
       if (!trackInfo) {
         const errorResponses = {
-          en: `❌ No application found matching reference number \`${msg}\`. Please check and try again.`,
-          hi: `❌ संदर्भ संख्या \`${msg}\` से मेल खाता कोई आवेदन नहीं मिला। कृपया जांचें और पुनः प्रयास करें।`,
-          hinglish: `❌ \`${msg}\` reference number ka koi application nahi mila. Please check karke fir se try karein.`,
+          en: `❌ No application found matching reference number \`${normalizedRef}\`. Please check and try again.`,
+          hi: `❌ संदर्भ संख्या \`${normalizedRef}\` से मेल खाता कोई आवेदन नहीं मिला। कृपया जांचें और पुनः प्रयास करें।`,
+          hinglish: `❌ \`${normalizedRef}\` reference number ka koi application nahi mila. Please check karke fir se try karein.`,
         };
         return {
           response: errorResponses[lang],
