@@ -797,10 +797,14 @@ export class ChatService {
       } catch (auditErr) {}
 
       if (state.step === 'CONFIRM_PROFILE') {
-        return this.renderConfirmationCard(state);
+        if (!state.citizen.fullName || !state.citizen.mobileNumber || (!state.citizen.city && !state.citizen.district) || !state.citizen.addressLine1) {
+          state.step = 'IDENTIFY_ADDRESS'; // Let the fallback logic pick up the exact missing field
+        } else {
+          return this.renderConfirmationCard(state);
+        }
       } else if (state.step === 'REVIEW') {
         return this.renderActiveWorkflowReviewScreen(state);
-      } else if (state.step === 'IDENTIFY_LOCATION' || state.step === 'CONFIRM_CITY' || state.step === 'CONFIRM_AUTO_LOCATION') {
+      } else if (state.step === 'IDENTIFY_LOCATION' || state.step === 'CONFIRM_CITY' || state.step === 'CONFIRM_LOCATION') {
         state.step = 'IDENTIFY_ADDRESS';
         return {
           response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
@@ -1157,22 +1161,23 @@ export class ChatService {
     if (!stepStr.startsWith('MODIFY_') && stepStr !== 'IDENTIFY_ADDRESS' && stepStr !== 'CONFIRM_PROFILE') {
       const isCorrection = this.handleProfileCorrection(state, message);
       if (isCorrection) {
-        state.step = 'IDENTIFY_ADDRESS';
+        state.step = 'CONFIRM_LOCATION';
         return {
-          response: `👮 I found your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
-          suggestions: [],
+          response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
+          suggestions: ['Confirm', 'Change Location'],
         };
       }
     }
 
     // State Machine Steps
-    if (stepStr === 'IDENTIFY_NAME') {
-      const confRes = this.validationService.validateNameConfidence(message);
-      if (confRes.valid) {
-        state.citizen.fullName = message.trim();
-        if (state.citizen.fullName.split(/\s+/).length === 1) {
-          state.data.nameSuggestFlag = true;
-        }
+    if (message !== '') {
+      if (stepStr === 'IDENTIFY_NAME') {
+        const confRes = this.validationService.validateNameConfidence(message);
+        if (confRes.valid) {
+          state.citizen.fullName = message.trim();
+          if (state.citizen.fullName.split(/\s+/).length === 1) {
+            state.data.nameSuggestFlag = true;
+          }
         state.step = 'IDENTIFY_MOBILE';
         const lang = state.language || 'en';
         let promptText = this.formatMessage('PROFILE_MOBILE_REQUEST', lang, '', { name: state.citizen.fullName });
@@ -1238,7 +1243,7 @@ export class ChatService {
       if (message.trim().length >= 3) {
         state.citizen.city = message.trim();
         state.citizen.district = message.trim();
-        state.step = 'IDENTIFY_ADDRESS';
+        state.step = 'CONFIRM_LOCATION';
         return {
           response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
           suggestions: ['Confirm', 'Change Location'],
@@ -1257,7 +1262,7 @@ export class ChatService {
         state.citizen.district = cityInput;
         state.citizen.addressLine1 = state.data.incompleteLocation;
         delete state.data.incompleteLocation;
-        state.step = 'IDENTIFY_ADDRESS';
+        state.step = 'CONFIRM_LOCATION';
         return {
           response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
           suggestions: ['Confirm', 'Change Location'],
@@ -1268,7 +1273,7 @@ export class ChatService {
           suggestions: [],
         };
       }
-    } else if (stepStr === 'CONFIRM_AUTO_LOCATION') {
+    } else if (stepStr === 'CONFIRM_LOCATION') {
       if (['confirm', 'yes', 'correct', 'option:confirm', 'option:yes', 'option:confirm details'].includes(cleanMsg)) {
         state.step = 'IDENTIFY_ADDRESS';
         return {
@@ -1288,7 +1293,7 @@ export class ChatService {
         if (ext.location) {
           state.citizen.city = ext.location;
           state.citizen.district = ext.location;
-          state.step = 'IDENTIFY_ADDRESS';
+          state.step = 'CONFIRM_LOCATION';
           return {
             response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
             suggestions: ['Confirm', 'Change Location'],
@@ -1465,6 +1470,8 @@ Let's continue with your request.`;
       delete state.data.currentExpectedField;
       return this.renderConfirmationCard(state);
     }
+    }
+
 
     const lang = state.language || 'en';
     const isHi = lang === 'hi';
@@ -1499,7 +1506,7 @@ Let's continue with your request.`;
       if (state.citizen.latitude && state.citizen.longitude) {
         state.citizen.city = "Lucknow";
         state.citizen.district = "Lucknow";
-        state.step = 'CONFIRM_AUTO_LOCATION';
+        state.step = 'CONFIRM_LOCATION';
         return {
           response: isHi ? "मुझे आपका स्थान लखनऊ, उत्तर प्रदेश के रूप में मिला है। क्या यह सही है?\n\n- [पुष्टि करें](option:Confirm)\n- [स्थान बदलें](option:Change Location)" :
                     isHinglish ? "Mujhe aapka location Lucknow, Uttar Pradesh mila hai. Kya ye sahi hai?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)" :
@@ -1676,7 +1683,7 @@ Is everything correct?
         // Log completion success metrics
         await this.intelligenceService.recordWorkflowStep('complaint', 'SUBMITTED', true, false);
 
-        const completionMsg = getCompletionMessage(resNum, lang) + 
+        const completionMsg = this.formatMessage('SUCCESS_COMPLAINT', lang, '', { referenceNumber: resNum, district: session.citizen.district || session.data.location || 'your area' }) + 
           "\n\n👮 **Before you go, was I able to help you today?**\n" +
           "- [👍 Yes](option:👍 Yes)\n" +
           "- [👎 No](option:👎 No)";

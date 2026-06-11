@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "ignoreDeprecations": "6.0",
+    "types": ["node", "jest"],
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "typeRoots": ["./node_modules/@types", "./backend/node_modules/@types"],
+    "paths": {
+      "@backend/*": ["backend/src/*"],
+      "@shared/*": ["shared/*"],
+      "@nestjs/*": ["backend/node_modules/@nestjs/*"],
+      "rxjs": ["backend/node_modules/rxjs"]
+    }
+  },
+  "include": [
+    "tests/**/*",
+    "backend/src/**/*"
+  ]
+}

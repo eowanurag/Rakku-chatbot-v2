@@ -64,7 +64,7 @@ def load_message_library():
         import json
         import os
         dir_path = os.path.dirname(os.path.abspath(__file__))
-        filePath = os.path.join(dir_path, 'message_library.json')
+        filePath = os.path.abspath(os.path.join(dir_path, '..', 'shared', 'message_library.json'))
         if os.path.exists(filePath):
             with open(filePath, 'r', encoding='utf-8') as f:
                 MESSAGE_LIBRARY = json.load(f)
@@ -622,7 +622,7 @@ class WorkflowEngine:
             if matched_lang:
                 return {
                     "intercepted": True,
-                    "response": "Hello and welcome.\n\nHow can I assist you today?",
+                    "response": format_message("MAIN_MENU_GREETING", session.language, session),
                     "suggestions": ["File Complaint", "Tenant Verification", "Character Certificate", "Event Permission", "Track Application"]
                 }
             
@@ -631,14 +631,7 @@ class WorkflowEngine:
                 session.language = self.detect_language(clean_msg)
                 session.language_selected = True
             else:
-                welcome_msg = (
-                    "👮 Welcome to Rakku\n\n"
-                    "I'm your Digital Police Assistant.\n\n"
-                    "Please choose your preferred language:\n\n"
-                    "• [English](option:English)\n"
-                    "• [हिंदी](option:हिंदी)\n"
-                    "• [Hinglish](option:Hinglish)"
-                )
+                welcome_msg = format_message("GREETING_LANGUAGE_SELECT", "en", session)
                 return {
                     "intercepted": True,
                     "response": welcome_msg,
@@ -690,7 +683,7 @@ class WorkflowEngine:
 
         if clean_msg in ["track application", "option:track application", "track status", "track", "status"]:
             session.workflow = "tracking"
-            session.step = 1
+            session.step = "2"
             session.currentWorkflowState = "SERVICE_COLLECTION"
             return {
                 "intercepted": True,
@@ -757,7 +750,7 @@ class WorkflowEngine:
         if session.workflow == "tracking":
             ref_num = message.strip()
             if ref_num.lower() in ["track status", "track application", "track", "status", "option:track status", "option:track application"]:
-                session.step = 1
+                session.step = "2"
                 return {
                     "intercepted": True,
                     "response": "Please provide your Application Reference Number for tracking (e.g. UP-CMP-2026-123456):",
@@ -765,7 +758,7 @@ class WorkflowEngine:
                 }
             # Reset tracking session state immediately
             session.workflow = None
-            session.step = 0
+            session.step = "START"
             session.currentWorkflowState = "START"
             session.data = {}
             
@@ -864,6 +857,12 @@ class WorkflowEngine:
                 is_corr = self.handle_profile_correction(session, message)
                 if is_corr:
                     return self.render_presubmission_review_screen(session)
+                
+                return {
+                    "intercepted": True,
+                    "response": "I'm sorry, please select either 'Submit Application' to proceed or 'Modify Details' to make changes.",
+                    "suggestions": ["Submit Application", "Modify Details"]
+                }
 
         # Handle modify flows
         if session.currentWorkflowState == "APPLICATION_MODIFICATION":
@@ -936,7 +935,7 @@ class WorkflowEngine:
                     session.step = 1
  
         # Enforce step validations before moving forward
-        if session.step > 0:
+        if isinstance(session.step, int) and session.step > 0:
             prev_field_name = fields[session.step - 1]["name"]
             session.currentExpectedField = prev_field_name
             
@@ -1296,7 +1295,7 @@ class WorkflowEngine:
             if len(message.strip()) >= 3:
                 session.city = message.strip()
                 session.district = message.strip()
-                session.step = "IDENTIFY_ADDRESS"
+                session.step = "CONFIRM_LOCATION"
                 return {
                     "intercepted": True,
                     "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
@@ -1315,7 +1314,7 @@ class WorkflowEngine:
                 session.district = city_input
                 session.addressLine1 = session.data.get("incomplete_location", "")
                 session.data.pop("incomplete_location", None)
-                session.step = "IDENTIFY_ADDRESS"
+                session.step = "CONFIRM_LOCATION"
                 return {
                     "intercepted": True,
                     "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
@@ -1327,7 +1326,7 @@ class WorkflowEngine:
                     "response": "Which city?",
                     "suggestions": []
                 }
-        elif step_str == "CONFIRM_AUTO_LOCATION":
+        elif step_str == "CONFIRM_LOCATION" or step_str == "CONFIRM_AUTO_LOCATION":
             if clean_msg in ["confirm", "yes", "correct", "option:confirm", "option:yes", "option:confirm details"]:
                 session.step = "IDENTIFY_ADDRESS"
                 return {
@@ -1349,7 +1348,7 @@ class WorkflowEngine:
                 if extracted:
                     session.city = extracted
                     session.district = extracted
-                    session.step = "IDENTIFY_ADDRESS"
+                    session.step = "CONFIRM_LOCATION"
                     return {
                         "intercepted": True,
                         "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
@@ -1743,9 +1742,8 @@ class WorkflowEngine:
         data = session.data
         citizen_id = session.citizenId or "default-citizen-id"
         
-        # Set state
-        session.currentWorkflowState = "APPLICATION_SUBMITTED"
-        session.applicationConfirmed = True
+        # Note: Do not clear the state here because we need it to generate the response text below.
+        # We will clear the state right before returning.
         
         year = 2026
         random_id = random.randint(100000, 999999)
@@ -1881,6 +1879,13 @@ class WorkflowEngine:
             "workflow": workflow,
             "referenceNumber": ref_num
         }, db_action_list)
+
+        # Reset session state to match NestJS fallback parity
+        session.workflow = None
+        session.step = "START"
+        session.data = {}
+        session.currentWorkflowState = "START"
+        session.currentExpectedField = ""
 
         return {
             "intercepted": True,

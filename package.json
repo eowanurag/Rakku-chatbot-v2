@@ -8,9 +8,33 @@
     "test:stability": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/stability_test.ts"
   },
   "devDependencies": {
-    "prisma": "^6.0.0"
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.9.2",
+    "@types/supertest": "^7.2.0",
+    "jest": "^30.4.2",
+    "prisma": "^6.0.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0"
-  }
+  },
+  "name": "rakku-chatbot-v1",
+  "version": "1.0.0",
+  "description": "Rakku is an AI-powered conversational citizen-service assistant prototype designed for **Uttar Pradesh Police Citizen Services**. The assistant helps citizens discover digital services, understand procedures, and navigate workflows (Complaints, Tenant Verification, Character Certificates, Event Permissions) using natural language (supporting English, Hindi, and Hinglish).",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eowanurag/Rakku-chatbot-v1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/eowanurag/Rakku-chatbot-v1/issues"
+  },
+  "homepage": "https://github.com/eowanurag/Rakku-chatbot-v1#readme"
 }

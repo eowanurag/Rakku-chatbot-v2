@@ -1,0 +1,213 @@
+import { ChatService } from '@backend/chat/chat.service';
+import { PrismaService } from '@backend/prisma.service';
+import { ValidationService } from '@backend/chat/validation.service';
+import { ComplaintService } from '@backend/complaint/complaint.service';
+import { VerificationService } from '@backend/verification/verification.service';
+import { CertificateService } from '@backend/certificate/certificate.service';
+import { EventService } from '@backend/event/event.service';
+import { TrackingService } from '@backend/tracking/tracking.service';
+import { AnalyticsService } from '@backend/citizen-assistance/analytics.service';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { IntelligenceService } from '@backend/citizen-assistance/intelligence.service';
+import { throwError } from 'rxjs';
+
+const DEBUG_PROFILE_FLOW = process.env.DEBUG_PROFILE_FLOW === 'true';
+
+describe('Profile Confirmation & Citizen Identification State Machine Test', () => {
+  let chatService: ChatService;
+  let prisma: PrismaService;
+  let validation: ValidationService;
+
+  beforeAll(() => {
+    prisma = new PrismaService();
+    const config = new ConfigService();
+    validation = new ValidationService();
+    const complaint = new ComplaintService(prisma);
+    const verification = new VerificationService(prisma);
+    const certificate = new CertificateService(prisma);
+    const event = new EventService(prisma);
+    const tracking = new TrackingService(prisma);
+    const intelligence = new IntelligenceService(prisma);
+    const analytics = new AnalyticsService();
+    
+    const httpService = new HttpService();
+    httpService.post = () => throwError(() => new Error('Forced connection failure for testing')) as any;
+
+    chatService = new ChatService(
+      httpService,
+      config,
+      complaint,
+      verification,
+      certificate,
+      event,
+      tracking,
+      analytics,
+      prisma,
+      validation,
+      intelligence
+    );
+  });
+
+  const debugLog = (step: string, message: string, nextStep: string, citizen: any) => {
+    if (DEBUG_PROFILE_FLOW) {
+      console.log({ step, message, nextStep, citizen });
+    }
+  };
+
+  afterAll(async () => {
+    await prisma.$disconnect();
+  });
+
+  it('Test Scenario 1: Happy Path', async () => {
+    const sess = `test-sess-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess);
+    await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
+    const wfRes = await chatService.sendMessage("Confirm Details", sess);
+    
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.citizen.isConfirmed).toBe(true);
+    expect(state.step).toBe("2"); // Transitions directly into the workflow step
+  });
+
+  it('Test Scenario 2: Address Corruption Protection', async () => {
+    const sess = `test-sess-corruption-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    
+    // In CONFIRM_LOCATION
+    await chatService.sendMessage("Confirm", sess);
+    
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.citizen.addressLine1).not.toBe("Confirm");
+    expect(state.citizen.addressLine1).not.toBe("Yes");
+    expect(state.citizen.addressLine1).not.toBe("No");
+  });
+
+  it('Test Scenario 3: Address Mandatory', async () => {
+    const sess = `test-sess-mandatory-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess); // Confirm location -> IDENTIFY_ADDRESS
+    
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.step).not.toBe("CONFIRM_PROFILE");
+    expect(state.step).toBe("IDENTIFY_ADDRESS");
+  });
+
+  it('Test Scenario 4: Profile Confirmation Transition', async () => {
+    const sess = `test-sess-trans-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess);
+    await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
+    
+    await chatService.sendMessage("Confirm Details", sess);
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.citizen.isConfirmed).toBe(true);
+    // After profile confirmation, it starts the workflow and reaches step 2
+    expect(state.step).toBe("2");
+  });
+
+  it('Test Scenario 5: Confirmation Loop Detection', async () => {
+    const sess = `test-sess-loop-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess);
+    await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
+    
+    const res1 = await chatService.sendMessage("Confirm Details", sess);
+    const state1 = await chatService.getOrCreateSession(sess);
+    expect(state1.citizen.isConfirmed).toBe(true);
+    expect(state1.step).toBe("2");
+    
+    // Send it again to verify it doesn't loop
+    const res2 = await chatService.sendMessage("Confirm Details", sess);
+    expect(res2.response).not.toContain("Citizen Profile Verified"); // Should not show profile confirmation success again
+    
+    const state2 = await chatService.getOrCreateSession(sess);
+    expect(state2.step).not.toBe("CONFIRM_PROFILE"); // Proves no loop
+  });
+
+  it('Test Scenario 6: Change Location', async () => {
+    const sess = `test-sess-change-loc-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess); // Moves to CONFIRM_LOCATION
+    
+    const res = await chatService.sendMessage("Change Location", sess);
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.step).toBe("IDENTIFY_LOCATION");
+  });
+
+  it('Test Scenario 7: Modify Mobile', async () => {
+    const sess = `test-sess-modify-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess);
+    await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
+    
+    await chatService.sendMessage("Modify Details", sess);
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.step).toBe("MODIFY_PROFILE_SELECT");
+    expect(state.citizen.fullName).toBeDefined();
+    expect(state.citizen.city).toBeDefined();
+    expect(state.citizen.addressLine1).toBeDefined();
+  });
+
+  it('Test Scenario 8: Reserved Command Protection', async () => {
+    const reserved = ['yes', 'no', 'confirm', 'change', 'modify', 'submit', 'ok'];
+    for (const cmd of reserved) {
+      const data = validation.extractCitizenData(cmd);
+      expect(data.name).toBeUndefined();
+      expect(data.location).toBeUndefined();
+    }
+  });
+
+  it('Test Scenario 9: Internal Action Leakage', async () => {
+    const sess = `test-sess-leak-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess);
+    const res = await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
+    
+    expect(res.response).not.toContain("action:PROFILE_CONFIRM");
+    expect(res.response).not.toContain("action:MODIFY_PROFILE");
+    expect(res.response).not.toContain("action:SUBMIT_APPLICATION");
+  });
+
+  it('Test Scenario 10: Full Data Integrity', async () => {
+    const sess = `test-sess-integrity-${Date.now()}`;
+    await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage("Manoj Tiwari", sess);
+    await chatService.sendMessage("7878787878", sess);
+    await chatService.sendMessage("Ayodhya", sess);
+    await chatService.sendMessage("Confirm", sess);
+    await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
+    await chatService.sendMessage("Confirm Details", sess);
+    
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.citizen.fullName).toBe("Manoj Tiwari");
+    expect(state.citizen.mobileNumber).toBe("7878787878");
+    expect(state.citizen.city).toContain("Ayodhya");
+    expect(state.citizen.addressLine1).toContain("Civil Lines");
+    expect(state.citizen.isConfirmed).toBe(true);
+  });
+});

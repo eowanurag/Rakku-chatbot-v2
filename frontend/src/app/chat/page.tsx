@@ -552,14 +552,6 @@ function ChatContent() {
                                 if (url.startsWith('option:')) {
                                   const optionVal = url.substring(7);
                                   let finalMsg = optionVal;
-                                  const cleanOpt = optionVal.trim().toLowerCase();
-                                  if (cleanOpt === 'confirm details' || cleanOpt === '👍 yes' || cleanOpt === 'yes') {
-                                    finalMsg = 'action:PROFILE_CONFIRM';
-                                  } else if (cleanOpt === 'modify details' || cleanOpt === 'modify' || cleanOpt === 'change details') {
-                                    finalMsg = 'action:MODIFY_PROFILE';
-                                  } else if (cleanOpt === 'submit application' || cleanOpt === 'submit') {
-                                    finalMsg = 'action:SUBMIT_APPLICATION';
-                                  }
                                   return (
                                     <button
                                       key={index}

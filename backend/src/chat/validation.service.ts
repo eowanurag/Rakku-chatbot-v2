@@ -177,6 +177,15 @@ export class ValidationService {
     const data: { fullName?: string; mobileNumber?: string; email?: string; location?: string } = {};
     const lowerText = text.toLowerCase().trim();
 
+    // Ignore reserved commands from extraction
+    const reservedCommands = [
+      "yes", "no", "confirm", "correct", "change", "modify", "submit", "ok", "okay",
+      "confirm details", "modify details", "change location", "confirm location", "confirm name", "change name"
+    ];
+    if (reservedCommands.includes(lowerText) || reservedCommands.some(cmd => lowerText === `option:${cmd}`)) {
+      return data;
+    }
+
     // 1. Mobile Number Extraction
     // Match 10 digit numbers or +91 prefixes
     const phoneMatches = text.match(/(?:\+91[\s-]?)?[6-9]\d{9}|\b[6-9]\d{9}\b/g);
