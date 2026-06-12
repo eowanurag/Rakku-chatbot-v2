@@ -79,13 +79,47 @@ export class ValidationService {
   validateDate(dateStr: string, rejectFuture = true): boolean {
     if (!dateStr) return false;
     const trimmed = dateStr.trim();
-    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    const match = trimmed.match(dateRegex);
-    if (!match) return false;
     
-    const day = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10);
-    const year = parseInt(match[3], 10);
+    // 1. Try simple numeric format: DD/MM/YYYY or DD-MM-YYYY
+    const numericRegex = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/;
+    let match = trimmed.match(numericRegex);
+    let day = 0;
+    let month = 0;
+    let year = 0;
+
+    if (match) {
+      day = parseInt(match[1], 10);
+      month = parseInt(match[2], 10);
+      year = parseInt(match[3], 10);
+    } else {
+      // 2. Try Hindi/English named month format: e.g. "6 जून 2026", "06 जून 2026", "6 June 2026"
+      const wordRegex = /^(\d{1,2})\s+([^\s\d]+)\s+(\d{4})$/;
+      match = trimmed.match(wordRegex);
+      if (!match) return false;
+
+      day = parseInt(match[1], 10);
+      const monthName = match[2].trim();
+      year = parseInt(match[3], 10);
+
+      const hindiMonths: Record<string, number> = {
+        'जनवरी': 1, 'जन': 1, 'jan': 1, 'january': 1,
+        'फरवरी': 2, 'फर': 2, 'feb': 2, 'february': 2,
+        'मार्च': 3, 'mar': 3, 'march': 3,
+        'अप्रैल': 4, 'अप्रै': 4, 'apr': 4, 'april': 4,
+        'मई': 5, 'may': 5,
+        'जून': 6, 'jun': 6, 'june': 6,
+        'जुलाई': 7, 'जुला': 7, 'jul': 7, 'july': 7,
+        'अगस्त': 8, 'अग': 8, 'aug': 8, 'august': 8,
+        'सितंबर': 9, 'सितम्बर': 9, 'सित': 9, 'sep': 9, 'september': 9,
+        'अक्टूबर': 10, 'अक्तूबर': 10, 'अक्तू': 10, 'ऑक्टोबर': 10, 'oct': 10, 'october': 10,
+        'नवंबर': 11, 'नवम्बर': 11, 'नव': 11, 'nov': 11, 'november': 11,
+        'दिसंबर': 12, 'दिसम्बर': 12, 'दिस': 12, 'dec': 12, 'december': 12
+      };
+
+      const mappedMonth = hindiMonths[monthName] || hindiMonths[monthName.toLowerCase()];
+      if (!mappedMonth) return false;
+      month = mappedMonth;
+    }
     
     if (month < 1 || month > 12) return false;
     if (day < 1 || day > 31) return false;

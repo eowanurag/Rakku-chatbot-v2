@@ -39,15 +39,54 @@ export class IntelligenceService {
     }
   }
 
-  async saveFeedback(sessionId: string, citizenId: string | null, workflowType: string | null, rating: number, comments?: string) {
+  classifyFeedback(comments?: string): string {
+    if (!comments) return 'OTHER';
+    const text = comments.toLowerCase();
+    if (text.includes('hindi') || text.includes('english') || text.includes('language') || text.includes('हिन्दी') || text.includes('हिंदी') || text.includes('अंग्रेजी') || text.includes('अनुवाद') || text.includes('translation') || text.includes('leakage') || text.includes('bhasha') || text.includes('बात करो')) {
+      return 'LOCALIZATION';
+    }
+    if (text.includes('confusing') || text.includes('many questions') || text.includes('hard') || text.includes('difficult') || text.includes('understand') || text.includes('complex') || text.includes('swal') || text.includes('saval') || text.includes('सवाल')) {
+      return 'CONFUSING_FLOW';
+    }
+    if (text.includes('location') || text.includes('district') || text.includes('city') || text.includes('area') || text.includes('sthan') || text.includes('zila') || text.includes('जिला') || text.includes('स्थान') || text.includes('गलत')) {
+      return 'LOCATION_ERROR';
+    }
+    if (text.includes('track') || text.includes('status') || text.includes('reference') || text.includes('ref') || text.includes('number') || text.includes('no record') || text.includes('checking')) {
+      return 'TRACKING_ISSUE';
+    }
+    if (text.includes('verify') || text.includes('verification') || text.includes('tenant') || text.includes('employee') || text.includes('domestic') || text.includes('satyapan') || text.includes('किरायेदार')) {
+      return 'VERIFICATION_ISSUE';
+    }
+    if (text.includes('slow') || text.includes('response') || text.includes('time') || text.includes('lag') || text.includes('delay') || text.includes('wait') || text.includes('time limit')) {
+      return 'SLOW_RESPONSE';
+    }
+    if (text.includes('ui') || text.includes('interface') || text.includes('button') || text.includes('screen') || text.includes('display') || text.includes('color') || text.includes('font') || text.includes('layout')) {
+      return 'UI_PROBLEM';
+    }
+    return 'OTHER';
+  }
+
+  async saveFeedback(sessionId: string, citizenId: string | null, workflowType: string | null, rating: number, comments?: string, category?: string) {
     try {
+      const finalCategory = category || this.classifyFeedback(comments);
       await this.prisma.feedback.create({
         data: {
           sessionId,
           citizenId,
           workflowType,
           rating,
-          comments: comments || null,
+          comments: comments === undefined ? null : comments,
+          category: finalCategory,
+        },
+      });
+      await this.prisma.citizenFeedback.create({
+        data: {
+          sessionId,
+          citizenId,
+          workflowType,
+          rating,
+          comments: comments === undefined ? null : comments,
+          category: finalCategory,
         },
       });
     } catch (e) {

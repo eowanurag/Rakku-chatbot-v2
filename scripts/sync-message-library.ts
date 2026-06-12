@@ -4,6 +4,7 @@ import * as path from 'path';
 const SRC_PATH = path.resolve(__dirname, '../shared/message_library.json');
 const NEST_DEST_PATH = path.resolve(__dirname, '../backend/src/chat/message_library.json');
 const FASTAPI_DEST_PATH = path.resolve(__dirname, '../ai-service/message_library.json');
+const FRONTEND_DEST_PATH = path.resolve(__dirname, '../frontend/src/message_library.json');
 
 function sync() {
   console.log(`[SYNC] Copying ${SRC_PATH} to destinations...`);
@@ -19,6 +20,10 @@ function sync() {
   // Copy to FastAPI Service
   fs.copyFileSync(SRC_PATH, FASTAPI_DEST_PATH);
   console.log(`[SYNC] Copied to FastAPI Service: ${FASTAPI_DEST_PATH}`);
+
+  // Copy to Frontend
+  fs.copyFileSync(SRC_PATH, FRONTEND_DEST_PATH);
+  console.log(`[SYNC] Copied to Frontend Service: ${FRONTEND_DEST_PATH}`);
 
   console.log('[SYNC] Message library synchronization completed successfully.');
 }

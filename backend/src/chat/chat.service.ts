@@ -636,6 +636,15 @@ export class ChatService {
             hinglish: `Application Details\n\nReference Number:\n${trackInfo.referenceNumber}\n\nService:\n${trackInfo.serviceType}\n\nCurrent Status:\n${trackInfo.status}\n\nSubmitted On:\n${formatLongDate(trackInfo.createdAt)}\n\nLast Updated:\n${formatLongDate(trackInfo.updatedAt)}${trackInfo.timeline}`,
           };
           return { trackingResponse: responses[dbAction.data.language || 'en'] };
+        case 'citizen_feedback':
+          await this.intelligenceService.saveFeedback(
+            dbAction.data.sessionId,
+            dbAction.data.citizenId || null,
+            dbAction.data.workflowType,
+            dbAction.data.rating,
+            dbAction.data.comments || '',
+          );
+          break;
       }
     } catch (error) {
       this.logger.error(`Failed to execute DB action: ${error.message}`);
@@ -711,32 +720,105 @@ export class ChatService {
       }
     }
 
+        const FEEDBACK_THANK_YOU = {
+      en: "👮 Thank you for your feedback! It helps me learn and serve you better.",
+      hi: "👮 आपकी प्रतिक्रिया के लिए धन्यवाद! यह मुझे सीखने और आपको बेहतर सेवा देने में मदद करता है।",
+      hinglish: "👮 Feedback ke liye thank you! Ye mujhe improve karne aur aapko better serve karne mein help karta hai."
+    };
+
+    const COMMENT_REQUIRED_MSG = {
+      en: "👮 Comments are required for ratings of 2 or less. Please let us know how we can improve.",
+      hi: "👮 2 या उससे कम की रेटिंग के लिए टिप्पणी आवश्यक है। कृपया हमें बताएं कि हम कैसे सुधार कर सकते हैं।",
+      hinglish: "👮 2 ya usse kam rating ke liye comment dena zaroori hai. Please batayein hum kaise improve karein."
+    };
+
     // Feedback response intercept — ONLY when NOT in a profile or active workflow step
     if (!isProfileStep && !isWorkflowActiveStep) {
-      if (cleanMsg === '👍 yes' || cleanMsg === 'option:👍 yes' || cleanMsg === 'yes' || cleanMsg === 'helpful') {
-        await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, 5, 'Citizen indicated helpful response.');
+      if (state.step === 'ASK_FEEDBACK') {
+        let rating = 0;
+        const numMatch = cleanMsg.match(/\b([1-5])\b/);
+        if (numMatch) {
+          rating = parseInt(numMatch[1]);
+        } else if (cleanMsg.includes('very helpful') || cleanMsg.includes('बहुत मददगार')) {
+          rating = 5;
+        } else if (cleanMsg.includes('not helpful') || cleanMsg.includes('मददगार नहीं')) {
+          rating = 1;
+        } else if (cleanMsg.includes('helpful') || cleanMsg.includes('मददगार')) {
+          rating = 4;
+        } else if (cleanMsg.includes('neutral') || cleanMsg.includes('सामान्य')) {
+          rating = 3;
+        } else if (cleanMsg.includes('needs improvement') || cleanMsg.includes('सुधार')) {
+          rating = 2;
+        }
+
+        if (rating === 0) {
+          return {
+            response: this.formatMessage('FEEDBACK_ASK', state.language || 'en', sessionId) + '\n(Please select a rating from 1 to 5)',
+            suggestions: this.getRatingSuggestions(state.language || 'en')
+          };
+        }
+
+        if (rating >= 4) {
+          await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, rating, '');
+          state.step = 'START';
+          state.workflow = null;
+          state.data = {};
+          return {
+            response: FEEDBACK_THANK_YOU[state.language || 'en'],
+            suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          };
+        } else if (rating === 3) {
+          state.step = 'FEEDBACK_COMMENT_OPTIONAL';
+          state.data.feedbackRating = rating;
+          const skipSug = state.language === 'hi' ? 'छोड़ें' : 'Skip';
+          return {
+            response: this.formatMessage('FEEDBACK_COMMENT_ASK', state.language || 'en', sessionId),
+            suggestions: [skipSug]
+          };
+        } else {
+          state.step = 'FEEDBACK_COMMENT_REQUIRED';
+          state.data.feedbackRating = rating;
+          return {
+            response: this.formatMessage('FEEDBACK_COMMENT_ASK', state.language || 'en', sessionId),
+            suggestions: []
+          };
+        }
+      }
+
+      if (state.step === 'FEEDBACK_COMMENT_OPTIONAL') {
+        const rating = state.data.feedbackRating || 3;
+        const isSkip = cleanMsg === 'skip' || cleanMsg === 'छोड़ें' || cleanMsg === 'option:skip' || cleanMsg === 'option:छोड़ें';
+        const comment = isSkip ? '' : message;
+        await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, rating, comment);
+        state.step = 'START';
+        state.workflow = null;
+        state.data = {};
         return {
-          response: "👮 Thank you for your feedback! It helps me learn and serve you better.",
+          response: FEEDBACK_THANK_YOU[state.language || 'en'],
           suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
         };
       }
-      if (cleanMsg === '👎 no' || cleanMsg === 'option:👎 no' || cleanMsg === 'no' || cleanMsg === 'not helpful') {
-        state.step = 'FEEDBACK_COMMENT';
-        return {
-          response: "👮 I'm sorry to hear that. What could I have done better?",
-          suggestions: [],
-        };
-      }
-      if (state.step === 'FEEDBACK_COMMENT') {
+
+      if (state.step === 'FEEDBACK_COMMENT_REQUIRED') {
+        const rating = state.data.feedbackRating || 2;
+        const isSkip = cleanMsg === 'skip' || cleanMsg === 'छोड़ें' || cleanMsg === 'option:skip' || cleanMsg === 'option:छोड़ें';
+        if (isSkip || !message.trim()) {
+          return {
+            response: COMMENT_REQUIRED_MSG[state.language || 'en'],
+            suggestions: []
+          };
+        }
+        await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, rating, message);
         state.step = 'START';
-        await this.intelligenceService.saveFeedback(sessionId, state.citizen.id || null, state.workflow, 1, message);
-        await this.intelligenceService.logLearningEvent('Workflow_Abandoned', 'INFO', { sessionId, comments: message });
+        state.workflow = null;
+        state.data = {};
         return {
-          response: "👮 Thank you. I have recorded your suggestions for my administrator to review and improve my workflows.",
+          response: FEEDBACK_THANK_YOU[state.language || 'en'],
           suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
         };
       }
     }
+
 
     // Global Location Correction Override check
     const extractedLoc = this.validationService.extractCitizenData(message).location;
@@ -1162,9 +1244,17 @@ export class ChatService {
       const isCorrection = this.handleProfileCorrection(state, message);
       if (isCorrection) {
         state.step = 'CONFIRM_LOCATION';
+        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
+        const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
+        let confirmSug = 'Confirm';
+        let changeSug = 'Change Location';
+        if (state.language === 'hi') {
+          confirmSug = 'पुष्टि करें';
+          changeSug = 'स्थान बदलें';
+        }
         return {
-          response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
-          suggestions: ['Confirm', 'Change Location'],
+          response: locationPrompt,
+          suggestions: [confirmSug, changeSug],
         };
       }
     }
@@ -1244,9 +1334,17 @@ export class ChatService {
         state.citizen.city = message.trim();
         state.citizen.district = message.trim();
         state.step = 'CONFIRM_LOCATION';
+        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
+        const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
+        let confirmSug = 'Confirm';
+        let changeSug = 'Change Location';
+        if (state.language === 'hi') {
+          confirmSug = 'पुष्टि करें';
+          changeSug = 'स्थान बदलें';
+        }
         return {
-          response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
-          suggestions: ['Confirm', 'Change Location'],
+          response: locationPrompt,
+          suggestions: [confirmSug, changeSug],
         };
       } else {
         return {
@@ -1263,9 +1361,17 @@ export class ChatService {
         state.citizen.addressLine1 = state.data.incompleteLocation;
         delete state.data.incompleteLocation;
         state.step = 'CONFIRM_LOCATION';
+        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
+        const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
+        let confirmSug = 'Confirm';
+        let changeSug = 'Change Location';
+        if (state.language === 'hi') {
+          confirmSug = 'पुष्टि करें';
+          changeSug = 'स्थान बदलें';
+        }
         return {
-          response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
-          suggestions: ['Confirm', 'Change Location'],
+          response: locationPrompt,
+          suggestions: [confirmSug, changeSug],
         };
       } else {
         return {
@@ -1276,8 +1382,10 @@ export class ChatService {
     } else if (stepStr === 'CONFIRM_LOCATION') {
       if (['confirm', 'yes', 'correct', 'option:confirm', 'option:yes', 'option:confirm details'].includes(cleanMsg)) {
         state.step = 'IDENTIFY_ADDRESS';
+        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
+        const addressRequest = this.formatMessage('PROFILE_ADDRESS_REQUEST', state.language || 'en', '', { district: localizedCity });
         return {
-          response: `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+          response: addressRequest,
           suggestions: [],
         };
       } else if (['change location', 'no', 'option:change location', 'option:no', 'option:modify details'].includes(cleanMsg)) {
@@ -1299,9 +1407,17 @@ export class ChatService {
             suggestions: ['Confirm', 'Change Location'],
           };
         } else {
+          const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
+          const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
+          let confirmSug = 'Confirm';
+          let changeSug = 'Change Location';
+          if (state.language === 'hi') {
+            confirmSug = 'पुष्टि करें';
+            changeSug = 'स्थान बदलें';
+          }
           return {
-            response: "👮 Please confirm your location or choose to change it:\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-            suggestions: ['Confirm', 'Change Location'],
+            response: locationPrompt,
+            suggestions: [confirmSug, changeSug],
           };
         }
       }
@@ -1582,21 +1698,26 @@ Let's continue with your request.`;
       addressDisplay += ` - ${state.citizen.pincode}`;
     }
 
-    const response = `👮 **Please review your details:**
+    const localizedCity = this.localizeLocation(state.citizen.city || state.citizen.district || 'Lucknow', state.language);
+    const addressFallback = state.language === 'hi' ? 'प्रदान नहीं किया गया' : 'Not provided';
 
-* **Name:** ${state.citizen.fullName}
-* **Mobile Number:** ${state.citizen.mobileNumber}
-* **Location:** ${state.citizen.city || state.citizen.district || 'Lucknow'}, ${state.citizen.state}
-* **Address:** ${addressDisplay || 'Not provided'}
+    const response = this.formatMessage('PROFILE_CONFIRM_SCREEN', state.language || 'en', '', {
+      name: state.citizen.fullName,
+      mobile: state.citizen.mobileNumber,
+      district: localizedCity,
+      address: addressDisplay || addressFallback,
+    });
 
-Is everything correct?
-
-- [Confirm Details](option:Confirm Details)
-- [Modify Details](option:Modify Details)`;
+    let confirmSug = 'Confirm Details';
+    let modifySug = 'Modify Details';
+    if (state.language === 'hi') {
+      confirmSug = 'विवरण की पुष्टि करें';
+      modifySug = 'विवरण बदलें';
+    }
 
     return {
       response,
-      suggestions: ['Confirm Details', 'Modify Details'],
+      suggestions: [confirmSug, modifySug],
     };
   }
 
@@ -1658,8 +1779,7 @@ Is everything correct?
             suggestions: ["Modify Details"]
           };
         }
-        session.workflow = null;
-        session.step = 'START';
+        session.step = 'ASK_FEEDBACK';
         let fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
         if (session.data.brand) {
           fullDetails = `Brand: ${session.data.brand} | Model: ${session.data.model} | Color: ${session.data.color} | Year: ${session.data.year} | IMEI: ${session.data.imei || 'N/A'} | ` + fullDetails;
@@ -1684,13 +1804,11 @@ Is everything correct?
         await this.intelligenceService.recordWorkflowStep('complaint', 'SUBMITTED', true, false);
 
         const completionMsg = this.formatMessage('SUCCESS_COMPLAINT', lang, '', { referenceNumber: resNum, district: session.citizen.district || session.data.location || 'your area' }) + 
-          "\n\n👮 **Before you go, was I able to help you today?**\n" +
-          "- [👍 Yes](option:👍 Yes)\n" +
-          "- [👎 No](option:👎 No)";
+          "\n\n" + this.formatMessage('FEEDBACK_ASK', lang, '');
 
         return {
           response: completionMsg,
-          suggestions: ['👍 Yes', '👎 No', 'File Complaint', 'Track Status'],
+          suggestions: this.getRatingSuggestions(lang),
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
         return {
@@ -1917,8 +2035,7 @@ ${readiness.checklist}
 
     if (step === 'REVIEW') {
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
-        session.workflow = null;
-        session.step = 'START';
+        session.step = 'ASK_FEEDBACK';
         const resNum = `UP-TV-2026-${Math.floor(100000 + Math.random() * 900000)}`;
         const record = await this.verificationService.createVerification(
           session.data.type,
@@ -1942,9 +2059,18 @@ ${readiness.checklist}
           }
         });
         session.data = {};
+        
+        const rawCompMsg = getCompletionMessage(resNum, lang);
+        let cleanCompMsg = rawCompMsg;
+        if (lang === 'hi') {
+          cleanCompMsg = cleanCompMsg.replace('क्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?', '').trim();
+        } else {
+          cleanCompMsg = cleanCompMsg.replace('Is there anything else I can help you with today?', '').trim();
+        }
+        
         return {
-          response: getCompletionMessage(resNum, lang),
-          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          response: cleanCompMsg + "\n\n" + this.formatMessage('FEEDBACK_ASK', lang, ''),
+          suggestions: this.getRatingSuggestions(lang),
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
         session.step = '2';
@@ -2063,8 +2189,7 @@ Would you like to submit this application?
 
     if (step === 'REVIEW') {
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
-        session.workflow = null;
-        session.step = 'START';
+        session.step = 'ASK_FEEDBACK';
         const resNum = `UP-CC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
         const record = await this.certificateService.createCertificate(
           session.data.name,
@@ -2087,9 +2212,18 @@ Would you like to submit this application?
           }
         });
         session.data = {};
+
+        const rawCompMsg = getCompletionMessage(resNum, lang);
+        let cleanCompMsg = rawCompMsg;
+        if (lang === 'hi') {
+          cleanCompMsg = cleanCompMsg.replace('क्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?', '').trim();
+        } else {
+          cleanCompMsg = cleanCompMsg.replace('Is there anything else I can help you with today?', '').trim();
+        }
+
         return {
-          response: getCompletionMessage(resNum, lang),
-          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          response: cleanCompMsg + "\n\n" + this.formatMessage('FEEDBACK_ASK', lang, ''),
+          suggestions: this.getRatingSuggestions(lang),
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
         session.step = '2';
@@ -2207,8 +2341,7 @@ Would you like to submit this application?
 
     if (step === 'REVIEW') {
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
-        session.workflow = null;
-        session.step = 'START';
+        session.step = 'ASK_FEEDBACK';
         const resNum = `UP-EP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
         const record = await this.eventService.createEventPermission(
           session.data.type,
@@ -2232,9 +2365,18 @@ Would you like to submit this application?
           }
         });
         session.data = {};
+
+        const rawCompMsg = getCompletionMessage(resNum, lang);
+        let cleanCompMsg = rawCompMsg;
+        if (lang === 'hi') {
+          cleanCompMsg = cleanCompMsg.replace('क्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?', '').trim();
+        } else {
+          cleanCompMsg = cleanCompMsg.replace('Is there anything else I can help you with today?', '').trim();
+        }
+
         return {
-          response: getCompletionMessage(resNum, lang),
-          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          response: cleanCompMsg + "\n\n" + this.formatMessage('FEEDBACK_ASK', lang, ''),
+          suggestions: this.getRatingSuggestions(lang),
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
         session.step = '2';
@@ -2594,5 +2736,40 @@ Would you like to submit this application?
     }
 
     return { response: 'Invalid step' };
+  }
+
+  localizeLocation(location: string, language: 'en' | 'hi' | 'hinglish'): string {
+    if (!location) return location;
+    if (language !== 'hi') return location;
+    const locationsMap: Record<string, string> = {
+      'Lucknow': 'लखनऊ',
+      'Kanpur': 'कानपुर',
+      'Noida': 'नोएडा',
+      'Ghaziabad': 'गाजियाबाद',
+      'Varanasi': 'वाराणसी',
+      'Prayagraj': 'प्रयागराज',
+      'Uttar Pradesh': 'उत्तर प्रदेश'
+    };
+    return locationsMap[location] || locationsMap[location.trim()] || location;
+  }
+
+  getRatingSuggestions(lang: 'en' | 'hi' | 'hinglish'): string[] {
+    if (lang === 'hi') {
+      return [
+        '5 - बहुत मददगार',
+        '4 - मददगार',
+        '3 - सामान्य',
+        '2 - सुधार की आवश्यकता',
+        '1 - मददगार नहीं'
+      ];
+    } else {
+      return [
+        '5 - Very Helpful',
+        '4 - Helpful',
+        '3 - Neutral',
+        '2 - Needs Improvement',
+        '1 - Not Helpful'
+      ];
+    }
   }
 }

@@ -58,19 +58,42 @@ def parse_full_address(text: str) -> dict:
 
 MESSAGE_LIBRARY = None
 
-def load_message_library():
+def load_message_library()
+
+def classify_feedback(comments: str) -> str:
+    if not comments:
+        return "OTHER"
+    text = comments.lower()
+    if any(w in text for w in ['hindi', 'english', 'language', 'हिन्दी', 'हिंदी', 'अंग्रेजी', 'अनुवाद', 'translation', 'leakage', 'bhasha', 'बात करो']):
+        return 'LOCALIZATION'
+    if any(w in text for w in ['confusing', 'many questions', 'hard', 'difficult', 'understand', 'complex', 'swal', 'saval', 'सवाल']):
+        return 'CONFUSING_FLOW'
+    if any(w in text for w in ['location', 'district', 'city', 'area', 'sthan', 'zila', 'जिला', 'स्थान', 'गलत']):
+        return 'LOCATION_ERROR'
+    if any(w in text for w in ['track', 'status', 'reference', 'ref', 'number', 'no record', 'checking']):
+        return 'TRACKING_ISSUE'
+    if any(w in text for w in ['verify', 'verification', 'tenant', 'employee', 'domestic', 'satyapan', 'किरायेदार']):
+        return 'VERIFICATION_ISSUE'
+    if any(w in text for w in ['slow', 'response', 'time', 'lag', 'delay', 'wait', 'time limit']):
+        return 'SLOW_RESPONSE'
+    if any(w in text for w in ['ui', 'interface', 'button', 'screen', 'display', 'color', 'font', 'layout']):
+        return 'UI_PROBLEM'
+    return 'OTHER'
+:
     global MESSAGE_LIBRARY
     try:
         import json
         import os
         dir_path = os.path.dirname(os.path.abspath(__file__))
-        filePath = os.path.abspath(os.path.join(dir_path, '..', 'shared', 'message_library.json'))
+        filePathLocal = os.path.join(dir_path, 'message_library.json')
+        filePathShared = os.path.abspath(os.path.join(dir_path, '..', 'shared', 'message_library.json'))
+        filePath = filePathLocal if os.path.exists(filePathLocal) else filePathShared
         if os.path.exists(filePath):
             with open(filePath, 'r', encoding='utf-8') as f:
                 MESSAGE_LIBRARY = json.load(f)
                 print(f"[LOAD] Loaded Message Library v{MESSAGE_LIBRARY.get('version')} from {filePath}")
         else:
-            print(f"[ERROR] Message library file not found at {filePath}")
+            print(f"[ERROR] Message library file not found. Tried {filePathLocal} and {filePathShared}")
     except Exception as e:
         print(f"[ERROR] Failed to load message library: {e}")
 
@@ -229,10 +252,38 @@ def validate_date(date_str: str, reject_future=True) -> bool:
     if not date_str:
         return False
     trimmed = date_str.strip()
-    match = re.match(r"^(\d{2})/(\d{2})/(\d{4})$", trimmed)
-    if not match:
-        return False
-    day, month, year = int(match.group(1)), int(match.group(2)), int(match.group(3))
+    
+    # 1. Try simple numeric format: DD/MM/YYYY or DD-MM-YYYY
+    numeric_match = re.match(r"^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$", trimmed)
+    if numeric_match:
+        day, month, year = int(numeric_match.group(1)), int(numeric_match.group(2)), int(numeric_match.group(3))
+    else:
+        # 2. Try Hindi/English named month format: e.g. "6 जून 2026", "06 जून 2026", "6 June 2026"
+        word_match = re.match(r"^(\d{1,2})\s+([^\s\d]+)\s+(\d{4})$", trimmed)
+        if not word_match:
+            return False
+        day = int(word_match.group(1))
+        month_name = word_match.group(2).strip()
+        year = int(word_match.group(3))
+        
+        hindi_months = {
+            'जनवरी': 1, 'जन': 1, 'jan': 1, 'january': 1,
+            'फरवरी': 2, 'फर': 2, 'feb': 2, 'february': 2,
+            'मार्च': 3, 'mar': 3, 'march': 3,
+            'अप्रैल': 4, 'अप्रै': 4, 'apr': 4, 'april': 4,
+            'मई': 5, 'may': 5,
+            'जून': 6, 'jun': 6, 'june': 6,
+            'जुलाई': 7, 'जुला': 7, 'jul': 7, 'july': 7,
+            'अगस्त': 8, 'अग': 8, 'aug': 8, 'august': 8,
+            'सितंबर': 9, 'सितम्बर': 9, 'सित': 9, 'sep': 9, 'september': 9,
+            'अक्टूबर': 10, 'अक्तूबर': 10, 'अक्तू': 10, 'ऑक्टोबर': 10, 'oct': 10, 'october': 10,
+            'नवंबर': 11, 'नवम्बर': 11, 'नव': 11, 'nov': 11, 'november': 11,
+            'दिसंबर': 12, 'दिसम्बर': 12, 'दिस': 12, 'dec': 12, 'december': 12
+        }
+        month = hindi_months.get(month_name) or hindi_months.get(month_name.lower())
+        if not month:
+            return False
+            
     if month < 1 or month > 12:
         return False
     if day < 1 or day > 31:
@@ -256,6 +307,22 @@ def validate_date(date_str: str, reject_future=True) -> bool:
         except:
             return False
     return True
+
+def localize_location(loc: str, lang: str) -> str:
+    if not loc:
+        return loc
+    if lang != "hi":
+        return loc
+    locations_map = {
+        "Lucknow": "लखनऊ",
+        "Kanpur": "कानपुर",
+        "Noida": "नोएडा",
+        "Ghaziabad": "गाजियाबाद",
+        "Varanasi": "वाराणसी",
+        "Prayagraj": "प्रयागराज",
+        "Uttar Pradesh": "उत्तर प्रदेश"
+    }
+    return locations_map.get(loc) or locations_map.get(loc.strip()) or loc
 
 def validate_consistency(city: str, text: str) -> bool:
     if not city or not text:
@@ -417,7 +484,7 @@ class WorkflowEngine:
 
     def get_workflow_fields(self, session: WorkflowSession) -> list[dict]:
         fields = list(self.workflow_fields.get(session.workflow, []))
-        if session.workflow == "complaint" and session.data.get("complaint_type") == "Lost Mobile / Theft":
+        if session.workflow == "complaint" and session.data.get("complaint_type") in ["Lost Mobile / Theft", "LOST_MOBILE"]:
             extended_fields = [
                 {"name": "mobile_brand", "label": "Mobile Brand / मोबाइल ब्रांड", "suggestions": ["Samsung", "Apple", "Xiaomi", "Realme", "OnePlus", "Vivo", "Oppo"]},
                 {"name": "mobile_model", "label": "Mobile Model / मोबाइल मॉडल", "suggestions": []},
@@ -543,20 +610,39 @@ class WorkflowEngine:
         if session.pincode:
             address_display += f" - {session.pincode}"
             
-        confirm_card = (
-            f"👮 **Please review your details:**\n\n"
-            f"* **Name:** {session.fullName}\n"
-            f"* **Mobile Number:** {session.mobileNumber}\n"
-            f"* **Location:** {session.city or session.district or 'Lucknow'}, {session.state_name}\n"
-            f"* **Address:** {address_display or 'Not provided'}\n\n"
-            f"Is everything correct?\n\n"
-            f"- [Confirm Details](option:Confirm Details)\n"
-            f"- [Modify Details](option:Modify Details)"
+        district_val = localize_location(session.city or session.district or 'Lucknow', session.language)
+        
+        address_fallback = "Not provided"
+        if session.language == "hi":
+            address_fallback = "प्रदान नहीं किया गया"
+        elif session.language == "hinglish":
+            address_fallback = "Not provided"
+
+        confirm_card = format_message(
+            "PROFILE_CONFIRM_SCREEN", 
+            session.language, 
+            session, 
+            {
+                "name": session.fullName,
+                "mobile": session.mobileNumber,
+                "district": district_val,
+                "address": address_display or address_fallback
+            }
         )
+        
+        confirm_sug = "Confirm Details"
+        modify_sug = "Modify Details"
+        if session.language == "hi":
+            confirm_sug = "विवरण की पुष्टि करें"
+            modify_sug = "विवरण बदलें"
+        elif session.language == "hinglish":
+            confirm_sug = "Confirm Details"
+            modify_sug = "Modify Details"
+
         return {
             "intercepted": True,
             "response": confirm_card,
-            "suggestions": ["Confirm Details", "Modify Details"]
+            "suggestions": [confirm_sug, modify_sug]
         }
 
     def process_message(self, message: str, session_id: str, gemini_client=None) -> dict:
@@ -713,25 +799,163 @@ class WorkflowEngine:
             session.workflow and str(session.step) in ['1','2','3','4','5','6','2_brand','2_model','2_color','2_year','2_imei']
         )
         if not is_profile_step and not is_workflow_active_step:
-            if clean_msg in ["👍 yes", "option:👍 yes", "yes", "helpful"]:
-                return {
-                    "intercepted": True,
-                    "response": "👮 Thank you for your feedback! It helps me learn and serve you better.",
-                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
-                }
-            if clean_msg in ["👎 no", "option:👎 no", "no", "not helpful"]:
-                session.step = "FEEDBACK_COMMENT"
-                return {
-                    "intercepted": True,
-                    "response": "👮 I'm sorry to hear that. What could I have done better?",
-                    "suggestions": []
-                }
-            if step_str == "FEEDBACK_COMMENT":
+            if step_str == "ASK_FEEDBACK":
+                rating = None
+                num_match = re.search(r"\b([1-5])\b", clean_msg)
+                if num_match:
+                    rating = int(num_match.group(1))
+                else:
+                    rating_map = {
+                        "😊": 5, "😃": 4, "😐": 3, "🙁": 2, "😡": 1,
+                        "very helpful": 5, "helpful": 4, "neutral": 3, "not helpful": 2, "very unhelpful": 1,
+                        "बहुत सहायक": 5, "सहायक": 4, "सामान्य": 3, "सहायक नहीं": 2, "बहुत खराब": 1,
+                        "yes": 5, "👍": 5, "no": 2, "👎": 2
+                    }
+                    for k, v in rating_map.items():
+                        if k in clean_msg:
+                            rating = v
+                            break
+                
+                if rating is None:
+                    feedback_ask_prompt = format_message("FEEDBACK_ASK", session.language, session)
+                    if session.language == "hi":
+                        rating_sugs = ["5 - बहुत मददगार", "4 - मददगार", "3 - सामान्य", "2 - सुधार की आवश्यकता", "1 - मददगार नहीं"]
+                    else:
+                        rating_sugs = ["5 - Very Helpful", "4 - Helpful", "3 - Neutral", "2 - Needs Improvement", "1 - Not Helpful"]
+                    return {
+                        "intercepted": True,
+                        "response": f"{feedback_ask_prompt}\n(Please select a rating from 1 to 5)",
+                        "suggestions": rating_sugs
+                    }
+                
+                session.data["feedback_rating"] = rating
+                
+                if rating >= 4:
+                    session.step = "START"
+                    session.currentWorkflowState = "START"
+                    session.workflow = None
+                    session.data = {}
+                    
+                    feedback_thanks = "👮 Thank you for your feedback! It helps me learn and serve you better."
+                    if session.language == "hi":
+                        feedback_thanks = "👮 आपकी प्रतिक्रिया के लिए धन्यवाद! यह मुझे सीखने और आपको बेहतर सेवा देने में मदद करता है।"
+                    elif session.language == "hinglish":
+                        feedback_thanks = "👮 Feedback ke liye thank you! Ye mujhe improve karne aur aapko better serve karne mein help karta hai."
+                        
+                    db_action = {
+                        "type": "citizen_feedback",
+                        "data": {
+                            "sessionId": session_id,
+                            "citizenId": session.citizenId,
+                            "workflowType": session.serviceType,
+                            "rating": rating,
+                            "comments": "",
+                            "category": "OTHER"
+                        }
+                    }
+                    return {
+                        "intercepted": True,
+                        "response": feedback_thanks,
+                        "suggestions": ["File Complaint", "Tenant Verification", "Track Status"],
+                        "db_action": db_action
+                    }
+                elif rating == 3:
+                    session.step = "FEEDBACK_COMMENT_OPTIONAL"
+                    feedback_comment_prompt = format_message("FEEDBACK_COMMENT_ASK", session.language, session)
+                    skip_sug = "छोड़ें" if session.language == "hi" else "Skip"
+                    return {
+                        "intercepted": True,
+                        "response": feedback_comment_prompt,
+                        "suggestions": [skip_sug]
+                    }
+                else:
+                    session.step = "FEEDBACK_COMMENT_REQUIRED"
+                    feedback_comment_prompt = format_message("FEEDBACK_COMMENT_ASK", session.language, session)
+                    return {
+                        "intercepted": True,
+                        "response": feedback_comment_prompt,
+                        "suggestions": []
+                    }
+            
+            if step_str == "FEEDBACK_COMMENT_OPTIONAL":
+                rating = session.data.get("feedback_rating", 3)
+                is_skip = clean_msg in ["skip", "छोड़ें", "option:skip", "option:छोड़ें"]
+                comments = "" if is_skip else message.strip()
+                category = classify_feedback(comments)
+                
                 session.step = "START"
+                session.currentWorkflowState = "START"
+                session.workflow = None
+                session.data = {}
+                
+                feedback_thanks = "👮 Thank you for your feedback! It helps me learn and serve you better."
+                if session.language == "hi":
+                    feedback_thanks = "👮 आपकी प्रतिक्रिया के लिए धन्यवाद! यह मुझे सीखने और आपको बेहतर सेवा देने में मदद करता है।"
+                elif session.language == "hinglish":
+                    feedback_thanks = "👮 Feedback ke liye thank you! Ye mujhe improve karne aur aapko better serve karne mein help karta hai."
+                    
+                db_action = {
+                    "type": "citizen_feedback",
+                    "data": {
+                        "sessionId": session_id,
+                        "citizenId": session.citizenId,
+                        "workflowType": session.serviceType,
+                        "rating": rating,
+                        "comments": comments,
+                        "category": category
+                    }
+                }
                 return {
                     "intercepted": True,
-                    "response": "👮 Thank you. I have recorded your suggestions for my administrator to review and improve my workflows.",
-                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"]
+                    "response": feedback_thanks,
+                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"],
+                    "db_action": db_action
+                }
+                
+            if step_str == "FEEDBACK_COMMENT_REQUIRED":
+                rating = session.data.get("feedback_rating", 2)
+                is_skip = clean_msg in ["skip", "छोड़ें", "option:skip", "option:छोड़ें"]
+                comments = message.strip()
+                if is_skip or not comments:
+                    comment_required_msg = "👮 Comments are required for ratings of 2 or less. Please let us know how we can improve."
+                    if session.language == "hi":
+                        comment_required_msg = "👮 2 या उससे कम की रेटिंग के लिए टिप्पणी आवश्यक है। कृपया हमें बताएं कि हम कैसे सुधार कर सकते हैं।"
+                    elif session.language == "hinglish":
+                        comment_required_msg = "👮 2 ya usse kam rating ke liye comment dena zaroori hai. Please batayein hum kaise improve karein."
+                    return {
+                        "intercepted": True,
+                        "response": comment_required_msg,
+                        "suggestions": []
+                    }
+                    
+                category = classify_feedback(comments)
+                session.step = "START"
+                session.currentWorkflowState = "START"
+                session.workflow = None
+                session.data = {}
+                
+                feedback_thanks = "👮 Thank you for your feedback! It helps me learn and serve you better."
+                if session.language == "hi":
+                    feedback_thanks = "👮 आपकी प्रतिक्रिया के लिए धन्यवाद! यह मुझे सीखने और आपको बेहतर सेवा देने में मदद करता है।"
+                elif session.language == "hinglish":
+                    feedback_thanks = "👮 Feedback ke liye thank you! Ye mujhe improve karne aur aapko better serve karne mein help karta hai."
+                    
+                db_action = {
+                    "type": "citizen_feedback",
+                    "data": {
+                        "sessionId": session_id,
+                        "citizenId": session.citizenId,
+                        "workflowType": session.serviceType,
+                        "rating": rating,
+                        "comments": comments,
+                        "category": category
+                    }
+                }
+                return {
+                    "intercepted": True,
+                    "response": feedback_thanks,
+                    "suggestions": ["File Complaint", "Tenant Verification", "Track Status"],
+                    "db_action": db_action
                 }
 
         # Check for cancel command
@@ -926,9 +1150,9 @@ class WorkflowEngine:
             if session.workflow == "complaint":
                 auto_type = None
                 if any(w in clean_msg for w in ["phone", "mobile", "stolen", "theft", "chori", "फ़ोन", "मोबाइल", "फोन", "चोरी", "चोर", "chora"]):
-                    auto_type = "Lost Mobile / Theft"
+                    auto_type = "LOST_MOBILE"
                 elif any(w in clean_msg for w in ["document", "wallet", "passport", "aadhar", "card"]):
-                    auto_type = "Lost Document"
+                    auto_type = "LOST_DOCUMENT"
                 
                 if auto_type:
                     session.data["complaint_type"] = auto_type
@@ -950,8 +1174,20 @@ class WorkflowEngine:
                     "suggestions": fields[session.step - 1].get("suggestions", [])
                 }
             
-            # Save valid data
-            session.data[prev_field_name] = message
+            # Save valid data (mapping complaint type to canonical keys)
+            val_to_save = message
+            if session.workflow == "complaint" and prev_field_name == "complaint_type":
+                val_clean = message.lower()
+                if any(w in val_clean for w in ["mobile", "phone", "stolen", "theft", "chori", "गुम", "चोरी", "chora"]):
+                    val_to_save = "LOST_MOBILE"
+                elif any(w in val_clean for w in ["document", "wallet", "passport", "aadhar", "card"]):
+                    val_to_save = "LOST_DOCUMENT"
+                elif any(w in val_clean for w in ["harass", "harassment", "teasing", "threat", "trolling", "pareshan", "dhamki", "उत्पीड़न", "परेशान", "धमकी"]):
+                    val_to_save = "SIMPLE_HARASSMENT"
+                elif any(w in val_clean for w in ["fraud", "scam", "cheated", "dhokha", "cyber", "धोखा", "धोखाधड़ी", "साइबर"]):
+                    val_to_save = "CYBER_FRAUD"
+
+            session.data[prev_field_name] = val_to_save
             if prev_field_name == "name" and len(message.strip().split()) == 1:
                 session.data["name_suggest_flag"] = True
  
@@ -963,7 +1199,7 @@ class WorkflowEngine:
             next_field = fields[session.step]
             session.step += 1
             session.currentExpectedField = next_field["name"]
-            response_txt = self._format_question(session.workflow, next_field, session.language, session.step)
+            response_txt = self._format_question(session, next_field, session.language, session.step)
             if session.data.get("name_suggest_flag"):
                 response_txt = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + response_txt
                 session.data["name_suggest_flag"] = False
@@ -1077,50 +1313,74 @@ class WorkflowEngine:
         required_ok = fields_complete
         ready_ok = applicant_ok and subject_ok and contact_ok and address_ok and location_ok and required_ok
         
+        # Format localized validation checklist
+        check_applicant = format_message("CHECK_APPLICANT_COMPLETE", session.language, session)
+        check_subject = format_message("CHECK_SUBJECT_COMPLETE", session.language, session)
+        check_contact = format_message("CHECK_CONTACT_VALID", session.language, session)
+        check_address = format_message("CHECK_ADDRESS_COMPLETE", session.language, session)
+        check_location = format_message("CHECK_LOCATION_CONFIRMED", session.language, session)
+        check_required = format_message("CHECK_REQUIRED_FIELDS", session.language, session)
+        check_ready = format_message("CHECK_READY_FOR_SUBMISSION", session.language, session)
+        
         checklist = (
-            f"{'[x]' if applicant_ok else '[ ]'} Applicant Information Complete\n"
-            f"{'[x]' if subject_ok else '[ ]'} Subject Information Complete\n"
-            f"{'[x]' if contact_ok else '[ ]'} Contact Details Valid\n"
-            f"{'[x]' if address_ok else '[ ]'} Address Complete\n"
-            f"{'[x]' if location_ok else '[ ]'} Location Confirmed\n"
-            f"{'[x]' if required_ok else '[ ]'} Required Fields Complete\n"
-            f"{'[x]' if ready_ok else '[ ]'} Ready for Submission"
+            f"{'✓' if applicant_ok else '✗'} {check_applicant}\n"
+            f"{'✓' if subject_ok else '✗'} {check_subject}\n"
+            f"{'✓' if contact_ok else '✗'} {check_contact}\n"
+            f"{'✓' if address_ok else '✗'} {check_address}\n"
+            f"{'✓' if location_ok else '✗'} {check_location}\n"
+            f"{'✓' if required_ok else '✗'} {check_required}\n"
+            f"{'✓' if ready_ok else '✗'} {check_ready}"
         )
         
-        # 1. Applicant Details section
         address_display = f"{session.addressLine1}"
         if session.addressLine2:
             address_display += f", {session.addressLine2}"
         if session.pincode:
             address_display += f" - {session.pincode}"
             
+        # Localized review screen labels
+        title_text = format_message("REVIEW_TITLE", session.language, session)
+        applicant_profile_text = format_message("REVIEW_APPLICANT_PROFILE", session.language, session)
+        service_type_text = format_message("REVIEW_SERVICE_TYPE", session.language, session)
+        validation_status_text = format_message("REVIEW_VALIDATION_STATUS", session.language, session)
+        
+        address_fallback = "प्रदान नहीं किया गया" if session.language == "hi" else "Not provided"
+        district_val = localize_location(session.city or session.district or 'Lucknow', session.language)
+        
         applicant_details = (
-            f"👤 **Applicant Profile Details:**\n"
+            f"👤 **{applicant_profile_text}**\n"
             f"- Name: **{session.fullName}**\n"
             f"- Mobile: **{session.mobileNumber}**\n"
-            f"- Location: **{session.city or 'Lucknow'}**\n"
-            f"- Address: **{address_display or 'Not provided'}**\n"
+            f"- Location: **{district_val}**\n"
+            f"- Address: **{address_display or address_fallback}**\n"
         )
         
-        # 2. Subject / Details section
         subject_details = ""
-        service_details = f"📋 **Service Type:** {session.workflow.capitalize()}\n"
+        service_details = f"📋 **{service_type_text}** {session.workflow.capitalize()}\n"
         
         if session.workflow == "complaint":
+            incident_details_header = format_message("REVIEW_INCIDENT_DETAILS", session.language, session)
+            device_info_header = format_message("REVIEW_DEVICE_INFORMATION", session.language, session)
+            
+            complaint_type_display = session.data.get("complaint_type")
+            translated_comp_type = format_message(complaint_type_display, session.language, session)
+            if translated_comp_type == complaint_type_display:
+                translated_comp_type = complaint_type_display
+
             subject_details = (
-                f"📝 **Complaint & Incident Details:**\n"
-                f"- Complaint Type: **{session.data.get('complaint_type')}**\n"
+                f"📝 **{incident_details_header}**\n"
+                f"- Complaint Type: **{translated_comp_type}**\n"
                 f"- Incident Location: **{session.data.get('incident_location')}**\n"
                 f"- Incident Date: **{session.data.get('incident_time')}**\n"
                 f"- Description: **{session.data.get('incident_description')}**"
             )
-            if session.data.get("complaint_type") == "Lost Mobile / Theft":
+            if session.data.get("complaint_type") in ["Lost Mobile / Theft", "LOST_MOBILE"]:
                 imei_val = session.data.get("imei_number")
                 skip_vars = ["skip", "skip / छोड़ें", "chodein", "none", "not available", "i don't know", "no", "na", "nahi", "n/a", "not provided", "no imei", "dont know", "don't know"]
                 if not imei_val or imei_val.strip().lower() in skip_vars:
-                    imei_val = "Not Provided"
+                    imei_val = "प्रदान नहीं किया गया" if session.language == "hi" else "Not Provided"
                 subject_details += (
-                    f"\n\n📱 **Device Information**\n"
+                    f"\n\n📱 **{device_info_header}**\n"
                     f"- Brand: **{session.data.get('mobile_brand')}**\n"
                     f"- Model: **{session.data.get('mobile_model')}**\n"
                     f"- Color: **{session.data.get('mobile_color')}**\n"
@@ -1155,29 +1415,45 @@ class WorkflowEngine:
             )
             
         review_screen = (
-            f"👮 **Please review your application.**\n\n"
+            f"👮 **{title_text}**\n\n"
             f"{applicant_details}\n"
             f"{service_details}\n"
             f"{subject_details}\n\n"
-            f"**Validation Status**\n"
+            f"**{validation_status_text}**\n"
             f"```\n"
             f"{checklist}\n"
             f"```\n"
         )
         
         if ready_ok:
+            if session.language == "hi":
+                submit_label = "आवेदन सबमिट करें"
+                modify_label = "विवरण बदलें"
+                submit_text = "क्या आप इस आवेदन को सबमिट करना चाहते हैं?"
+            else:
+                submit_label = "Submit Application"
+                modify_label = "Modify Details"
+                submit_text = "Would you like to submit this application?"
+                
             review_screen += (
-                f"Would you like to submit this application?\n\n"
-                f"- [Submit Application](option:Submit Application)\n"
-                f"- [Modify Details](option:Modify Details)"
+                f"{submit_text}\n\n"
+                f"- [{submit_label}](option:Submit Application)\n"
+                f"- [{modify_label}](option:Modify Details)"
             )
-            sugs = ["Submit Application", "Modify Details"]
+            sugs = [submit_label, modify_label]
         else:
+            if session.language == "hi":
+                modify_label = "विवरण बदलें"
+                cannot_submit_text = "⚠️ **सबमिट नहीं कर सकते:** कृपया सभी आवश्यक फ़ील्ड भरें और सुनिश्चित करें कि सत्यापन सफल हो।"
+            else:
+                modify_label = "Modify Details"
+                cannot_submit_text = "⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass."
+                
             review_screen += (
-                f"⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.\n\n"
-                f"- [Modify Details](option:Modify Details)"
+                f"{cannot_submit_text}\n\n"
+                f"- [{modify_label}](option:Modify Details)"
             )
-            sugs = ["Modify Details"]
+            sugs = [modify_label]
             
         return {
             "intercepted": True,
@@ -1406,7 +1682,7 @@ class WorkflowEngine:
                 next_field = fields[0]
                 session.step = 1
                 session.currentExpectedField = next_field["name"]
-                q_text = self._format_question(session.workflow, next_field, session.language, 1)
+                q_text = self._format_question(session, next_field, session.language, 1)
 
                 db_action_list = [db_action]
                 log_audit(session, "profile_confirmed", {
@@ -1582,7 +1858,8 @@ class WorkflowEngine:
         session.step = "CONFIRM_PROFILE"
         return self.render_confirmation_card(session)
 
-    def _format_question(self, workflow: str, field: dict, language: str, step: int) -> str:
+    def _format_question(self, session: WorkflowSession, field: dict, language: str, step: int) -> str:
+        workflow = session.workflow
         transitions = {
             "en": ["Let's start with your details.", "Thank you. ", "Got it. ", "Perfect. ", "Thank you. "],
             "hi": ["आइए आपकी जानकारी से शुरू करते हैं।", "धन्यवाद। ", "ठीक है। ", "बहुत बढ़िया। ", "धन्यवाद। "],
@@ -1592,6 +1869,18 @@ class WorkflowEngine:
         if step > 1:
             idx = min(step - 1, len(transitions[language]) - 1)
             prefix_phrase = transitions[language][idx]
+
+        empathy_prepend = ""
+        if workflow == "complaint" and field["name"] in ["mobile_brand", "incident_location"] and not session.data.get("empathy_shown"):
+            comp_type = session.data.get("complaint_type")
+            empathy_key = f"EMPATHY_{comp_type}"
+            empathy_text = format_message(empathy_key, language, session)
+            if empathy_text != empathy_key:
+                session.data["empathy_shown"] = True
+                if comp_type == "LOST_MOBILE":
+                    return empathy_text
+                else:
+                    empathy_prepend = empathy_text + "\n\n"
 
         field_questions = {
             "complaint": {
@@ -1735,7 +2024,7 @@ class WorkflowEngine:
                 options_text += f"- [{sug}](option:{sug})\n"
             q_text += options_text
 
-        return f"{prefix_phrase}{q_text}"
+        return f"{empathy_prepend}{prefix_phrase}{q_text}"
 
     def _finalize_workflow(self, session: WorkflowSession) -> dict:
         workflow = session.workflow
@@ -1880,16 +2169,25 @@ class WorkflowEngine:
             "referenceNumber": ref_num
         }, db_action_list)
 
-        # Reset session state to match NestJS fallback parity
+        # Reset session state to FEEDBACK_COLLECTION for feedback prompts
         session.workflow = None
-        session.step = "START"
+        session.step = "ASK_FEEDBACK"
         session.data = {}
-        session.currentWorkflowState = "START"
+        session.currentWorkflowState = "FEEDBACK_COLLECTION"
         session.currentExpectedField = ""
+
+        # Localized feedback ask prompt
+        feedback_ask_prompt = format_message("FEEDBACK_ASK", session.language, session)
+        resp_str = f"{resp_str}\n\n{feedback_ask_prompt}"
+        
+        if session.language == "hi":
+            rating_sugs = ["5 - बहुत मददगार", "4 - मददगार", "3 - सामान्य", "2 - सुधार की आवश्यकता", "1 - मददगार नहीं"]
+        else:
+            rating_sugs = ["5 - Very Helpful", "4 - Helpful", "3 - Neutral", "2 - Needs Improvement", "1 - Not Helpful"]
 
         return {
             "intercepted": True,
             "response": resp_str,
-            "suggestions": sugs,
+            "suggestions": rating_sugs,
             "db_action": db_action_list
         }

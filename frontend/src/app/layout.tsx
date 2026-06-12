@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ThemeToggle from "./components/ThemeToggle";
+import ThemeToggle from "@/components/ui/ThemeToggle";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 export const metadata: Metadata = {
   title: "Rakku - Your Digital Raksak | Uttar Pradesh Police Citizen Services",
@@ -69,7 +70,9 @@ export default function RootLayout({
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col">
-          {children}
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </main>
 
         {/* Footer */}

@@ -5,6 +5,7 @@ const config: Config = {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -28,7 +29,7 @@ const config: Config = {
           khaki: {
             DEFAULT: "var(--police-khaki)",
             dark: "var(--police-khaki-dark)",
-          }
+          },
         },
         slate: {
           850: "#1E293B",
@@ -38,7 +39,11 @@ const config: Config = {
         theme: {
           primary: "var(--text-primary)",
           secondary: "var(--text-secondary)",
-        }
+        },
+        // Official government palette
+        primary: "#0F52BA",
+        secondary: "#1E3A8A",
+        accent: "#F59E0B",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "sans-serif"],
@@ -55,10 +60,11 @@ const config: Config = {
         "fade-in-up": {
           "0%": { opacity: "0", transform: "translateY(10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
-        }
-      }
+        },
+      },
     },
   },
   plugins: [],
 };
+
 export default config;

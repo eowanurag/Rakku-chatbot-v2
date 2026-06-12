@@ -167,6 +167,7 @@ model Feedback {
   workflowType String?
   rating       Int
   comments     String?
+  category     String?
   createdAt    DateTime @default(now())
 }
 
@@ -240,4 +241,16 @@ model AggregatedMetric {
   value     Json
   createdAt DateTime @default(now())
 }
+
+model CitizenFeedback {
+  id           String   @id @default(uuid())
+  sessionId    String
+  citizenId    String?
+  workflowType String?
+  rating       Int
+  comments     String?
+  category     String?
+  createdAt    DateTime @default(now())
+}
+
 

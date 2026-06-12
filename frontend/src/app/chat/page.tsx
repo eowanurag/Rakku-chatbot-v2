@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import DOMPurify from "dompurify";
 import { ChatService } from "../../services/api";
+import { useLanguage } from "@/context/LanguageContext";
+import LanguageSelector from "@/components/chat/LanguageSelector";
+import LanguageBadge from "@/components/chat/LanguageBadge";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
 
@@ -58,6 +61,20 @@ function ChatContent() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const { selectedLanguage, translate } = useLanguage();
+
+  const getLocalizedWelcome = () => {
+    if (!selectedLanguage) return "";
+    const mainGreeting = translate("MAIN_MENU_GREETING");
+    const complaint = `[🚔 ${translate("SERVICE_COMPLAINT")}](option:🚔 File a Complaint)`;
+    const verification = `[🏠 ${translate("SERVICE_VERIFICATION")}](option:🏠 Tenant Verification)`;
+    const certificate = `[📜 ${translate("SERVICE_CERTIFICATE")}](option:📜 Character Certificate)`;
+    const permission = `[🎭 ${translate("SERVICE_PERMISSION")}](option:🎭 Event Permission)`;
+    const tracking = `[🔍 ${translate("SERVICE_TRACKING")}](option:🔍 Track Application)`;
+
+    return `${mainGreeting}\n\n${complaint}\n\n${verification}\n\n${certificate}\n\n${permission}\n\n${tracking}`;
+  };
 
   // --- Police Station Helpers ---
   const trackTelemetry = async (type: string, value?: string) => {
@@ -128,12 +145,6 @@ function ChatContent() {
   // Initialize Session ID and request location coordinates
   useEffect(() => {
     setSessionId(`session-${Math.random().toString(36).substring(7)}`);
-    setMessages([
-      {
-        role: "assistant",
-        text: "👮 Welcome to Rakku\n\nI'm your Digital Police Assistant.\n\nI can help you with:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n\nPlease choose your preferred language:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nYou can also simply tell me what you need help with.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
-      },
-    ]);
 
     if (typeof window !== "undefined" && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -150,12 +161,40 @@ function ChatContent() {
     }
   }, []);
 
+  // Handle localized welcome message updates when language changes
+  useEffect(() => {
+    if (selectedLanguage) {
+      setMessages(prev => {
+        const localizedMsg = getLocalizedWelcome();
+        if (prev.length === 0) {
+          return [{ role: "assistant", text: localizedMsg }];
+        }
+        // If the first message is from the assistant and we are just starting out
+        if (prev[0].role === "assistant" && prev.length === 1) {
+          const updated = [...prev];
+          updated[0].text = localizedMsg;
+          return updated;
+        }
+        return prev;
+      });
+      
+      setSuggestions([
+        `🚔 ${translate("SERVICE_COMPLAINT")}`,
+        `🏠 ${translate("SERVICE_VERIFICATION")}`,
+        `📜 ${translate("SERVICE_CERTIFICATE")}`,
+        `🎭 ${translate("SERVICE_PERMISSION")}`,
+        `🔍 ${translate("SERVICE_TRACKING")}`,
+        `📍 Find Police Station`
+      ]);
+    }
+  }, [selectedLanguage]);
+
   // Handle triggered query from dashboard
   useEffect(() => {
-    if (triggerQuery && sessionId && messages.length === 1) {
+    if (triggerQuery && sessionId && messages.length === 1 && selectedLanguage) {
       handleSendMessage(triggerQuery);
     }
-  }, [triggerQuery, sessionId]);
+  }, [triggerQuery, sessionId, selectedLanguage]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -398,20 +437,25 @@ function ChatContent() {
 
   const startNewChat = () => {
     setSessionId(`session-${Math.random().toString(36).substring(7)}`);
-    setMessages([
-      {
-        role: "assistant",
-        text: "👮 Welcome to Rakku\n\nI'm your Digital Police Assistant.\n\nI can help you with:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n\nPlease choose your preferred language:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nYou can also simply tell me what you need help with.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
-      },
-    ]);
-    setSuggestions([
-      "🚔 File a Complaint",
-      "🏠 Tenant Verification",
-      "📜 Character Certificate",
-      "🎭 Event Permission",
-      "🔍 Track Application",
-      "📍 Find Police Station",
-    ]);
+    if (selectedLanguage) {
+      setMessages([
+        {
+          role: "assistant",
+          text: getLocalizedWelcome(),
+        },
+      ]);
+      setSuggestions([
+        `🚔 ${translate("SERVICE_COMPLAINT")}`,
+        `🏠 ${translate("SERVICE_VERIFICATION")}`,
+        `📜 ${translate("SERVICE_CERTIFICATE")}`,
+        `🎭 ${translate("SERVICE_PERMISSION")}`,
+        `🔍 ${translate("SERVICE_TRACKING")}`,
+        `📍 Find Police Station`
+      ]);
+    } else {
+      setMessages([]);
+      setSuggestions([]);
+    }
   };
 
   const loadHistorySession = (sessionTitle: string) => {
@@ -423,6 +467,10 @@ function ChatContent() {
       },
     ]);
   };
+
+  if (!selectedLanguage) {
+    return <LanguageSelector />;
+  }
 
   return (
     <div className="flex-1 flex overflow-hidden relative">
@@ -490,16 +538,19 @@ function ChatContent() {
             <span className="text-xs font-semibold text-slate-300">Rakku Chat Assistant</span>
           </div>
 
-          <button
-            onClick={() => {
-              setMessages([]);
-              startNewChat();
-            }}
-            title="Clear chat history"
-            className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-police-red rounded-lg transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <div className="flex items-center space-x-4">
+            <LanguageBadge />
+            <button
+              onClick={() => {
+                setMessages([]);
+                startNewChat();
+              }}
+              title="Clear chat history"
+              className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-police-red rounded-lg transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* Chat Area */}
@@ -597,7 +648,7 @@ function ChatContent() {
                             className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
                           >
                             <span className="text-xl">🚔</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">File Complaint</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_COMPLAINT")}</span>
                           </button>
                           
                           <button
@@ -605,7 +656,7 @@ function ChatContent() {
                             className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
                           >
                             <span className="text-xl">🏠</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Tenant Verify</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_VERIFICATION")}</span>
                           </button>
 
                           <button
@@ -613,7 +664,7 @@ function ChatContent() {
                             className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
                           >
                             <span className="text-xl">📜</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Character Cert</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_CERTIFICATE")}</span>
                           </button>
 
                           <button
@@ -621,7 +672,7 @@ function ChatContent() {
                             className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
                           >
                             <span className="text-xl">🎭</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Event Permit</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_PERMISSION")}</span>
                           </button>
 
                           <button
@@ -629,7 +680,7 @@ function ChatContent() {
                             className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
                           >
                             <span className="text-xl">🔍</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Track Status</span>
+                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_TRACKING")}</span>
                           </button>
 
                           <button

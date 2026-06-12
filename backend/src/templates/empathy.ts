@@ -1,6 +1,44 @@
 export function getEmpathyMessage(message: string, lang: 'en' | 'hi' | 'hinglish'): string {
   const cleanMsg = message.toLowerCase();
   
+  // Try to load message library
+  let messageLibrary: any = null;
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '..', 'chat', 'message_library.json');
+    if (fs.existsSync(filePath)) {
+      messageLibrary = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const getFromLibrary = (key: string): string => {
+    if (messageLibrary && messageLibrary.messages && messageLibrary.messages[key]) {
+      const msgObj = messageLibrary.messages[key];
+      return msgObj[lang] || msgObj['en'] || '';
+    }
+    return '';
+  };
+
+  const isEmployee = cleanMsg.includes('employee') || cleanMsg.includes('कर्मचारी');
+  const isTenant = cleanMsg.includes('tenant') || cleanMsg.includes('kirayedar') || cleanMsg.includes('किरायेदार') || cleanMsg.includes('rent') || cleanMsg.includes('pg') || cleanMsg.includes('domestic') || cleanMsg.includes('help') || cleanMsg.includes('satyapan') || cleanMsg.includes('सत्यापन');
+  const isCharacter = cleanMsg.includes('character') || cleanMsg.includes('charitra') || cleanMsg.includes('चरित्र');
+
+  if (isEmployee) {
+    const libMsg = getFromLibrary('EMPATHY_EMPLOYEE_VERIFICATION');
+    if (libMsg) return libMsg + '\n\n';
+  }
+  if (isTenant) {
+    const libMsg = getFromLibrary('EMPATHY_TENANT_VERIFICATION');
+    if (libMsg) return libMsg + '\n\n';
+  }
+  if (isCharacter) {
+    const libMsg = getFromLibrary('EMPATHY_CHARACTER_CERTIFICATE');
+    if (libMsg) return libMsg + '\n\n';
+  }
+  
   const theftKeys = ['stolen', 'theft', 'steal', 'chori', 'चोरी', 'चोर'];
   const lostKeys = ['lost', 'missing', 'gum', 'kho', 'खोया', 'खो', 'गुम', 'belost'];
   const harassKeys = ['harass', 'harassment', 'teasing', 'threat', 'trolling', 'pareshan', 'dhamki', 'उत्पीड़न', 'परेशान', 'धमकी'];

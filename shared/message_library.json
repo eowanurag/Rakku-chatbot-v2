@@ -3,14 +3,69 @@
   "updatedAt": "2026-06-10",
   "messages": {
     "GREETING_WELCOME": {
-      "en": "👮 Welcome to Rakku.\n\nI'm here to help you access UP Police citizen services.\n\nHow may I assist you today?",
-      "hi": "👮 राक्कू (Rakku) में आपका स्वागत है।\n\nमैं उत्तर प्रदेश पुलिस नागरिक सेवाओं तक पहुँचने में आपकी सहायता करने के लिए यहाँ हूँ।\n\nआज मैं आपकी क्या सहायता कर सकता हूँ?",
-      "hinglish": "👮 Rakku mein aapka welcome hai.\n\nMain UP Police citizen services access karne mein aapki help karunga.\n\nMain aaj aapki kya help kar sakta hoon?"
+      "en": "I am Rakku, your Digital Citizen Assistance Officer.\n\nI am here to help you access police services, submit requests, and receive guidance whenever you need assistance.\n\nIf you're reporting an incident, requesting a service, or simply looking for information, I'll guide you through each step.\n\nHow may I assist you today?",
+      "hi": "मैं रक्कू हूँ, आपका डिजिटल नागरिक सहायता अधिकारी।\n\nमैं यहाँ पुलिस सेवाओं तक पहुँचने, अनुरोध प्रस्तुत करने और जब भी आपको सहायता की आवश्यकता हो, मार्गदर्शन प्राप्त करने में आपकी मदद करने के लिए हूँ।\n\nयदि आप किसी घटना की रिपोर्ट कर रहे हैं, किसी सेवा का अनुरोध कर रहे हैं, या बस जानकारी की तलाश कर रहे हैं, तो मैं हर कदम पर आपका मार्गदर्शन करूँगा।\n\nआज मैं आपकी क्या सहायता कर सकता हूँ?",
+      "hinglish": "Main Rakku hoon, aapka Digital Citizen Assistance Officer.\n\nMain yahan police services access karne, requests submit karne aur jab bhi aapko madad chahiye, guidance dene mein aapki help karne ke liye hoon.\n\nAgar aap kisi incident ki report kar rahe hain, service request kar rahe hain, ya bas information dhoondh rahe hain, main har step par aapko guide karunga.\n\nAaj main aapki kya madad kar sakta hoon?"
     },
     "GREETING_LANG_SELECT": {
       "en": "Please select your preferred language / कृपया अपनी पसंदीदा भाषा चुनें:",
       "hi": "कृपया अपनी पसंदीदा भाषा चुनें / Please select your preferred language:",
       "hinglish": "Please apni preferred language select karein / कृपया अपनी पसंदीदा भाषा चुनें:"
+    },
+    "MAIN_MENU_GREETING": {
+      "en": "👮 Welcome to Rakku\n\nI am Rakku, your Digital Citizen Assistance Officer.\n\nI am here to help you access police services, submit requests, and receive guidance whenever you need assistance.\n\nIf you're reporting an incident, requesting a service, or looking for information, I'll guide you through each step.\n\nHow may I assist you today?",
+      "hi": "👮 नमस्कार\n\nमैं Rakku, आपका डिजिटल नागरिक सहायता अधिकारी हूँ।\n\nमैं पुलिस सेवाओं, शिकायत पंजीकरण, सत्यापन, प्रमाण पत्र एवं अन्य नागरिक सेवाओं में आपकी सहायता कर सकता हूँ।\n\nमैं आपकी किस प्रकार सहायता कर सकता हूँ?",
+      "hinglish": "👮 Namaste\n\nMain Rakku hoon, aapka Digital Citizen Assistance Officer.\n\nMain complaints register karne, verification requests, certificates aur application tracking mein madad kar sakta hoon.\n\nAaj main aapki kis tarah sahayata kar sakta hoon?"
+    },
+    "SERVICE_COMPLAINT": {
+      "en": "File Complaint",
+      "hi": "शिकायत दर्ज करें",
+      "hinglish": "Complaint Register Karein"
+    },
+    "SERVICE_COMPLAINT_DESC": {
+      "en": "Register incidents and complaints.",
+      "hi": "घटनाओं एवं शिकायतों का पंजीकरण करें।",
+      "hinglish": "Incidents aur complaints register karein."
+    },
+    "SERVICE_VERIFICATION": {
+      "en": "Tenant Verification",
+      "hi": "किरायेदार सत्यापन",
+      "hinglish": "Tenant Verification"
+    },
+    "SERVICE_VERIFICATION_DESC": {
+      "en": "Verify tenants, employees, or domestic help.",
+      "hi": "किरायेदार, कर्मचारी, या घरेलू सहायक का सत्यापन करें।",
+      "hinglish": "Tenants, employees, ya domestic help verify karein."
+    },
+    "SERVICE_CERTIFICATE": {
+      "en": "Character Certificate",
+      "hi": "चरित्र प्रमाण पत्र",
+      "hinglish": "Character Certificate"
+    },
+    "SERVICE_CERTIFICATE_DESC": {
+      "en": "Apply for official character certificates.",
+      "hi": "आधिकारिक चरित्र प्रमाण पत्र के लिए आवेदन करें।",
+      "hinglish": "Official character certificates ke liye apply karein."
+    },
+    "SERVICE_PERMISSION": {
+      "en": "Event Permission",
+      "hi": "कार्यक्रम अनुमति",
+      "hinglish": "Event Permission"
+    },
+    "SERVICE_PERMISSION_DESC": {
+      "en": "Request NOC for events, processions, or shoots.",
+      "hi": "कार्यक्रमों, जुलूसों या शूटिंग के लिए एनओसी का अनुरोध करें।",
+      "hinglish": "Events, processions, ya shoots ke liye NOC request karein."
+    },
+    "SERVICE_TRACKING": {
+      "en": "Application Tracking",
+      "hi": "आवेदन की स्थिति",
+      "hinglish": "Application Status"
+    },
+    "SERVICE_TRACKING_DESC": {
+      "en": "Check real-time status of your requests.",
+      "hi": "अपने अनुरोधों की वास्तविक समय की स्थिति की जाँच करें।",
+      "hinglish": "Apne requests ka real-time status check karein."
     },
     "GREETING_RESUME": {
       "en": "👮 Welcome back. I see we have an active request in progress. Let's resume.",
@@ -191,6 +246,266 @@
       "en": "👮 I am here to assist you. This is an official digital helpdesk. Let me know if you would like me to explain any step or field in detail.",
       "hi": "👮 मैं यहाँ आपकी सहायता के लिए हूँ। यह एक आधिकारिक सहायता केंद्र है। मुझे बताएं कि क्या आप चाहते हैं कि मैं किसी कदम या क्षेत्र को विस्तार से समझाऊं।",
       "hinglish": "👮 Main aapki help ke liye hoon. Agar aapko koi step samajh na aaye, to main detail mein explain kar sakta hoon."
+    },
+    "REVIEW_TITLE": {
+      "en": "Review Application",
+      "hi": "आवेदन की समीक्षा करें",
+      "hinglish": "Application Review karein"
+    },
+    "REVIEW_APPLICANT_PROFILE": {
+      "en": "Applicant Profile Details:",
+      "hi": "आवेदक प्रोफ़ाइल विवरण:",
+      "hinglish": "Applicant Profile Details:"
+    },
+    "REVIEW_SERVICE_TYPE": {
+      "en": "Service Type:",
+      "hi": "सेवा का प्रकार:",
+      "hinglish": "Service Type:"
+    },
+    "REVIEW_INCIDENT_DETAILS": {
+      "en": "Incident Details:",
+      "hi": "घटना का विवरण:",
+      "hinglish": "Incident Details:"
+    },
+    "REVIEW_DEVICE_INFORMATION": {
+      "en": "Device Information:",
+      "hi": "डिवाइस की जानकारी:",
+      "hinglish": "Device Information:"
+    },
+    "REVIEW_VALIDATION_STATUS": {
+      "en": "Validation Status",
+      "hi": "सत्यापन की स्थिति",
+      "hinglish": "Validation Status"
+    },
+    "REVIEW_READY_FOR_SUBMISSION": {
+      "en": "Ready for Submission",
+      "hi": "जमा करने के लिए तैयार",
+      "hinglish": "Submission ke liye ready"
+    },
+    "CHECK_APPLICANT_COMPLETE": {
+      "en": "Applicant Information Complete",
+      "hi": "आवेदक की जानकारी पूर्ण",
+      "hinglish": "Applicant Information Complete"
+    },
+    "CHECK_SUBJECT_COMPLETE": {
+      "en": "Subject Information Complete",
+      "hi": "विषय की जानकारी पूर्ण",
+      "hinglish": "Subject Information Complete"
+    },
+    "CHECK_CONTACT_VALID": {
+      "en": "Contact Details Valid",
+      "hi": "सम्पर्क विवरण मान्य",
+      "hinglish": "Contact Details Valid"
+    },
+    "CHECK_ADDRESS_COMPLETE": {
+      "en": "Address Complete",
+      "hi": "पता पूर्ण",
+      "hinglish": "Address Complete"
+    },
+    "CHECK_LOCATION_CONFIRMED": {
+      "en": "Location Confirmed",
+      "hi": "स्थान की पुष्टि की गई",
+      "hinglish": "Location Confirmed"
+    },
+    "CHECK_REQUIRED_FIELDS": {
+      "en": "Required Fields Complete",
+      "hi": "आवश्यक फ़ील्ड पूर्ण",
+      "hinglish": "Required Fields Complete"
+    },
+    "CHECK_READY_FOR_SUBMISSION": {
+      "en": "Ready for Submission",
+      "hi": "जमा करने के लिए तैयार",
+      "hinglish": "Submission ke liye ready"
+    },
+    "SUCCESS_COMPLAINT_REGISTERED": {
+      "en": "Your complaint has been submitted successfully.",
+      "hi": "आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है।",
+      "hinglish": "Aapki complaint successfully submit ho gayi hai."
+    },
+    "SUCCESS_VERIFICATION_REGISTERED": {
+      "en": "Your verification request has been submitted successfully.",
+      "hi": "आपका सत्यापन अनुरोध सफलतापूर्वक सबमिट कर दिया गया है।",
+      "hinglish": "Aapka verification request successfully submit ho gaya hai."
+    },
+    "SUCCESS_CERTIFICATE_REGISTERED": {
+      "en": "Your character certificate application has been submitted successfully.",
+      "hi": "आपका चरित्र प्रमाण पत्र आवेदन सफलतापूर्वक सबमिट कर दिया गया है।",
+      "hinglish": "Aapka character certificate application successfully submit ho gaya hai."
+    },
+    "SUCCESS_EVENT_REGISTERED": {
+      "en": "Your event permission request has been submitted successfully.",
+      "hi": "आपका कार्यक्रम अनुमति अनुरोध सफलतापूर्वक सबमिट कर दिया गया है।",
+      "hinglish": "Aapka event permission request successfully submit ho gaya hai."
+    },
+    "LABEL_REFERENCE_NUMBER": {
+      "en": "Reference Number:",
+      "hi": "संदर्भ संख्या:",
+      "hinglish": "Reference Number:"
+    },
+    "LABEL_STATUS": {
+      "en": "Status:",
+      "hi": "स्थिति:",
+      "hinglish": "Status:"
+    },
+    "LABEL_SUBMITTED": {
+      "en": "Submitted:",
+      "hi": "जमा किया गया:",
+      "hinglish": "Submitted:"
+    },
+    "LABEL_TRACK_APPLICATION": {
+      "en": "Track Application",
+      "hi": "आवेदन ट्रैक करें",
+      "hinglish": "Application Track karein"
+    },
+    "LABEL_DOWNLOAD_RECEIPT": {
+      "en": "Download Receipt",
+      "hi": "रसीद डाउनलोड करें",
+      "hinglish": "Receipt Download karein"
+    },
+    "STATUS_SUBMITTED": {
+      "en": "Submitted",
+      "hi": "जमा किया गया",
+      "hinglish": "Submitted"
+    },
+    "STATUS_PENDING_REVIEW": {
+      "en": "Pending Review",
+      "hi": "समीक्षा लंबित",
+      "hinglish": "Review Pending"
+    },
+    "STATUS_UNDER_PROCESS": {
+      "en": "Under Process",
+      "hi": "प्रक्रिया के अधीन",
+      "hinglish": "Under Process"
+    },
+    "STATUS_COMPLETED": {
+      "en": "Completed",
+      "hi": "पूर्ण",
+      "hinglish": "Completed"
+    },
+    "STATUS_REJECTED": {
+      "en": "Rejected",
+      "hi": "अस्वीकृत",
+      "hinglish": "Rejected"
+    },
+    "EMPATHY_LOST_DOCUMENT": {
+      "en": "👮 Losing official documents is inconvenient. I'll help you register a lost document report to facilitate duplicates.",
+      "hi": "👮 आधिकारिक दस्तावेजों का खो जाना असुविधाजनक होता है। मैं खोए हुए दस्तावेज की रिपोर्ट दर्ज करने में आपकी मदद करूँगा ताकि आप दूसरी प्रति प्राप्त कर सकें।",
+      "hinglish": "👮 Official documents ka khona pareshani ki baat hai. Main report register karne mein help karunga takki aap duplicate copy le sakein."
+    },
+    "FEEDBACK_ASK": {
+      "en": "Was this service helpful to you?",
+      "hi": "क्या यह सेवा आपके लिए सहायक रही?",
+      "hinglish": "Kya ye service aapke liye helpful rahi?"
+    },
+    "FEEDBACK_COMMENT_ASK": {
+      "en": "What could we improve?",
+      "hi": "हम क्या सुधार कर सकते हैं?",
+      "hinglish": "Hum kya improve kar sakte hain?"
+    },
+    "STATE_UP": {
+      "en": "Uttar Pradesh",
+      "hi": "उत्तर प्रदेश",
+      "hinglish": "Uttar Pradesh"
+    },
+    "LOST_MOBILE": {
+      "en": "Lost Mobile / Theft",
+      "hi": "मोबाइल चोरी / गुम होना",
+      "hinglish": "Lost Mobile / Theft"
+    },
+    "LOST_DOCUMENT": {
+      "en": "Lost Document",
+      "hi": "खोया हुआ दस्तावेज़",
+      "hinglish": "Lost Document"
+    },
+    "SIMPLE_HARASSMENT": {
+      "en": "Simple Harassment",
+      "hi": "सामान्य उत्पीड़न",
+      "hinglish": "Simple Harassment"
+    },
+    "CYBER_FRAUD": {
+      "en": "Cyber Fraud / Financial Loss",
+      "hi": "साइबर धोखाधड़ी",
+      "hinglish": "Cyber Fraud / Financial Loss"
+    },
+    "VERIFICATION_TYPE_REQUEST": {
+      "en": "Please select the **Verification Type**:\n\n- [Tenant Verification](option:Tenant Verification)\n- [PG Verification](option:PG Verification)\n- [Domestic Help Verification](option:Domestic Help Verification)\n- [Employee Verification](option:Employee Verification)",
+      "hi": "कृपया **सत्यापन का प्रकार** चुनें:\n\n- [किरायेदार सत्यापन](option:Tenant Verification)\n- [पीजी सत्यापन](option:PG Verification)\n- [घरेलू सहायक सत्यापन](option:Domestic Help Verification)\n- [कर्मचारी सत्यापन](option:Employee Verification)",
+      "hinglish": "Please select the **Verification Type**:\n\n- [Tenant Verification](option:Tenant Verification)\n- [PG Verification](option:PG Verification)\n- [Domestic Help Verification](option:Domestic Help Verification)\n- [Employee Verification](option:Employee Verification)"
+    },
+    "CANDIDATE_NAME_REQUEST": {
+      "en": "What is the full name of the candidate being verified?",
+      "hi": "सत्यापित किए जाने वाले व्यक्ति का पूरा नाम क्या है?",
+      "hinglish": "Satyapit hone wale candidate ka full name kya hai?"
+    },
+    "CANDIDATE_ADDRESS_REQUEST": {
+      "en": "What is their permanent address?",
+      "hi": "उनका स्थायी पता क्या है?",
+      "hinglish": "Unka permanent address kya hai?"
+    },
+    "CANDIDATE_MOBILE_REQUEST": {
+      "en": "Could you please share their mobile number?",
+      "hi": "क्या आप कृपया उनका मोबाइल नंबर साझा कर सकते हैं?",
+      "hinglish": "Kya aap unka mobile number share karenge?"
+    },
+    "PROPERTY_DETAILS_REQUEST": {
+      "en": "Could you provide the property details (flat number, block, city) where they will reside?",
+      "hi": "क्या आप संपत्ति का विवरण (जैसे फ्लैट नंबर, ब्लॉक और शहर) दे सकते हैं जहाँ वे रहेंगे?",
+      "hinglish": "Kya aap property details (flat number, block, city) batayenge jahan wo rahenge?"
+    },
+    "REVIEW_CANDIDATE_DETAILS": {
+      "en": "Candidate Details (Subject):",
+      "hi": "उम्मीदवार की जानकारी (विषय):",
+      "hinglish": "Candidate Details (Subject):"
+    },
+    "REVIEW_LOCATION": {
+      "en": "Location:",
+      "hi": "स्थान:",
+      "hinglish": "Location:"
+    },
+    "REVIEW_ADDRESS": {
+      "en": "Address:",
+      "hi": "पता:",
+      "hinglish": "Address:"
+    },
+    "REVIEW_CONTACT": {
+      "en": "Mobile Number:",
+      "hi": "मोबाइल नंबर:",
+      "hinglish": "Mobile Number:"
+    },
+    "EMPATHY_EMPLOYEE_VERIFICATION": {
+      "en": "👮 Thank you. I will assist you in the employee verification process. Please share the details of the person being verified.",
+      "hi": "👮 धन्यवाद। मैं कर्मचारी सत्यापन प्रक्रिया में आपकी सहायता करूंगा। कृपया सत्यापित किए जाने वाले व्यक्ति की जानकारी साझा करें।",
+      "hinglish": "👮 Dhanyavad. Main employee verification process mein aapki help karunga. Please satyapit hone wale vyakti ki details share karein."
+    },
+    "EMPATHY_TENANT_VERIFICATION": {
+      "en": "👮 Thank you. I will assist you in completing the tenant verification process.",
+      "hi": "👮 धन्यवाद। मैं किरायेदार सत्यापन प्रक्रिया पूरी करने में आपकी सहायता करूंगा।",
+      "hinglish": "👮 Dhanyavad. Main tenant verification process complete karne mein aapki help karunga."
+    },
+    "EMPATHY_CHARACTER_CERTIFICATE": {
+      "en": "👮 I will assist you with your character certificate application.",
+      "hi": "👮 मैं आपके चरित्र प्रमाण पत्र आवेदन में सहायता करूंगा।",
+      "hinglish": "👮 Main aapke character certificate application mein help karunga."
+    },
+    "TENANT_VERIFICATION": {
+      "en": "Tenant Verification",
+      "hi": "किरायेदार सत्यापन",
+      "hinglish": "Tenant Verification"
+    },
+    "PG_VERIFICATION": {
+      "en": "PG Verification",
+      "hi": "पीजी सत्यापन",
+      "hinglish": "PG Verification"
+    },
+    "DOMESTIC_HELP_VERIFICATION": {
+      "en": "Domestic Help Verification",
+      "hi": "घरेलू सहायक सत्यापन",
+      "hinglish": "Domestic Help Verification"
+    },
+    "EMPLOYEE_VERIFICATION": {
+      "en": "Employee Verification",
+      "hi": "कर्मचारी सत्यापन",
+      "hinglish": "Employee Verification"
     }
   }
 }

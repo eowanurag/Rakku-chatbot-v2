@@ -88,46 +88,70 @@ Supabase/PostgreSQL
 
 ```text
 Rakku-chatbot-v1/
-├── docker-compose.yml               # Orchestrates all services
-├── .env.example                     # Configuration file template
+├── docker-compose.yml               # Environment variables template
+├── .env.example                     # Environment variables template
 ├── README.md                        # Project documentation
 ├── shared/
-│   ├── message_library.json         # Conversational strings
-│   └── officer_persona.md           # Persona guardrails
+│   ├── message_library.json         # All conversational strings
+│   └── officer_persona.md           # Persona guardrails for the AI
 ├── frontend/
-│   ├── package.json
-│   ├── next.config.js
+│   ├── package.json                 # Frontend dependencies
+│   ├── next.config.js               # Next.js configuration
+│   ├── tailwind.config.js           # Tailwind CSS config
+│   ├── tsconfig.json                # TypeScript config
 │   └── src/
 │       ├── app/
 │       │   ├── chat/
-│       │   │   ├── page.tsx
-│       │   │   └── components/
-│       │   ├── admin/
-│       │   └── track/
+│       │   │   ├── page.tsx         # Chat page component
+│       │   │   └── components/     # Chat UI components (ChatBubble, TypingIndicator, etc.)
+│       │   ├── admin/               # Admin dashboard components
+│       │   ├── track/               # Application tracking UI
+│       │   └── layout/              # Shared layout components (Header, Footer)
 │       ├── components/
-│       │   ├── Header.tsx
-│       │   └── Footer.tsx
+│       │   ├── chat/
+│       │   │   ├── ChatBubble.tsx
+│       │   │   ├── TypingIndicator.tsx
+│       │   │   └── ActionButtonGroup.tsx
+│       │   ├── dashboard/
+│       │   │   ├── ApplicationCard.tsx
+│       │   │   └── ServiceCard.tsx
+│       │   ├── layout/
+│       │   │   ├── ErrorBoundary.tsx
+│       │   │   ├── Footer.tsx
+│       │   │   └── Header.tsx
+│       │   ├── review/
+│       │   │   ├── ApplicantReviewCard.tsx
+│       │   │   ├── ServiceReviewCard.tsx
+│       │   │   └── ValidationStatusCard.tsx
+│       │   ├── tracking/
+│       │   │   └── TrackingTimeline.tsx
+│       │   └── ui/
+│       │       ├── EmptyState.tsx
+│       │       ├── LoadingCard.tsx
+│       │       ├── PageContainer.tsx
+│       │       └── StatusBadge.tsx
 │       └── services/
-│           └── api.ts               # API client
+│           └── api.ts               # API client wrapper
 ├── backend/
-│   ├── package.json
-│   ├── tsconfig.json
+│   ├── package.json                 # Backend dependencies
+│   ├── tsconfig.json                # TypeScript config
+│   ├── prisma/
+│   │   └── schema.prisma            # Prisma data model
 │   └── src/
-│       ├── main.ts                 # NestJS bootstrap
+│       ├── main.ts                  # NestJS bootstrap
 │       ├── chat/
-│       │   ├── chat.service.ts
-│       │   └── chat.controller.ts
+│       │   ├── chat.service.ts      # Chat fallback logic
+│       │   └── chat.controller.ts   # Chat HTTP endpoints
 │       ├── validation/
-│       │   └── validation.service.ts
-│       └── prisma/
-│           └── schema.prisma
+│       │   └── validation.service.ts # Input validation utilities
+│       └── ...                      # Additional services/modules
 └── ai-service/
-    ├── requirements.txt
+    ├── requirements.txt             # Python dependencies
     ├── main.py                       # FastAPI entrypoint
-    ├── workflow_engine.py            # State machine
-    ├── gemini_client.py              # Gemini integration
+    ├── workflow_engine.py            # Slot‑filling state machine
+    ├── gemini_client.py              # Gemini API integration
     └── utils/
-        └── helpers.py
+        └── helpers.ts                # Helper functions for AI service
 ```
 
 ## Features
@@ -174,6 +198,14 @@ Coverage Areas:
 ```
 STAGING READY ≥ 90%
 ```
+
+### Frontend Reliability Validation
+
+- [ ] Verify that UI components render correctly on Desktop (1080p), Tablet (768px), and Mobile (360px).
+- [ ] Ensure `useSessionPersistence` successfully retains chat history across page reloads.
+- [ ] Confirm `ErrorBoundary` catches rendering errors gracefully and shows fallback UI.
+- [ ] Test status badges for all states (Submitted, Under Review, Approved, Rejected, etc.) to ensure proper color coding.
+- [ ] Check responsive layout on the Dashboard Quick-Actions Grid.
 
 ## Security
 

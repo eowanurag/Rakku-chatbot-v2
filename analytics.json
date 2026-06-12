@@ -1,11 +1,11 @@
 {
-  "help_requests": 2405,
+  "help_requests": 2777,
   "police_station_searches": 0,
   "helpline_recommendations": {},
   "emergency_overrides": 0,
   "language_distribution": {
-    "en": 178,
-    "hi": 1,
+    "en": 191,
+    "hi": 12,
     "hinglish": 0
   }
 }
