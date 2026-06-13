@@ -40,6 +40,8 @@ interface UnansweredQuestion {
   frequency: number;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://rakku-chatbot-v1.onrender.com/api";
+
 export default function AdminIntelligencePage() {
   const [summary, setSummary] = useState<IntelligenceSummary | null>(null);
   const [languages, setLanguages] = useState<Record<string, number>>({ en: 0, hi: 0, hinglish: 0 });
@@ -51,19 +53,19 @@ export default function AdminIntelligencePage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const sRes = await fetch("http://localhost:3001/api/intelligence/summary");
+      const sRes = await fetch(`${BACKEND_URL}/intelligence/summary`);
       const sData = await sRes.json();
       setSummary(sData);
 
-      const lRes = await fetch("http://localhost:3001/api/intelligence/languages");
+      const lRes = await fetch(`${BACKEND_URL}/intelligence/languages`);
       const lData = await lRes.json();
       setLanguages(lData);
 
-      const seRes = await fetch("http://localhost:3001/api/intelligence/sentiment");
+      const seRes = await fetch(`${BACKEND_URL}/intelligence/sentiment`);
       const seData = await seRes.json();
       setSentiment(seData);
 
-      const uRes = await fetch("http://localhost:3001/api/intelligence/unanswered");
+      const uRes = await fetch(`${BACKEND_URL}/intelligence/unanswered`);
       const uData = await uRes.json();
       setUnanswered(uData);
     } catch (e) {
@@ -98,7 +100,7 @@ export default function AdminIntelligencePage() {
   const triggerNightlyJob = async () => {
     setTriggeringJob(true);
     try {
-      await fetch("http://localhost:3001/api/intelligence/nightly-trigger", { method: "POST" });
+      await fetch(`${BACKEND_URL}/intelligence/nightly-trigger`, { method: "POST" });
       alert("Nightly aggregation metrics successfully computed!");
       fetchData();
     } catch {
@@ -107,6 +109,7 @@ export default function AdminIntelligencePage() {
       setTriggeringJob(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans selection:bg-amber-500 selection:text-slate-950">

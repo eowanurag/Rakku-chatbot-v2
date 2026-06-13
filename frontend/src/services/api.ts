@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://rakku-chatbot-v1.onrender.com/api";
 
 // Helper to make API calls or fallback
 async function fetchApi(path: string, options: RequestInit = {}) {

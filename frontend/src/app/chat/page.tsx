@@ -25,7 +25,7 @@ import RakkuWelcomeCard from "../../components/chat/RakkuWelcomeCard";
 import ChatMessage from "../../components/chat/ChatMessage";
 import { avatarImages } from "../../utils/avatarConfig";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://rakku-chatbot-v1.onrender.com/api";
 
 interface Message {
   role: "user" | "assistant";
