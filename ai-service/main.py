@@ -43,6 +43,7 @@ class ChatResponse(BaseModel):
     suggestions: list[str] = []
     db_action: dict | list[dict] | None = None
     state: dict | None = None
+    avatar_state: str = "TALKING"
 
 @app.post("/chat/message", response_model=ChatResponse)
 async def chat_message(req: ChatRequest):
@@ -66,14 +67,18 @@ async def chat_message(req: ChatRequest):
             
             emergency_msgs = {
                 "en": "⚠️ **EMERGENCY NOTICE:** This appears to be an emergency. Please contact UP Police emergency services immediately by dialing **112**.",
-                "hi": "⚠️ **आपातकालीन सूचना:** यह एक आपातकालीन स्थिति लगती है। कृपया तुरंत **112** डायल करके उत्तर प्रदेश पुलिस आपातकालीन सेवाओं से संपर्क करें।",
-                "hinglish": "⚠️ **EMERGENCY:** Yeh emergency situation lag rahi hai. Please immediate help ke liye UP Police ko **112** dial karke contact karein."
+                "hi": "⚠️ **आपातकालीन सूचना:** यह एक आपातकालीन स्थिति लगती है। कृपया तुरंत **112** डायल करके उत्तर प्रदेश पुलिस आपातकालीन सेवाओं से संपर्क करें।"
+            }
+            emergency_sugs = {
+                "en": ["🚔 File Complaint", "📋 Track Application Status"],
+                "hi": ["🚔 शिकायत दर्ज करें", "📋 आवेदन की स्थिति"]
             }
             
             return ChatResponse(
                 response=emergency_msgs.get(lang, emergency_msgs["en"]),
-                suggestions=["File Complaint", "Track Status"],
-                state=session.to_dict()
+                suggestions=emergency_sugs.get(lang, emergency_sugs["en"]),
+                state=session.to_dict(),
+                avatar_state="EMERGENCY"
             )
             
         # 2. Workflow engine slot filling check
@@ -83,7 +88,8 @@ async def chat_message(req: ChatRequest):
                 response=wf_res["response"],
                 suggestions=wf_res.get("suggestions", []),
                 db_action=wf_res.get("db_action", None),
-                state=session.to_dict()
+                state=session.to_dict(),
+                avatar_state=wf_res.get("avatar_state", "TALKING")
             )
             
         # 3. Retrieve relevant context from Knowledge Base
@@ -96,21 +102,33 @@ async def chat_message(req: ChatRequest):
             language=session.language
         )
         
+        # Parse JSON response from Gemini
+        import json
+        try:
+            # Try to strip markdown code blocks if the model wrapped it
+            clean_text = response_text.strip()
+            if clean_text.startswith("```json"):
+                clean_text = clean_text[7:]
+            if clean_text.endswith("```"):
+                clean_text = clean_text[:-3]
+            clean_text = clean_text.strip()
+            
+            parsed_res = json.loads(clean_text)
+            final_response = parsed_res.get("message", response_text)
+            avatar_state = parsed_res.get("avatar_state", "TALKING")
+        except Exception as e:
+            print(f"Failed to parse Gemini JSON: {e}")
+            final_response = response_text
+            avatar_state = "TALKING"
+        
         # Determine dynamic suggestions based on context
-        suggestions = ["File Complaint", "Tenant Verification", "Character Certificate", "Track Application"]
-        if retrieved_context:
-            cat = retrieved_context[0]["category"]
-            if cat == "Postmortem Report Request":
-                suggestions = ["Ask about Postmortem", "File Complaint", "Main Dashboard"]
-            elif cat == "Character Certificate":
-                suggestions = ["Character Certificate", "Track Application", "Main Dashboard"]
-            elif cat == "Tenant Verification":
-                suggestions = ["Tenant Verification", "PG Verification", "Main Dashboard"]
+        suggestions = workflow_engine.get_localized_suggestions_list(session.language, retrieved_context)
         
         return ChatResponse(
-            response=response_text,
+            response=final_response,
             suggestions=suggestions,
-            state=session.to_dict()
+            state=session.to_dict(),
+            avatar_state=avatar_state
         )
         
     except Exception as e:

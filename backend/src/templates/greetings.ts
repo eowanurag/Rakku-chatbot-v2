@@ -9,6 +9,8 @@ I can help you with:
 📜 [Character Certificate](option:📜 Character Certificate)
 🎭 [Event Permission](option:🎭 Event Permission)
 🔍 [Application Tracking](option:🔍 Track Application)
+📍 [Find Nearby Police Station](option:nearest police station)
+🆘 [Emergency Help](option:Emergency Contacts)
 
 Please choose your preferred language:
 

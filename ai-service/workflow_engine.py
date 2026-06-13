@@ -58,8 +58,6 @@ def parse_full_address(text: str) -> dict:
 
 MESSAGE_LIBRARY = None
 
-def load_message_library()
-
 def classify_feedback(comments: str) -> str:
     if not comments:
         return "OTHER"
@@ -79,7 +77,8 @@ def classify_feedback(comments: str) -> str:
     if any(w in text for w in ['ui', 'interface', 'button', 'screen', 'display', 'color', 'font', 'layout']):
         return 'UI_PROBLEM'
     return 'OTHER'
-:
+
+def load_message_library():
     global MESSAGE_LIBRARY
     try:
         import json
@@ -334,6 +333,15 @@ def validate_consistency(city: str, text: str) -> bool:
         if other != city_lower and other in text_lower:
             return False
     return True
+
+
+def format_name_with_honorific(name: str, lang: str) -> str:
+    if not name:
+        return ""
+    if lang == "hi":
+        if not name.endswith(" जी"):
+            return f"{name} जी"
+    return name
 
 
 class WorkflowSession:
@@ -1494,9 +1502,11 @@ class WorkflowEngine:
             is_corr = self.handle_profile_correction(session, message)
             if is_corr:
                 session.step = "IDENTIFY_ADDRESS"
+                district_val = localize_location(session.city, session.language)
+                prompt_text = format_message("PROFILE_ADDRESS_REQUEST", session.language, session, {"district": district_val})
                 return {
                     "intercepted": True,
-                    "response": f"👮 I found your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                    "response": prompt_text,
                     "suggestions": []
                 }
 
@@ -1508,9 +1518,17 @@ class WorkflowEngine:
                 if len(session.fullName.split()) == 1:
                     session.data["name_suggest_flag"] = True
                 session.step = "IDENTIFY_MOBILE"
-                prompt_text = f"Thank you, {session.fullName}.\n\nCould you please share your mobile number?"
+                
+                full_name_disp = format_name_with_honorific(session.fullName, session.language)
+                prompt_text = format_message("PROFILE_MOBILE_REQUEST", session.language, session, {"name": full_name_disp})
+                
                 if session.data.get("name_suggest_flag"):
-                    prompt_text = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + prompt_text
+                    suggest_text = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n"
+                    if session.language == "hi":
+                        suggest_text = "*(सुझाव: आधिकारिक अभिलेखों के लिए पूरा नाम देना उपयोगी होता है, लेकिन हम आगे बढ़ सकते हैं।)*\n\n"
+                    elif session.language == "hinglish":
+                        suggest_text = "*(Suggestion: Official records ke liye surname ke saath full name dena sahi rehta hai, par hum aage badh sakte hain.)*\n\n"
+                    prompt_text = suggest_text + prompt_text
                     session.data["name_suggest_flag"] = False
                 return {
                     "intercepted": True,
@@ -1518,9 +1536,10 @@ class WorkflowEngine:
                     "suggestions": []
                 }
             else:
+                prompt_text = format_message("ERROR_VALIDATION_NAME", session.language, session)
                 return {
                     "intercepted": True,
-                    "response": "I may not have understood correctly. Could you please provide that information in a different way?\nExample: Rahul Kumar or Raju",
+                    "response": prompt_text,
                     "suggestions": []
                 }
         elif step_str == "CONFIRM_NAME":
@@ -1532,30 +1551,46 @@ class WorkflowEngine:
             elif clean_msg in ["change", "no", "change name", "option:no", "option:change name"]:
                 session.step = "IDENTIFY_NAME"
                 session.data.pop("pending_name", None)
+                msg = "Understood. Please enter your name again:"
+                if session.language == "hi":
+                    msg = "ठीक है। कृपया अपना नाम फिर से दर्ज करें:"
+                elif session.language == "hinglish":
+                    msg = "Understood. Please apna name phir se enter karein:"
                 return {
                     "intercepted": True,
-                    "response": "Understood. Please enter your name again:",
+                    "response": msg,
                     "suggestions": []
                 }
             else:
+                pending_name_disp = format_name_with_honorific(session.data.get('pending_name', ''), session.language)
+                if session.language == "hi":
+                    confirm_sug = "नाम की पुष्टि करें"
+                    change_sug = "नाम बदलें"
+                    msg = f"क्या '{pending_name_disp}' आपका सही पूरा नाम है?\n\n- [{confirm_sug}](option:Confirm Name)\n- [{change_sug}](option:Change Name)"
+                else:
+                    confirm_sug = "Confirm Name"
+                    change_sug = "Change Name"
+                    msg = f"Is '{pending_name_disp}' your correct full name?\n\n- [{confirm_sug}](option:Confirm Name)\n- [{change_sug}](option:Change Name)"
                 return {
                     "intercepted": True,
-                    "response": f"Is '{session.data.get('pending_name')}' your correct full name?\n\n- [Confirm Name](option:Confirm Name)\n- [Change Name](option:Change Name)",
-                    "suggestions": ["Confirm Name", "Change Name"]
+                    "response": msg,
+                    "suggestions": [confirm_sug, change_sug]
                 }
         elif step_str == "IDENTIFY_MOBILE":
             if validate_mobile(message):
                 session.mobileNumber = normalize_mobile(message)
                 session.step = "IDENTIFY_LOCATION"
+                prompt_text = format_message("PROFILE_LOCATION_REQUEST", session.language, session)
                 return {
                     "intercepted": True,
-                    "response": "Could you please tell me your city, district, or area?",
+                    "response": prompt_text,
                     "suggestions": []
                 }
             else:
+                prompt_text = format_message("ERROR_VALIDATION_MOBILE", session.language, session)
                 return {
                     "intercepted": True,
-                    "response": "👮 The mobile number appears incomplete.\n\nPlease provide a valid 10-digit Indian mobile number.\n\nExample:\n9876543210",
+                    "response": prompt_text,
                     "suggestions": []
                 }
         elif step_str == "IDENTIFY_LOCATION":
@@ -1563,24 +1598,39 @@ class WorkflowEngine:
             if "civil lines" in trimmed_msg.lower() or "near" in trimmed_msg.lower():
                 session.step = "CONFIRM_CITY"
                 session.data["incomplete_location"] = trimmed_msg
+                msg = "Which city?"
+                if session.language == "hi":
+                    msg = "कौन सा शहर?"
+                elif session.language == "hinglish":
+                    msg = "Kaun sa city?"
                 return {
                     "intercepted": True,
-                    "response": "Which city?",
+                    "response": msg,
                     "suggestions": []
                 }
             if len(message.strip()) >= 3:
                 session.city = message.strip()
                 session.district = message.strip()
                 session.step = "CONFIRM_LOCATION"
+                
+                district_val = localize_location(session.city, session.language)
+                msg = format_message("PROFILE_LOCATION_CONFIRM", session.language, session, {"district": district_val})
+                confirm_sug = "पुष्टि करें" if session.language == "hi" else "Confirm"
+                change_sug = "स्थान बदलें" if session.language == "hi" else "Change Location"
                 return {
                     "intercepted": True,
-                    "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-                    "suggestions": ["Confirm", "Change Location"]
+                    "response": msg,
+                    "suggestions": [confirm_sug, change_sug]
                 }
             else:
+                msg = "I may not have understood correctly. Could you please provide that information in a different way?"
+                if session.language == "hi":
+                    msg = "मुझे समझ नहीं आया। कृपया दूसरी तरह से जानकारी प्रदान करें।"
+                elif session.language == "hinglish":
+                    msg = "Mujhe samajh nahi aaya. Please clear batayein."
                 return {
                     "intercepted": True,
-                    "response": "I may not have understood correctly. Could you please provide that information in a different way?",
+                    "response": msg,
                     "suggestions": []
                 }
         elif step_str == "CONFIRM_CITY":
@@ -1591,32 +1641,49 @@ class WorkflowEngine:
                 session.addressLine1 = session.data.get("incomplete_location", "")
                 session.data.pop("incomplete_location", None)
                 session.step = "CONFIRM_LOCATION"
+                
+                district_val = localize_location(session.city, session.language)
+                msg = format_message("PROFILE_LOCATION_CONFIRM", session.language, session, {"district": district_val})
+                confirm_sug = "पुष्टि करें" if session.language == "hi" else "Confirm"
+                change_sug = "स्थान बदलें" if session.language == "hi" else "Change Location"
                 return {
                     "intercepted": True,
-                    "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-                    "suggestions": ["Confirm", "Change Location"]
+                    "response": msg,
+                    "suggestions": [confirm_sug, change_sug]
                 }
             else:
+                msg = "Which city?"
+                if session.language == "hi":
+                    msg = "कौन सा शहर?"
+                elif session.language == "hinglish":
+                    msg = "Kaun sa city?"
                 return {
                     "intercepted": True,
-                    "response": "Which city?",
+                    "response": msg,
                     "suggestions": []
                 }
         elif step_str == "CONFIRM_LOCATION" or step_str == "CONFIRM_AUTO_LOCATION":
-            if clean_msg in ["confirm", "yes", "correct", "option:confirm", "option:yes", "option:confirm details"]:
+            if clean_msg in ["confirm", "yes", "correct", "option:confirm", "option:yes", "option:confirm details", "पुष्टि करें", "option:पुष्टि करें"]:
                 session.step = "IDENTIFY_ADDRESS"
+                district_val = localize_location(session.city, session.language)
+                prompt_text = format_message("PROFILE_ADDRESS_REQUEST", session.language, session, {"district": district_val})
                 return {
                     "intercepted": True,
-                    "response": f"👮 I set your location as: {session.city}, {session.state_name}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)",
+                    "response": prompt_text,
                     "suggestions": []
                 }
-            elif clean_msg in ["change location", "no", "option:change location", "option:no", "option:modify details"]:
+            elif clean_msg in ["change location", "no", "option:change location", "option:no", "option:modify details", "स्थान बदलें", "option:स्थान बदलें"]:
                 session.city = ""
                 session.district = ""
                 session.step = "IDENTIFY_LOCATION"
+                msg = "Understood. Please tell me your city, district, or area:"
+                if session.language == "hi":
+                    msg = "ठीक है। कृपया अपना शहर, ज़िला या क्षेत्र बताएं:"
+                elif session.language == "hinglish":
+                    msg = "Understood. Please apna city, district, ya area batayein:"
                 return {
                     "intercepted": True,
-                    "response": "Understood. Please tell me your city, district, or area:",
+                    "response": msg,
                     "suggestions": []
                 }
             else:
@@ -1625,16 +1692,28 @@ class WorkflowEngine:
                     session.city = extracted
                     session.district = extracted
                     session.step = "CONFIRM_LOCATION"
+                    
+                    district_val = localize_location(session.city, session.language)
+                    msg = format_message("PROFILE_LOCATION_CONFIRM", session.language, session, {"district": district_val})
+                    confirm_sug = "पुष्टि करें" if session.language == "hi" else "Confirm"
+                    change_sug = "स्थान बदलें" if session.language == "hi" else "Change Location"
                     return {
                         "intercepted": True,
-                        "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-                        "suggestions": ["Confirm", "Change Location"]
+                        "response": msg,
+                        "suggestions": [confirm_sug, change_sug]
                     }
                 else:
+                    confirm_sug = "पुष्टि करें" if session.language == "hi" else "Confirm"
+                    change_sug = "स्थान बदलें" if session.language == "hi" else "Change Location"
+                    prompt = "👮 Please confirm your location or choose to change it:\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)"
+                    if session.language == "hi":
+                        prompt = f"👮 कृपया अपने स्थान की पुष्टि करें या इसे बदलने का विकल्प चुनें:\n\n- [{confirm_sug}](option:Confirm)\n- [{change_sug}](option:Change Location)"
+                    elif session.language == "hinglish":
+                        prompt = f"👮 Please location confirm karein ya change karne ka option select karein:\n\n- [{confirm_sug}](option:Confirm)\n- [{change_sug}](option:Change Location)"
                     return {
                         "intercepted": True,
-                        "response": "👮 Please confirm your location or choose to change it:\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-                        "suggestions": ["Confirm", "Change Location"]
+                        "response": prompt,
+                        "suggestions": [confirm_sug, change_sug]
                     }
         elif step_str == "IDENTIFY_ADDRESS":
             parsed = parse_full_address(message)
@@ -1643,7 +1722,7 @@ class WorkflowEngine:
             session.pincode = parsed["pincode"] or ""
             session.step = "CONFIRM_PROFILE"
         elif step_str == "CONFIRM_PROFILE":
-            if clean_msg in ["yes", "correct", "confirm details", "option:yes", "option:confirm details", "confirm"]:
+            if clean_msg in ["yes", "correct", "confirm details", "option:yes", "option:confirm details", "confirm", "विवरण की पुष्टि करें", "option:विवरण की पुष्टि करें"]:
                 session.isConfirmed = True
                 session.profileConfirmed = True
                 
@@ -1666,15 +1745,39 @@ class WorkflowEngine:
                 }
 
                 first_name = session.fullName.split()[0] if session.fullName else ""
-                success_txt = (
-                    f"👮 Citizen Profile Verified\n\n"
-                    f"Name: {session.fullName}\n"
-                    f"Mobile: {session.mobileNumber}\n"
-                    f"Location: {session.city or session.district or 'Lucknow'}, {session.state_name}\n\n"
-                    f"✓ Your details have been recorded successfully.\n\n"
-                    f"Thank you, {first_name}.\n\n"
-                    f"Let's continue with your {session.workflow}."
-                )
+                first_name_disp = format_name_with_honorific(first_name, session.language)
+                full_name_disp = format_name_with_honorific(session.fullName, session.language)
+                
+                if session.language == "hi":
+                    success_txt = (
+                        f"👮 नागरिक प्रोफ़ाइल सत्यापित\n\n"
+                        f"नाम: {full_name_disp}\n"
+                        f"मोबाइल: {session.mobileNumber}\n"
+                        f"स्थान: {localize_location(session.city or session.district or 'Lucknow', session.language)}, {session.state_name}\n\n"
+                        f"✓ आपके विवरण सफलतापूर्वक दर्ज कर लिए गए हैं।\n\n"
+                        f"धन्यवाद, {first_name_disp}।\n\n"
+                        f"आइए आपके {session.workflow} के साथ आगे बढ़ें।"
+                    )
+                elif session.language == "hinglish":
+                    success_txt = (
+                        f"👮 Citizen Profile Verified\n\n"
+                        f"Name: {session.fullName}\n"
+                        f"Mobile: {session.mobileNumber}\n"
+                        f"Location: {session.city or session.district or 'Lucknow'}, {session.state_name}\n\n"
+                        f"✓ Aapki details successfully record ho gayi hain.\n\n"
+                        f"Thank you, {first_name}.\n\n"
+                        f"Chaliye aapke {session.workflow} ke saath aage badhte hain."
+                    )
+                else:
+                    success_txt = (
+                        f"👮 Citizen Profile Verified\n\n"
+                        f"Name: {session.fullName}\n"
+                        f"Mobile: {session.mobileNumber}\n"
+                        f"Location: {session.city or session.district or 'Lucknow'}, {session.state_name}\n\n"
+                        f"✓ Your details have been recorded successfully.\n\n"
+                        f"Thank you, {first_name}.\n\n"
+                        f"Let's continue with your {session.workflow}."
+                    )
 
                 # Initialize main active workflow step
                 session.step = 0
@@ -1811,17 +1914,24 @@ class WorkflowEngine:
         # Check for missing inputs
         if not session.fullName:
             session.step = "IDENTIFY_NAME"
+            prompt_text = format_message("PROFILE_NAME_REQUEST", session.language, session)
             return {
                 "intercepted": True,
-                "response": "Before we begin, may I know your full name?",
+                "response": prompt_text,
                 "suggestions": []
             }
 
         if not session.mobileNumber:
             session.step = "IDENTIFY_MOBILE"
-            prompt_text = f"Thank you, {session.fullName}.\n\nCould you please share your mobile number?"
+            full_name_disp = format_name_with_honorific(session.fullName, session.language)
+            prompt_text = format_message("PROFILE_MOBILE_REQUEST", session.language, session, {"name": full_name_disp})
             if session.data.get("name_suggest_flag"):
-                prompt_text = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + prompt_text
+                suggest_text = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n"
+                if session.language == "hi":
+                    suggest_text = "*(सुझाव: आधिकारिक अभिलेखों के लिए पूरा नाम देना उपयोगी होता है, लेकिन हम आगे बढ़ सकते हैं।)*\n\n"
+                elif session.language == "hinglish":
+                    suggest_text = "*(Suggestion: Official records ke liye surname ke saath full name dena sahi rehta hai, par hum aage badh sakte hain.)*\n\n"
+                prompt_text = suggest_text + prompt_text
                 session.data["name_suggest_flag"] = False
             return {
                 "intercepted": True,
@@ -1834,25 +1944,33 @@ class WorkflowEngine:
                 session.city = "Lucknow"
                 session.district = "Lucknow"
                 session.step = "CONFIRM_AUTO_LOCATION"
+                
+                district_val = localize_location(session.city, session.language)
+                prompt_text = format_message("PROFILE_LOCATION_CONFIRM", session.language, session, {"district": district_val})
+                confirm_sug = "पुष्टि करें" if session.language == "hi" else "Confirm"
+                change_sug = "स्थान बदलें" if session.language == "hi" else "Change Location"
                 return {
                     "intercepted": True,
-                    "response": "I found your location as Lucknow, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-                    "suggestions": ["Confirm", "Change Location"]
+                    "response": prompt_text,
+                    "suggestions": [confirm_sug, change_sug]
                 }
             else:
                 session.step = "IDENTIFY_LOCATION"
+                prompt_text = format_message("PROFILE_LOCATION_REQUEST", session.language, session)
                 return {
                     "intercepted": True,
-                    "response": "I couldn't determine your location automatically.\n\nCould you please tell me your city, district, or area?",
+                    "response": prompt_text,
                     "suggestions": []
                 }
 
         if not session.addressLine1:
             session.step = "IDENTIFY_ADDRESS"
+            district_val = localize_location(session.city, session.language)
+            prompt_text = format_message("PROFILE_ADDRESS_REQUEST", session.language, session, {"district": district_val})
             return {
                 "intercepted": True,
-                "response": f"I found your location as {session.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-                "suggestions": ["Confirm", "Change Location"]
+                "response": prompt_text,
+                "suggestions": []
             }
 
         session.step = "CONFIRM_PROFILE"
@@ -2191,3 +2309,47 @@ class WorkflowEngine:
             "suggestions": rating_sugs,
             "db_action": db_action_list
         }
+
+    def get_localized_suggestions_list(self, lang: str, retrieved_context: list = None) -> list[str]:
+        # Default options
+        if lang == "hi":
+            suggestions = ["🚔 शिकायत दर्ज करें", "🏠 किरायेदार सत्यापन", "📜 चरित्र प्रमाण पत्र", "🔍 आवेदन की स्थिति"]
+        elif lang == "hinglish":
+            suggestions = ["🚔 File Complaint", "🏠 Tenant Verification", "📜 Character Certificate", "🔍 Track Application"]
+        else:
+            suggestions = ["🚔 File Complaint", "🏠 Tenant Verification", "📜 Character Certificate", "🔍 Track Application"]
+            
+        if retrieved_context:
+            try:
+                first_item = retrieved_context[0]
+                cat = ""
+                if isinstance(first_item, dict):
+                    cat = first_item.get("category", "")
+                else:
+                    cat = getattr(first_item, "category", "")
+                    
+                if cat == "Postmortem Report Request":
+                    if lang == "hi":
+                        suggestions = ["पोस्टमार्टम के बारे में पूछें", "🚔 शिकायत दर्ज करें", "मुख्य डैशबोर्ड"]
+                    elif lang == "hinglish":
+                        suggestions = ["Postmortem ke baare mein poochein", "🚔 File Complaint", "Main Dashboard"]
+                    else:
+                        suggestions = ["Ask about Postmortem", "🚔 File Complaint", "Main Dashboard"]
+                elif cat == "Character Certificate":
+                    if lang == "hi":
+                        suggestions = ["📜 चरित्र प्रमाण पत्र", "🔍 आवेदन की स्थिति", "मुख्य डैशबोर्ड"]
+                    elif lang == "hinglish":
+                        suggestions = ["📜 Character Certificate", "🔍 Track Application", "Main Dashboard"]
+                    else:
+                        suggestions = ["📜 Character Certificate", "🔍 Track Application", "Main Dashboard"]
+                elif cat == "Tenant Verification":
+                    if lang == "hi":
+                        suggestions = ["🏠 किरायेदार सत्यापन", "पीजी सत्यापन", "मुख्य डैशबोर्ड"]
+                    elif lang == "hinglish":
+                        suggestions = ["🏠 Tenant Verification", "PG Verification", "Main Dashboard"]
+                    else:
+                        suggestions = ["🏠 Tenant Verification", "PG Verification", "Main Dashboard"]
+            except Exception as e:
+                print(f"Error parsing retrieved context in suggestions list: {e}")
+                    
+        return suggestions

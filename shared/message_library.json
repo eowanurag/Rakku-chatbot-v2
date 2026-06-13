@@ -67,6 +67,16 @@
       "hi": "अपने अनुरोधों की वास्तविक समय की स्थिति की जाँच करें।",
       "hinglish": "Apne requests ka real-time status check karein."
     },
+    "SERVICE_NEAREST_STATION": {
+      "en": "Find Station",
+      "hi": "नजदीकी थाना खोजें",
+      "hinglish": "Nearest Station"
+    },
+    "SERVICE_EMERGENCY": {
+      "en": "Emergency Help",
+      "hi": "आपातकालीन सहायता",
+      "hinglish": "Emergency Help"
+    },
     "GREETING_RESUME": {
       "en": "👮 Welcome back. I see we have an active request in progress. Let's resume.",
       "hi": "👮 आपका स्वागत है। मुझे आपका एक सक्रिय अनुरोध प्रगति पर दिख रहा है। चलिए इसे जारी रखते हैं।",

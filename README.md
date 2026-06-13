@@ -171,13 +171,14 @@ Rakku-chatbot-v1/
 - Application Tracking
 - Knowledge Assistance
 
-### AI Features
-- Multilingual Support
-- Workflow Automation
-- Citizen Identification
-- Smart Validation
-- Context Awareness
-- Session Recovery (Planned)
+### AI & UI Persona Features
+- **Inspector Rakku Identity**: Fully integrated official UP Police digital persona conforming to strict citizen-friendly guidelines.
+- **Dynamic Avatar States**: Support for 12 conversational avatar poses (Salute, Welcome, Namaste, Idle, Thinking, Talking, Pointing, Completed, Success, Emergency, Goodbye, Error).
+- **Persistent Assistant Panel**: Sticky desktop side-panel and responsive mobile header featuring large animated avatars, directional speech bubbles, and online status indicators.
+- **Custom CSS Animations**: Gentle idle float, soft thinking pulse, success bounce, and pulsing emergency outline effects.
+- **State Machine Sequences**: Automatically handles complex welcome experience state flows and timed auto-idle transitions.
+- **Multilingual Support**: Supports English, Hindi, and Hinglish.
+- **Workflow Automation & Smart Validation**: In-context slot filling and validations.
 
 ## Testing & Quality Assurance
 

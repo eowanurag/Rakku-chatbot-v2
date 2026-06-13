@@ -331,7 +331,8 @@ export class ChatService {
     sessionId: string,
     latitude?: number,
     longitude?: number,
-  ): Promise<{ response: string; suggestions?: string[]; _debug?: any }> {
+    clientLanguage?: string,
+  ): Promise<{ response: string; suggestions?: string[]; avatar_state?: string; _debug?: any }> {
     this.analyticsService.trackHelpRequest();
     
     // Sanitize incoming message input to prevent Stored XSS
@@ -340,6 +341,12 @@ export class ChatService {
     // Load session state
     const state = await this.getOrCreateSession(sessionId);
     const stepBefore = String(state.step);
+
+    // Synchronize language from client request if passed
+    if (clientLanguage === 'hi' || clientLanguage === 'en') {
+      state.language = clientLanguage;
+      state.languageSelected = true;
+    }
 
     // Update latitude and longitude if passed
     if (latitude !== undefined && latitude !== null) {
@@ -442,7 +449,11 @@ export class ChatService {
 
       // Persist state to DB
       await this.saveSession(sessionId, state);
-      return { ...responseData, _debug: { activeEngine: 'FASTAPI', step: state.step, workflow: state.workflow } };
+      return { 
+        ...responseData, 
+        avatar_state: responseData.avatar_state || 'TALKING',
+        _debug: { activeEngine: 'FASTAPI', step: state.step, workflow: state.workflow } 
+      };
     } catch (e) {
       this.logger.warn(`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`);
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'WORKFLOW_FALLBACK_USED', state.workflow, stepBefore, String(state.step), sanitizedMessage);
@@ -453,7 +464,11 @@ export class ChatService {
       // Log fallback step transition
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
       await this.saveSession(sessionId, state);
-      return { ...localResult, _debug: { activeEngine: 'FALLBACK', step: state.step, workflow: state.workflow } };
+      return { 
+        ...localResult, 
+        avatar_state: localResult.avatar_state || 'TALKING',
+        _debug: { activeEngine: 'FALLBACK', step: state.step, workflow: state.workflow } 
+      };
     }
   }  private async executeDbAction(dbAction: any): Promise<any> {
     if (!dbAction) return null;
@@ -657,7 +672,7 @@ export class ChatService {
     message: string,
     sessionId: string,
     state: ChatSessionState,
-  ): Promise<{ response: string; suggestions?: string[] }> {
+  ): Promise<{ response: string; suggestions?: string[]; avatar_state?: string }> {
     const cleanMsg = message.trim().toLowerCase();
 
     // Check frustration first
@@ -1214,7 +1229,9 @@ export class ChatService {
       state.step = 'START';
       return {
         response: "👮 I encountered an issue processing your request. Let me help you start over.\n\nHow can I assist you today?",
-        suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
+        suggestions: state.language === 'hi'
+          ? ['🚔 शिकायत दर्ज करें', '🏠 किरायेदार सत्यापन', '📜 चरित्र प्रमाण पत्र', '🎭 कार्यक्रम अनुमति', '🔍 आवेदन की स्थिति']
+          : ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
       };
     }
     return result;

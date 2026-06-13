@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import messageLibrary from "../message_library.json";
 
-export type Language = "en" | "hi" | "hinglish";
+export type Language = "en" | "hi";
 
 interface LanguageContextType {
   selectedLanguage: Language | null;
@@ -20,7 +20,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Check localStorage on mount
     const savedLang = localStorage.getItem("rakku_language") as Language | null;
-    if (savedLang && ["en", "hi", "hinglish"].includes(savedLang)) {
+    if (savedLang && ["en", "hi"].includes(savedLang)) {
       setSelectedLanguage(savedLang);
     }
     setIsLoaded(true);

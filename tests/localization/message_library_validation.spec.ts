@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 describe('Message Library Validation Test', () => {
-  const libraryPath = path.resolve(__dirname, '../../../shared/message_library.json');
+  const libraryPath = path.resolve(__dirname, '../../shared/message_library.json');
   let data: any;
 
   beforeAll(() => {

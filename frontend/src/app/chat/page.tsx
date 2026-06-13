@@ -19,12 +19,19 @@ import { useLanguage } from "@/context/LanguageContext";
 import LanguageSelector from "@/components/chat/LanguageSelector";
 import LanguageBadge from "@/components/chat/LanguageBadge";
 
+// Modular Redesign Components
+import RakkuFloatingAssistant from "../../components/chat/RakkuFloatingAssistant";
+import RakkuWelcomeCard from "../../components/chat/RakkuWelcomeCard";
+import ChatMessage from "../../components/chat/ChatMessage";
+import { avatarImages } from "../../utils/avatarConfig";
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
 
 interface Message {
   role: "user" | "assistant";
   text: string;
   isStreaming?: boolean;
+  avatarState?: string;
 }
 
 interface ChatSession {
@@ -44,14 +51,7 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [waitingForManualLocation, setWaitingForManualLocation] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([
-    "🚔 File a Complaint",
-    "🏠 Tenant Verification",
-    "📜 Character Certificate",
-    "🎭 Event Permission",
-    "🔍 Track Application",
-    "📍 Find Police Station",
-  ]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const [history, setHistory] = useState<ChatSession[]>([
     { id: "sess-1", title: "Phone Stolen Complaint", date: "Today" },
@@ -62,18 +62,74 @@ function ChatContent() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
 
+  // --- Inspector Rakku Panel States ---
+  const [currentAvatarState, setCurrentAvatarState] = useState<string>("SALUTE");
+  const [currentSpeechBubble, setCurrentSpeechBubble] = useState<string>(
+    "🫡 Namaste!\nI am Inspector Rakku, your UP Police Virtual Assistant.\nHow may I assist you today?"
+  );
+  const [hasInitializedWelcome, setHasInitializedWelcome] = useState<boolean>(false);
+  const [showWelcomeCard, setShowWelcomeCard] = useState<boolean>(false);
+  const autoIdleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Thinking Experience rotating helper messages
+  const thinkingMessages = [
+    "Checking information...",
+    "Reviewing your request...",
+    "Preparing guidance...",
+    "Processing details..."
+  ];
+  const [thinkingIndex, setThinkingIndex] = useState(0);
+
+  const updateAvatarAndSpeech = (state: string, text: string) => {
+    setCurrentAvatarState(state);
+    setCurrentSpeechBubble(text);
+
+    if (autoIdleTimerRef.current) {
+      clearTimeout(autoIdleTimerRef.current);
+      autoIdleTimerRef.current = null;
+    }
+
+    const autoIdleStates = ["TALKING", "SUCCESS", "COMPLETED", "GOODBYE"];
+    if (autoIdleStates.includes(state)) {
+      autoIdleTimerRef.current = setTimeout(() => {
+        setCurrentAvatarState("IDLE");
+      }, 5000);
+    }
+  };
+
   const { selectedLanguage, translate } = useLanguage();
 
   const getLocalizedWelcome = () => {
     if (!selectedLanguage) return "";
     const mainGreeting = translate("MAIN_MENU_GREETING");
-    const complaint = `[🚔 ${translate("SERVICE_COMPLAINT")}](option:🚔 File a Complaint)`;
-    const verification = `[🏠 ${translate("SERVICE_VERIFICATION")}](option:🏠 Tenant Verification)`;
-    const certificate = `[📜 ${translate("SERVICE_CERTIFICATE")}](option:📜 Character Certificate)`;
-    const permission = `[🎭 ${translate("SERVICE_PERMISSION")}](option:🎭 Event Permission)`;
-    const tracking = `[🔍 ${translate("SERVICE_TRACKING")}](option:🔍 Track Application)`;
 
-    return `${mainGreeting}\n\n${complaint}\n\n${verification}\n\n${certificate}\n\n${permission}\n\n${tracking}`;
+    let complaintOpt = "🚔 File a Complaint";
+    let verificationOpt = "🏠 Tenant Verification";
+    let certificateOpt = "📜 Character Certificate";
+    let permissionOpt = "🎭 Event Permission";
+    let trackingOpt = "🔍 Track Application";
+    let nearestStationOpt = "nearest police station";
+    let emergencyOpt = "Emergency Contacts";
+
+    if (selectedLanguage === "hi") {
+      complaintOpt = "🚔 शिकायत दर्ज करें";
+      verificationOpt = "🏠 किरायेदार सत्यापन";
+      certificateOpt = "📜 चरित्र प्रमाण पत्र";
+      permissionOpt = "🎭 कार्यक्रम अनुमति";
+      trackingOpt = "🔍 आवेदन की स्थिति";
+      nearestStationOpt = "📍 नजदीकी थाना खोजें";
+      emergencyOpt = "🆘 आपातकालीन सहायता";
+    }
+
+    const complaint = `[🚔 ${translate("SERVICE_COMPLAINT")}](option:${complaintOpt})`;
+    const verification = `[🏠 ${translate("SERVICE_VERIFICATION")}](option:${verificationOpt})`;
+    const certificate = `[📜 ${translate("SERVICE_CERTIFICATE")}](option:${certificateOpt})`;
+    const permission = `[🎭 ${translate("SERVICE_PERMISSION")}](option:${permissionOpt})`;
+    const tracking = `[🔍 ${translate("SERVICE_TRACKING")}](option:${trackingOpt})`;
+    const nearestStation = `[📍 ${translate("SERVICE_NEAREST_STATION")}](option:${nearestStationOpt})`;
+    const emergency = `[🆘 ${translate("SERVICE_EMERGENCY")}](option:${emergencyOpt})`;
+
+    return `${mainGreeting}\n\n${complaint}\n\n${verification}\n\n${certificate}\n\n${permission}\n\n${tracking}\n\n${nearestStation}\n\n${emergency}`;
   };
 
   // --- Police Station Helpers ---
@@ -104,6 +160,7 @@ function ChatContent() {
   const searchByCity = async (cityText: string): Promise<void> => {
     setLoading(true);
     trackTelemetry('manual_search_used', cityText);
+    updateAvatarAndSpeech("THINKING", `Searching for police stations in "${cityText}"...`);
     try {
       const res = await fetch(
         `${BACKEND_URL}/citizen-assistance/police-stations/nearest?city=${encodeURIComponent(cityText)}`
@@ -111,32 +168,32 @@ function ChatContent() {
       const data = await res.json();
       if (data.success && data.station) {
         if (data.demoMode) trackTelemetry('demo_mode_triggered');
-        setMessages((prev) => [...prev, { role: 'assistant', text: formatStationMessage(data, 'Manual Search') }]);
+        const text = formatStationMessage(data, 'Manual Search');
+        setMessages((prev) => [...prev, { role: 'assistant', text: text }]);
+        updateAvatarAndSpeech("SUCCESS", `I successfully located the nearest police station: ${data.station.name}.`);
       } else {
+        const text = `😔 I couldn't find a police station matching **"${cityText}"**.\n\nPlease try a city name like:\n- Lucknow\n- Kanpur\n- Noida\n- Varanasi\n- Ghaziabad\n- Prayagraj\n\nOr type **cancel** to go back.`;
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            text:
-              `😔 I couldn't find a police station matching **"${cityText}"**.\n\n` +
-              `Please try a city name like:\n` +
-              `- Lucknow\n- Kanpur\n- Noida\n- Varanasi\n- Ghaziabad\n- Prayagraj\n\n` +
-              `Or type **cancel** to go back.`,
+            text,
           },
         ]);
         setWaitingForManualLocation(true); // keep waiting for another attempt
+        updateAvatarAndSpeech("POINTING", `I could not locate any police station for "${cityText}". Please provide a different district, city, or locality.`);
       }
     } catch (e: any) {
       trackTelemetry('police_station_api_failure', e?.message || 'unknown');
+      const text = '👮 I\'m sorry — the police station service is temporarily unavailable.\n\nPlease try again in a moment, or call **112** for emergencies.';
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          text:
-            '👮 I\'m sorry — the police station service is temporarily unavailable.\n\n' +
-            'Please try again in a moment, or call **112** for emergencies.',
+          text,
         },
       ]);
+      updateAvatarAndSpeech("ERROR", "I am currently unable to process your request. Please try again shortly.");
     } finally {
       setLoading(false);
     }
@@ -161,33 +218,101 @@ function ChatContent() {
     }
   }, []);
 
+  // Welcome experience check from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined" && selectedLanguage) {
+      const completed = sessionStorage.getItem("rakku_welcome_completed");
+      if (completed === "true") {
+        setHasInitializedWelcome(true);
+        setShowWelcomeCard(false);
+        const welcomeMsg = getLocalizedWelcome();
+        if (messages.length === 0) {
+          setMessages([{ role: "assistant", text: welcomeMsg, avatarState: "IDLE" }]);
+          setCurrentAvatarState("IDLE");
+          setCurrentSpeechBubble(welcomeMsg);
+        }
+      } else {
+        setShowWelcomeCard(true);
+      }
+    }
+  }, [selectedLanguage]);
+
+  const handleWelcomeComplete = () => {
+    setShowWelcomeCard(false);
+    setHasInitializedWelcome(true);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("rakku_welcome_completed", "true");
+    }
+    const welcomeMsg = getLocalizedWelcome();
+    setMessages([{ role: "assistant", text: welcomeMsg, avatarState: "IDLE" }]);
+    updateAvatarAndSpeech("IDLE", welcomeMsg);
+  };
+
+  // Thinking messages rotation interval
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (loading) {
+      interval = setInterval(() => {
+        setThinkingIndex((prev) => (prev + 1) % thinkingMessages.length);
+      }, 1500);
+    } else {
+      setThinkingIndex(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading && currentAvatarState === "THINKING") {
+      setCurrentSpeechBubble(thinkingMessages[thinkingIndex]);
+    }
+  }, [loading, thinkingIndex, currentAvatarState]);
+
+  const getLocalizedSuggestions = (lang: string) => {
+    if (lang === "hi") {
+      return [
+        "🚔 शिकायत दर्ज करें",
+        "📋 आवेदन की स्थिति",
+        "📍 नजदीकी थाना खोजें",
+        "🏠 किरायेदार सत्यापन",
+        "📜 चरित्र प्रमाण पत्र",
+        "🎭 कार्यक्रम अनुमति",
+        "🆘 आपातकालीन सहायता"
+      ];
+    }
+    return [
+      "🚔 File Complaint",
+      "📋 Track Application Status",
+      "📍 Find Nearby Police Station",
+      "🏠 Tenant Verification",
+      "📜 Character Certificate",
+      "🎭 Event Permission",
+      "🆘 Emergency Help"
+    ];
+  };
+
   // Handle localized welcome message updates when language changes
   useEffect(() => {
-    if (selectedLanguage) {
+    if (selectedLanguage && hasInitializedWelcome) {
       setMessages(prev => {
         const localizedMsg = getLocalizedWelcome();
         if (prev.length === 0) {
-          return [{ role: "assistant", text: localizedMsg }];
+          return [{ role: "assistant", text: localizedMsg, avatarState: "WELCOME" }];
         }
         // If the first message is from the assistant and we are just starting out
         if (prev[0].role === "assistant" && prev.length === 1) {
           const updated = [...prev];
           updated[0].text = localizedMsg;
+          updated[0].avatarState = "WELCOME";
           return updated;
         }
         return prev;
       });
       
-      setSuggestions([
-        `🚔 ${translate("SERVICE_COMPLAINT")}`,
-        `🏠 ${translate("SERVICE_VERIFICATION")}`,
-        `📜 ${translate("SERVICE_CERTIFICATE")}`,
-        `🎭 ${translate("SERVICE_PERMISSION")}`,
-        `🔍 ${translate("SERVICE_TRACKING")}`,
-        `📍 Find Police Station`
-      ]);
+      setSuggestions(getLocalizedSuggestions(selectedLanguage));
     }
-  }, [selectedLanguage]);
+  }, [selectedLanguage, hasInitializedWelcome]);
 
   // Handle triggered query from dashboard
   useEffect(() => {
@@ -216,6 +341,7 @@ function ChatContent() {
             role: "assistant",
             text: currentText,
             isStreaming: true,
+            avatarState: prev[msgIndex]?.avatarState || "TALKING",
           };
           return updated;
         });
@@ -228,6 +354,7 @@ function ChatContent() {
             role: "assistant",
             text: fullText,
             isStreaming: false,
+            avatarState: prev[msgIndex]?.avatarState || "TALKING",
           };
           return updated;
         });
@@ -251,6 +378,7 @@ function ChatContent() {
           ...prev,
           { role: 'assistant', text: '👮 Police station search cancelled. How else can I help you?' },
         ]);
+        updateAvatarAndSpeech("TALKING", "Police station search cancelled. How else can I assist you?");
         return;
       }
 
@@ -266,11 +394,15 @@ function ChatContent() {
       cleanLower.includes('police station near me') ||
       cleanLower.includes('closest station') ||
       cleanLower.includes('find police station') ||
-      cleanLower === '📍 find police station';
+      cleanLower === '📍 find police station' ||
+      cleanLower.includes('नजदीकी थाना') ||
+      cleanLower.includes('थाना खोजें') ||
+      cleanLower.includes('निकटतम पुलिस स्टेशन');
 
     if (isPoliceStationQuery) {
       setMessages((prev) => [...prev, { role: 'user', text: userText }]);
       setLoading(true);
+      updateAvatarAndSpeech("THINKING", "Please wait while I locate the nearest police station.");
 
       // Step A: Try GPS with a 10-second timeout
       const gpsResult = await new Promise<{ success: boolean; lat?: number; lng?: number; reason?: string }>(
@@ -318,34 +450,34 @@ function ChatContent() {
 
           if (data.success && data.station) {
             if (data.demoMode) trackTelemetry('demo_mode_triggered');
-            setMessages((prev) => [...prev, { role: 'assistant', text: formatStationMessage(data, 'GPS') }]);
+            const text = formatStationMessage(data, 'GPS');
+            setMessages((prev) => [...prev, { role: 'assistant', text }]);
+            updateAvatarAndSpeech("SUCCESS", `I successfully located the nearest police station: ${data.station.name}.`);
           } else {
             // Structured error from backend → fall through to manual
+            const text = '👮 I couldn\'t find a police station near your GPS coordinates.\n\nPlease enter your **area, city, or district** so I can search manually.\n\n**Examples:** Gomti Nagar, Lucknow · Sector 62, Noida · Varanasi';
             setMessages((prev) => [
               ...prev,
               {
                 role: 'assistant',
-                text:
-                  '👮 I couldn\'t find a police station near your GPS coordinates.\n\n' +
-                  'Please enter your **area, city, or district** so I can search manually.\n\n' +
-                  '**Examples:** Gomti Nagar, Lucknow · Sector 62, Noida · Varanasi',
+                text,
               },
             ]);
             setWaitingForManualLocation(true);
+            updateAvatarAndSpeech("POINTING", "Please enter your area, city, or district so I can search manually.");
           }
         } catch (e: any) {
           trackTelemetry('police_station_api_failure', e?.message || 'unknown');
+          const text = '👮 I couldn\'t reach the police station service right now.\n\nPlease enter your **area, city, or district** and I\'ll try a manual search.\n\n**Examples:** Lucknow · Kanpur · Noida';
           setMessages((prev) => [
             ...prev,
             {
               role: 'assistant',
-              text:
-                '👮 I couldn\'t reach the police station service right now.\n\n' +
-                'Please enter your **area, city, or district** and I\'ll try a manual search.\n\n' +
-                '**Examples:** Lucknow · Kanpur · Noida',
+              text,
             },
           ]);
           setWaitingForManualLocation(true);
+          updateAvatarAndSpeech("POINTING", "Please enter your area, city, or district and I'll search manually.");
         }
         setLoading(false);
         return;
@@ -367,50 +499,63 @@ function ChatContent() {
           const data = await res.json();
           if (data.success && data.station) {
             if (data.demoMode) trackTelemetry('demo_mode_triggered');
-            setMessages((prev) => [...prev, { role: 'assistant', text: formatStationMessage(data, 'Saved Location') }]);
+            const text = formatStationMessage(data, 'Saved Location');
+            setMessages((prev) => [...prev, { role: 'assistant', text }]);
             setLoading(false);
+            updateAvatarAndSpeech("SUCCESS", `Located nearest police station: ${data.station.name}.`);
             return;
           }
         } catch { /* fall through to manual prompt */ }
       }
 
+      const text = '👮 I couldn\'t access your location automatically.\n\nPlease tell me your **area, city, or district** so I can find the nearest police station for you.\n\n**Examples:**\n- Gomti Nagar, Lucknow\n- Sector 62, Noida\n- Varanasi\n- Kanpur\n\nOr type **cancel** to go back.';
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          text:
-            '👮 I couldn\'t access your location automatically.\n\n' +
-            'Please tell me your **area, city, or district** so I can find the nearest police station for you.\n\n' +
-            '**Examples:**\n- Gomti Nagar, Lucknow\n- Sector 62, Noida\n- Varanasi\n- Kanpur\n\n' +
-            'Or type **cancel** to go back.',
+          text,
         },
       ]);
       setWaitingForManualLocation(true);
       setLoading(false);
+      updateAvatarAndSpeech("POINTING", "Please tell me your area, city, or district so I can locate the nearest police station.");
       return;
     }
     
     // Add user message
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setLoading(true);
+    updateAvatarAndSpeech("THINKING", "Please wait while I process your request.");
 
     // Add empty assistant message for streaming placeholder
     const placeholderIndex = messages.length + 1;
-    setMessages((prev) => [...prev, { role: "assistant", text: "...", isStreaming: true }]);
+    setMessages((prev) => [...prev, { role: "assistant", text: "...", isStreaming: true, avatarState: "THINKING" }]);
 
     try {
       const data = await ChatService.sendMessage(
         userText,
         sessionId,
         coords?.latitude || undefined,
-        coords?.longitude || undefined
+        coords?.longitude || undefined,
+        selectedLanguage || undefined
       );
       
       // Remove loading status
       setLoading(false);
       
+      // Update placeholder with correct avatar state before typing starts
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[placeholderIndex] = {
+          ...updated[placeholderIndex],
+          avatarState: data.avatar_state || "TALKING",
+        };
+        return updated;
+      });
+
       // Update with typing effect
       typeMessage(data.response, placeholderIndex);
+      updateAvatarAndSpeech(data.avatar_state || "TALKING", data.response);
 
       if (data.suggestions) {
         setSuggestions(data.suggestions);
@@ -425,6 +570,7 @@ function ChatContent() {
         };
         return updated;
       });
+      updateAvatarAndSpeech("ERROR", "I am currently unable to process your request. Please try again shortly.");
     }
   };
 
@@ -437,21 +583,16 @@ function ChatContent() {
 
   const startNewChat = () => {
     setSessionId(`session-${Math.random().toString(36).substring(7)}`);
+    setHasInitializedWelcome(false); // restarts Salute -> Welcome -> Idle
     if (selectedLanguage) {
       setMessages([
         {
           role: "assistant",
           text: getLocalizedWelcome(),
+          avatarState: "SALUTE",
         },
       ]);
-      setSuggestions([
-        `🚔 ${translate("SERVICE_COMPLAINT")}`,
-        `🏠 ${translate("SERVICE_VERIFICATION")}`,
-        `📜 ${translate("SERVICE_CERTIFICATE")}`,
-        `🎭 ${translate("SERVICE_PERMISSION")}`,
-        `🔍 ${translate("SERVICE_TRACKING")}`,
-        `📍 Find Police Station`
-      ]);
+      setSuggestions(getLocalizedSuggestions(selectedLanguage));
     } else {
       setMessages([]);
       setSuggestions([]);
@@ -460,12 +601,15 @@ function ChatContent() {
 
   const loadHistorySession = (sessionTitle: string) => {
     setSessionId(`session-${Math.random().toString(36).substring(7)}`);
+    const welcomeMsg = `👮 **Welcome back. Loading session: ${sessionTitle}**\nHow can I assist you with this request? You can continue or ask something new.`;
     setMessages([
       {
         role: "assistant",
-        text: `👮 **Welcome back. Loading session: ${sessionTitle}**\nHow can I assist you with this request? You can continue or ask something new.`,
+        text: welcomeMsg,
+        avatarState: "WELCOME",
       },
     ]);
+    updateAvatarAndSpeech("WELCOME", `Welcome back! Loading session: ${sessionTitle}`);
   };
 
   if (!selectedLanguage) {
@@ -546,7 +690,7 @@ function ChatContent() {
                 startNewChat();
               }}
               title="Clear chat history"
-              className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-police-red rounded-lg transition-colors"
+              className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-police-red rounded-lg"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -554,186 +698,27 @@ function ChatContent() {
         </header>
 
         {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-grow overflow-y-auto p-6 space-y-6">
           <div className="max-w-3xl mx-auto space-y-6">
             {messages.map((msg, idx) => {
               const isAssistant = msg.role === "assistant";
+              
+              // Find the index of the latest assistant message
+              const latestAssistantIdx = [...messages].reverse().findIndex(m => m.role === 'assistant');
+              const latestAssistantIndexInArray = latestAssistantIdx !== -1 ? messages.length - 1 - latestAssistantIdx : -1;
+              const isLatestAssistant = isAssistant && idx === latestAssistantIndexInArray;
+
               return (
-                <div 
+                <ChatMessage
                   key={idx}
-                  className={`flex ${isAssistant ? "justify-start" : "justify-end"} animate-fade-in-up`}
-                >
-                  <div className={`flex items-start space-x-3 max-w-[85%] ${isAssistant ? "" : "flex-row-reverse space-x-reverse"}`}>
-                    {/* Avatar */}
-                    {isAssistant ? (
-                      <img src="/rakku_officer.png" alt="Rakku" className="w-8 h-8 rounded-full object-cover object-top border border-police-gold/30 shadow flex-shrink-0" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shadow flex-shrink-0 bg-slate-800 text-slate-300">
-                        👤
-                      </div>
-                    )}
-
-                    {/* Text Container */}
-                    <div className={`rounded-2xl p-4 border text-xs sm:text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
-                      isAssistant 
-                        ? "bubble-assistant glow-gold/5" 
-                        : "bubble-user"
-                    }`}>
-                      {(typeof window !== "undefined" ? DOMPurify.sanitize(msg.text) : msg.text).split("\n").map((line, lIdx) => {
-                        // For simplicity, if we have markdown bullets, indent them
-                        const isBullet = line.trim().startsWith("-") || line.trim().startsWith("👉") || line.trim().startsWith("•");
-
-                        // Parse markdown elements: **bold** and [label](url-or-option)
-                        const parseMarkdown = (text: string) => {
-                          const regex = /(\*\*.*?\*\*|\[.*?\]\(.*?\))/g;
-                          const elements = text.split(regex);
-                          
-                          return elements.map((part, index) => {
-                            if (part.startsWith('**') && part.endsWith('**')) {
-                              return (
-                                <strong key={index} className="text-police-gold font-bold">
-                                  {part.slice(2, -2)}
-                                </strong>
-                              );
-                            } else if (part.startsWith('[') && part.endsWith(')')) {
-                              const linkMatch = part.match(/\[(.*?)\]\((.*?)\)/);
-                              if (linkMatch) {
-                                const label = linkMatch[1];
-                                const url = linkMatch[2];
-                                if (url.startsWith('option:')) {
-                                  const optionVal = url.substring(7);
-                                  let finalMsg = optionVal;
-                                  return (
-                                    <button
-                                      key={index}
-                                      onClick={() => handleSendMessage(finalMsg)}
-                                      className="text-police-gold hover:text-white underline font-semibold mx-1 cursor-pointer transition-colors text-left bg-transparent border-0 p-0 inline align-baseline"
-                                    >
-                                      {label}
-                                    </button>
-                                  );
-                                } else {
-                                  return (
-                                    <a
-                                      key={index}
-                                      href={url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-police-gold hover:underline font-semibold mx-1 inline"
-                                    >
-                                      {label}
-                                    </a>
-                                  );
-                                }
-                              }
-                            }
-                            return part;
-                          });
-                        };
-
-                        return (
-                          <p 
-                            key={lIdx} 
-                            className={`${isBullet ? "pl-4 py-0.5" : ""} ${line.trim() === "" ? "h-3" : ""}`}
-                          >
-                            {parseMarkdown(line)}
-                          </p>
-                        );
-                      })}
-
-                      {isAssistant && idx === 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5 pt-4 border-t border-slate-800/80">
-                          <button
-                            onClick={() => handleSendMessage("🚔 File a Complaint")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
-                          >
-                            <span className="text-xl">🚔</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_COMPLAINT")}</span>
-                          </button>
-                          
-                          <button
-                            onClick={() => handleSendMessage("🏠 Tenant Verification")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
-                          >
-                            <span className="text-xl">🏠</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_VERIFICATION")}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("📜 Character Certificate")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
-                          >
-                            <span className="text-xl">📜</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_CERTIFICATE")}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("🎭 Event Permission")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
-                          >
-                            <span className="text-xl">🎭</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_PERMISSION")}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("🔍 Track Application")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
-                          >
-                            <span className="text-xl">🔍</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">{translate("SERVICE_TRACKING")}</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("nearest police station")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer"
-                          >
-                            <span className="text-xl">📍</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Find Station</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("Emergency Contacts")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer col-span-1"
-                          >
-                            <span className="text-xl">📞</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Emergency Helplines</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("I got scammed online")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer col-span-1"
-                          >
-                            <span className="text-xl">💻</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Cyber Crime Help</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleSendMessage("harass")}
-                            className="p-3 bg-slate-900/60 hover:bg-slate-850 border border-slate-800 hover:border-police-gold rounded-xl transition-all flex flex-col items-center justify-center text-center space-y-1.5 group cursor-pointer col-span-1"
-                          >
-                            <span className="text-xl">👩</span>
-                            <span className="text-[11px] font-bold text-slate-300 group-hover:text-police-gold transition-colors">Women Safety Help</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  msg={msg}
+                  idx={idx}
+                  isLatestAssistant={isLatestAssistant}
+                  onOptionClick={handleSendMessage}
+                  translate={translate}
+                />
               );
             })}
-            
-            {loading && (
-              <div className="flex justify-start">
-                <div className="flex items-start space-x-3 max-w-[85%]">
-                  <img src="/rakku_officer.png" alt="Rakku" className="w-8 h-8 rounded-full object-cover object-top border border-police-gold/30 shadow flex-shrink-0" />
-                  <div className="bg-slate-900/80 border-slate-800 rounded-2xl p-4 border text-xs text-slate-400 flex items-center space-x-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-police-gold animate-bounce"></span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-police-gold animate-bounce [animation-delay:0.2s]"></span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-police-gold animate-bounce [animation-delay:0.4s]"></span>
-                  </div>
-                </div>
-              </div>
-            )}
             <div ref={messagesEndRef} />
           </div>
         </div>
@@ -777,11 +762,16 @@ function ChatContent() {
             </div>
             <div className="flex items-center justify-between text-[9px] text-slate-500 mt-2 px-1">
               <span>Press <strong className="text-slate-400 font-mono">Enter</strong> to send, <strong className="text-slate-400 font-mono">Shift + Enter</strong> for line break.</span>
-              <span className="hidden sm:inline">👮 Rakku Assitant V1 Prototype</span>
+              <span className="hidden sm:inline">👮 Rakku Assistant V1 Prototype</span>
             </div>
           </div>
         </footer>
       </div>
+
+      {/* Floating Welcome Overlay Greeting Card */}
+      {showWelcomeCard && (
+        <RakkuWelcomeCard onComplete={handleWelcomeComplete} />
+      )}
     </div>
   );
 }

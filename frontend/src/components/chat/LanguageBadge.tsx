@@ -9,8 +9,7 @@ export default function LanguageBadge() {
 
   const labels = {
     en: "English",
-    hi: "हिंदी",
-    hinglish: "Hinglish"
+    hi: "हिंदी"
   };
 
   return (

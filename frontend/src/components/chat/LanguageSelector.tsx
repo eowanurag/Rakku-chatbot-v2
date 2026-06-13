@@ -43,14 +43,6 @@ export default function LanguageSelector() {
             <span className="text-lg">🇮🇳</span>
             <span>हिंदी</span>
           </button>
-
-          <button 
-            onClick={() => handleSelect('hinglish')}
-            className="w-full py-3 px-4 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-police-gold rounded-xl text-white font-medium transition-all shadow-sm flex items-center justify-center space-x-2 cursor-pointer"
-          >
-            <span className="text-lg">🗣️</span>
-            <span>Hinglish</span>
-          </button>
         </div>
       </div>
     </div>
