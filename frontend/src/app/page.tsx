@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { 
-  FileText, 
-  ShieldCheck, 
-  UserCheck, 
-  CalendarDays, 
-  Search, 
+import {
+  FileText,
+  ShieldCheck,
+  UserCheck,
+  CalendarDays,
+  Search,
   HelpCircle,
   TrendingUp,
   Clock,
@@ -22,6 +22,43 @@ export default function DashboardPage() {
     certificatesIssued: 48512,
     responseTimeMins: 12.5
   });
+
+  const homepageAvatars = [
+    {
+      src: "/avatars/Salute Pose.png",
+      bubble: "Jai Hind! Welcome to Rakku Portal.",
+      poseName: "Salute Pose"
+    },
+    {
+      src: "/avatars/welcome pose.png",
+      bubble: "I am here to help you access UP Police services.",
+      poseName: "Welcome Pose"
+    },
+    {
+      src: "/avatars/Namaste.png",
+      bubble: "Namaste! How can I assist you today?",
+      poseName: "Namaste Pose"
+    },
+    {
+      src: "/avatars/Ideal pose.png",
+      bubble: "Your safety and satisfaction are our top priorities.",
+      poseName: "Ideal Pose"
+    },
+    {
+      src: "/avatars/Goodbye.png",
+      bubble: "Thank you for using Rakku digital services.",
+      poseName: "Goodbye Pose"
+    }
+  ];
+
+  const [avatarIndex, setAvatarIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAvatarIndex((prev) => (prev + 1) % homepageAvatars.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     PortalService.getQuickStats().then(setStats);
@@ -115,15 +152,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Officer image column */}
-        <div className="flex-shrink-0 w-72 md:w-80 glass-panel rounded-2xl p-4 border-slate-800 flex flex-col items-center shadow-lg border relative">
+        <div className="flex-shrink-0 w-72 md:w-80 glass-panel rounded-2xl p-4 border-slate-800 flex flex-col items-center shadow-lg border relative transition-all duration-500">
           {/* Speech Bubble */}
-          <div className="speech-bubble-welcome absolute -top-4 -left-4 text-xs font-extrabold px-3.5 py-1.5 rounded-xl border shadow-lg animate-bounce z-10">
-            💬 "May I Help You?"
+          <div className="speech-bubble-welcome absolute -top-5 -left-8 text-xs font-bold px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-900 text-slate-200 shadow-xl max-w-[260px] z-10 transition-all duration-300">
+            💬 {homepageAvatars[avatarIndex].bubble}
           </div>
-          <img src="/rakku_officer.png" alt="Officer Rakku" className="w-full h-80 object-cover object-top rounded-xl shadow border border-police-gold/15" />
+          <img
+            src={homepageAvatars[avatarIndex].src}
+            alt={`Officer Rakku - ${homepageAvatars[avatarIndex].poseName}`}
+            className="w-full h-80 object-contain object-top rounded-xl shadow border border-police-gold/15 bg-white dark:bg-slate-950/40 p-2 transition-all duration-500 transform hover:scale-[1.02]"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/rakku_officer.png'; }}
+          />
           <div className="mt-3 text-center">
             <span className="text-sm font-bold text-white block">Inspector Rakku</span>
-            <span className="text-[10px] text-police-gold font-semibold uppercase tracking-wider block">Your Digital Police Assistant</span>
+            <span className="text-[10px] text-police-gold font-semibold uppercase tracking-wider block">Uttar Pradesh Police</span>
+            <span className="text-[11px] text-slate-400 block mt-0.5 font-bold">Your Digital Assistant</span>
           </div>
         </div>
       </div>
@@ -175,7 +218,7 @@ export default function DashboardPage() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quickActions.map((action, idx) => (
-            <div 
+            <div
               key={idx}
               className={`glass-panel glass-panel-hover rounded-xl p-6 transition-all duration-300 flex flex-col justify-between ${action.color} group`}
             >
@@ -186,7 +229,7 @@ export default function DashboardPage() {
                 <h4 className="text-base font-semibold text-white group-hover:text-police-gold transition-colors">{action.title}</h4>
                 <p className="mt-2 text-xs text-slate-400 leading-relaxed font-light">{action.desc}</p>
               </div>
-              
+
               <div className="mt-6">
                 {action.href ? (
                   <a
