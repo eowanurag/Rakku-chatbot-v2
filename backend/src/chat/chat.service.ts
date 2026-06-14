@@ -333,10 +333,12 @@ export class ChatService {
     longitude?: number,
     clientLanguage?: string,
   ): Promise<{ response: string; suggestions?: string[]; avatar_state?: string; _debug?: any }> {
+    console.log('[ChatService.sendMessage] Entry - message:', message, 'sessionId:', sessionId);
     this.analyticsService.trackHelpRequest();
     
     // Sanitize incoming message input to prevent Stored XSS
     const sanitizedMessage = this.validationService.sanitizeInput(message);
+
 
     // Load session state
     const state = await this.getOrCreateSession(sessionId);
@@ -449,12 +451,14 @@ export class ChatService {
 
       // Persist state to DB
       await this.saveSession(sessionId, state);
+      console.log('[ChatService.sendMessage] Exit - Successfully processed message via FastAPI');
       return { 
         ...responseData, 
         avatar_state: responseData.avatar_state || 'TALKING',
         _debug: { activeEngine: 'FASTAPI', step: state.step, workflow: state.workflow } 
       };
     } catch (e) {
+      console.error('[ChatService.sendMessage] Warning - AI Service connection failed, using local fallback:', e);
       this.logger.warn(`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`);
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'WORKFLOW_FALLBACK_USED', state.workflow, stepBefore, String(state.step), sanitizedMessage);
       const localResult = await this.handleLocalFallback(sanitizedMessage, sessionId, state);
@@ -464,6 +468,7 @@ export class ChatService {
       // Log fallback step transition
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
       await this.saveSession(sessionId, state);
+      console.log('[ChatService.sendMessage] Exit - Processed message via Fallback engine');
       return { 
         ...localResult, 
         avatar_state: localResult.avatar_state || 'TALKING',

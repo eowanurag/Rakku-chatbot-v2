@@ -25,7 +25,17 @@ import RakkuWelcomeCard from "../../components/chat/RakkuWelcomeCard";
 import ChatMessage from "../../components/chat/ChatMessage";
 import { avatarImages } from "../../utils/avatarConfig";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://rakku-chatbot-v1.onrender.com/api";
+const getBackendUrl = () => {
+  if (typeof window === "undefined") {
+    return process.env.NEXT_PUBLIC_BACKEND_URL || "https://rakku-chatbot-v1.onrender.com/api";
+  }
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  return isLocalhost 
+    ? "http://localhost:3000/api" 
+    : "https://rakku-chatbot-v1.onrender.com/api";
+};
+
+const BACKEND_URL = getBackendUrl();
 
 interface Message {
   role: "user" | "assistant";
