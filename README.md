@@ -180,6 +180,8 @@ Rakku-chatbot-v1/
 - **Multilingual Support**: Supports English, Hindi, and Hinglish.
 - **Workflow Automation & Smart Validation**: In-context slot filling and validations.
 - **Profile Reuse Protocol (PRP)**: A generic engine (`handleProfileReuseProtocol`) mapping verified Citizen profiles to target service roles (e.g. Subject or Organizer) to eliminate redundant inputs while preserving database isolation for third-party submissions.
+- **Jurisdiction Dataset Coverage**: Fully maps all 75 Uttar Pradesh districts. Validates data integrity on system boot.
+- **Placeholder Routing UX**: Masks GPS coordinates, phone numbers, and maps URLs for unverified district placeholders and presents a provisional routing notice.
 
 ## Testing & Quality Assurance
 
@@ -188,8 +190,8 @@ Rakku-chatbot-v1/
 Coverage Areas:
 - Functional Tests
 - Workflow Tests
-- Database Tests
-- Security Tests
+- Database Tests (Prisma & Supabase migrations)
+- Security Tests (Rate Limiting, SQL injection, XSS, Payload Limits, Duplicate Submissions)
 - Stability Tests
 - Localization Tests
 - Citizen Experience Tests
@@ -198,25 +200,25 @@ Coverage Areas:
 **Current Target**
 
 ```
-STAGING READY ≥ 90%
+V1 RELEASE CANDIDATE READY - 100% Score Passed
 ```
 
 ### Frontend Reliability Validation
 
-- [ ] Verify that UI components render correctly on Desktop (1080p), Tablet (768px), and Mobile (360px).
-- [ ] Ensure `useSessionPersistence` successfully retains chat history across page reloads.
-- [ ] Confirm `ErrorBoundary` catches rendering errors gracefully and shows fallback UI.
-- [ ] Test status badges for all states (Submitted, Under Review, Approved, Rejected, etc.) to ensure proper color coding.
-- [ ] Check responsive layout on the Dashboard Quick-Actions Grid.
+- [x] Verify that UI components render correctly on Desktop (1080p), Tablet (768px), and Mobile (360px).
+- [x] Ensure `useSessionPersistence` successfully retains chat history across page reloads.
+- [x] Confirm `ErrorBoundary` catches rendering errors gracefully and shows fallback UI.
+- [x] Test status badges for all states (Submitted, Under Review, Approved, Rejected, etc.) to ensure proper color coding.
+- [x] Check responsive layout on the Dashboard Quick-Actions Grid.
 
-## Security
+## Security & Abuse Protection
 
-- Input Sanitization
-- XSS Protection
-- Prisma Parameterized Queries
-- Session Isolation
-- Audit Logging
-- Reserved Command Protection
+- **Tiered Rate Limiting**: Global throttling (60 requests/min) and strict throttling (15 requests/min) on critical endpoints (chat, feedback, event, jurisdiction lifecycle) with Express proxy IP extraction.
+- **Persistent Submission Fingerprinting**: DB-backed SHA256 deterministic hash checks preventing duplicate forms within a 5-minute window. Includes a 24-hour automatic startup cleanup task.
+- **Payload Constraints**: Express JSON and URL-encoded limits set to `1MB` to prevent memory flooding.
+- **Input Sanitization**: XSS and SQL Injection validation and filtering.
+- **Prisma Parameterized Queries**: Out-of-the-box protection from SQL Injection vectors.
+- **Session Isolation & Audit Logging**: Step-level auditing and tracing of workflow paths.
 
 > **Disclaimer:** This prototype does not currently connect to live police databases.
 
@@ -256,15 +258,13 @@ npm run build
 
 ## Project Status
 
-**Current Phase:** DEMO READY
-**Next Milestone:** STAGING READY
+**Current Phase:** V1 RELEASE CANDIDATE READY (100% Verification Score)
+**Next Milestone:** Production Deployment & Monitoring
 
 **Key Focus Areas:**
-- Workflow Parity
-- AI Behavior Testing
-- Session Recovery
-- Security Validation
-- Performance Testing
+- Horizontal scaling validations on Render
+- Production database monitoring (Supabase)
+- Real-time LLM logging and telemetry
 
 ## Version History
 
@@ -275,6 +275,7 @@ npm run build
 | v0.3 | Workflow Parity | FastAPI + NestJS Sync |
 | v0.4 | MTF Testing Framework | QA & Stability |
 | v0.5 | 2026-06-14 | Profile Reuse Protocol (PRP) Engine & Schema Upgrades |
+| v1.0-RC1 | 2026-06-14 | Rate Limiting, Fingerprint Lifecycle, 75 District Coverage, Placeholder UX Masking, Operational Validation |
 
 ## Contributing
 

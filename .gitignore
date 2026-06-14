@@ -51,3 +51,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+ 
+# Exclude system guide from tracking
+COMPREHENSIVE_GUIDE.md
