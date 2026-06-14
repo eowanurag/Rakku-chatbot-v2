@@ -39,36 +39,41 @@ export class IntelligenceService {
     }
   }
 
-  classifyFeedback(comments?: string): string {
-    if (!comments) return 'OTHER';
+  classifyFeedback(comments?: string): { category: string; subcategory?: string } {
+    if (!comments) return { category: 'OTHER' };
     const text = comments.toLowerCase();
+    if (text.includes('dont ask name repetedly') || text.includes("don't ask name repeatedly") || text.includes('ask name repeatedly') || text.includes('duplicate name') || text.includes('duplicate data') || text.includes('repeatedly') || text.includes('repetedly') || text.includes('ask again')) {
+      return { category: 'CONFUSING_FLOW', subcategory: 'DUPLICATE_DATA_COLLECTION' };
+    }
     if (text.includes('hindi') || text.includes('english') || text.includes('language') || text.includes('हिन्दी') || text.includes('हिंदी') || text.includes('अंग्रेजी') || text.includes('अनुवाद') || text.includes('translation') || text.includes('leakage') || text.includes('bhasha') || text.includes('बात करो')) {
-      return 'LOCALIZATION';
+      return { category: 'LOCALIZATION' };
     }
     if (text.includes('confusing') || text.includes('many questions') || text.includes('hard') || text.includes('difficult') || text.includes('understand') || text.includes('complex') || text.includes('swal') || text.includes('saval') || text.includes('सवाल')) {
-      return 'CONFUSING_FLOW';
+      return { category: 'CONFUSING_FLOW' };
     }
     if (text.includes('location') || text.includes('district') || text.includes('city') || text.includes('area') || text.includes('sthan') || text.includes('zila') || text.includes('जिला') || text.includes('स्थान') || text.includes('गलत')) {
-      return 'LOCATION_ERROR';
+      return { category: 'LOCATION_ERROR' };
     }
     if (text.includes('track') || text.includes('status') || text.includes('reference') || text.includes('ref') || text.includes('number') || text.includes('no record') || text.includes('checking')) {
-      return 'TRACKING_ISSUE';
+      return { category: 'TRACKING_ISSUE' };
     }
     if (text.includes('verify') || text.includes('verification') || text.includes('tenant') || text.includes('employee') || text.includes('domestic') || text.includes('satyapan') || text.includes('किरायेदार')) {
-      return 'VERIFICATION_ISSUE';
+      return { category: 'VERIFICATION_ISSUE' };
     }
     if (text.includes('slow') || text.includes('response') || text.includes('time') || text.includes('lag') || text.includes('delay') || text.includes('wait') || text.includes('time limit')) {
-      return 'SLOW_RESPONSE';
+      return { category: 'SLOW_RESPONSE' };
     }
     if (text.includes('ui') || text.includes('interface') || text.includes('button') || text.includes('screen') || text.includes('display') || text.includes('color') || text.includes('font') || text.includes('layout')) {
-      return 'UI_PROBLEM';
+      return { category: 'UI_PROBLEM' };
     }
-    return 'OTHER';
+    return { category: 'OTHER' };
   }
 
-  async saveFeedback(sessionId: string, citizenId: string | null, workflowType: string | null, rating: number, comments?: string, category?: string) {
+  async saveFeedback(sessionId: string, citizenId: string | null, workflowType: string | null, rating: number, comments?: string, category?: string, subcategory?: string) {
     try {
-      const finalCategory = category || this.classifyFeedback(comments);
+      const classification = this.classifyFeedback(comments);
+      const finalCategory = category || classification.category;
+      const finalSubcategory = subcategory || classification.subcategory || null;
       await this.prisma.feedback.create({
         data: {
           sessionId,
@@ -77,6 +82,7 @@ export class IntelligenceService {
           rating,
           comments: comments === undefined ? null : comments,
           category: finalCategory,
+          subcategory: finalSubcategory,
         },
       });
       await this.prisma.citizenFeedback.create({
@@ -87,6 +93,7 @@ export class IntelligenceService {
           rating,
           comments: comments === undefined ? null : comments,
           category: finalCategory,
+          subcategory: finalSubcategory,
         },
       });
     } catch (e) {

@@ -90,6 +90,10 @@ model EventPermission {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   citizen            Citizen  @relation(fields: [citizenId], references: [id])
+  organizerName        String?
+  organizerAddress     String?
+  organizerMobile      String?
+  organizerIsApplicant Boolean  @default(true)
 }
 
 model ChatHistory {
@@ -168,6 +172,7 @@ model Feedback {
   rating       Int
   comments     String?
   category     String?
+  subcategory  String?
   createdAt    DateTime @default(now())
 }
 
@@ -250,6 +255,7 @@ model CitizenFeedback {
   rating       Int
   comments     String?
   category     String?
+  subcategory  String?
   createdAt    DateTime @default(now())
 }
 

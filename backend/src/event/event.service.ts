@@ -13,6 +13,10 @@ export interface EventPermissionData {
   status: string;
   createdAt: Date;
   updatedAt: Date;
+  organizerName?: string | null;
+  organizerAddress?: string | null;
+  organizerMobile?: string | null;
+  organizerIsApplicant?: boolean;
 }
 
 @Injectable()
@@ -53,6 +57,10 @@ export class EventService {
     expectedAttendance: number,
     preGeneratedRefNum?: string,
     citizenId?: string,
+    organizerName?: string,
+    organizerAddress?: string,
+    organizerMobile?: string,
+    organizerIsApplicant: boolean = true,
   ): Promise<EventPermissionData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
     const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
@@ -66,6 +74,10 @@ export class EventService {
           date,
           expectedAttendance,
           citizenId: resolvedCitizenId,
+          organizerName: organizerName || null,
+          organizerAddress: organizerAddress || null,
+          organizerMobile: organizerMobile || null,
+          organizerIsApplicant,
         },
       }) as unknown as EventPermissionData;
     } catch (e) {
@@ -82,6 +94,10 @@ export class EventService {
         status: 'Submitted',
         createdAt: new Date(),
         updatedAt: new Date(),
+        organizerName: organizerName || null,
+        organizerAddress: organizerAddress || null,
+        organizerMobile: organizerMobile || null,
+        organizerIsApplicant,
       };
       this.inMemoryEvents.push(mock);
       return mock;

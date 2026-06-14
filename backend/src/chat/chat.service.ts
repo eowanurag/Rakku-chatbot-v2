@@ -1082,6 +1082,11 @@ export class ChatService {
       return this.runCitizenIdentificationFlow(state, message);
     }
 
+    // If citizen is already confirmed and starting a workflow, initialize step to '1'
+    if (state.citizen.isConfirmed && state.step === 'START' && state.workflow && state.workflow !== 'tracking') {
+      state.step = '1';
+    }
+
     // Process Active Workflows
     let empathyPrepend = "";
     if (message && !state.data.empathyShown) {
@@ -2182,6 +2187,132 @@ Would you like to submit this application?
     return { response: 'Invalid step' };
   }
 
+  private requiresProfileReuse(workflow: string): boolean {
+    return ['certificate', 'event'].includes(workflow);
+  }
+
+  private async handleProfileReuseProtocol(
+    session: ChatSessionState,
+    msg: string,
+    workflowType: string,
+    targetRole: 'ROLE_SUBJECT' | 'ROLE_ORGANIZER',
+    nextWorkflowPrompt: string,
+    nextWorkflowSuggestions?: string[],
+    manualStartStep: string = '2',
+    manualStartPrompt?: string,
+    manualStartSuggestions?: string[]
+  ): Promise<{ response: string; suggestions?: string[] } | null> {
+    const lang = session.language;
+    const cleanMsg = msg.trim().toLowerCase();
+    const step = session.step;
+
+    const addressStr = [
+      session.citizen.addressLine1,
+      session.citizen.addressLine2,
+      session.citizen.city,
+      session.citizen.pincode
+    ].filter(Boolean).join(', ');
+
+    const prompts = {
+      en: {
+        foundProfile: `I found a verified profile:\n\nName: **${session.citizen.fullName}**\nAddress: **${addressStr}**\n\nHow would you like to proceed?`,
+        options: ["Use My Verified Details", "Apply For Someone Else"],
+        confirmUse: `I will use your verified details for this application.\n\nName: **${session.citizen.fullName}**\nAddress: **${addressStr}**\n\nContinue?`,
+        confirmOptions: ["Continue", "Modify Details"],
+      },
+      hi: {
+        foundProfile: `मुझे एक सत्यापित प्रोफ़ाइल मिली है:\n\nनाम: **${session.citizen.fullName}**\nपता: **${addressStr}**\n\nआप कैसे आगे बढ़ना चाहेंगे?`,
+        options: ["मेरे सत्यापित विवरण का उपयोग करें", "किसी अन्य व्यक्ति के लिए आवेदन करें"],
+        confirmUse: `मैं इस आवेदन के लिए आपके सत्यापित विवरणों का उपयोग करूँगा।\n\nनाम: **${session.citizen.fullName}**\nपता: **${addressStr}**\n\nजारी रखें?`,
+        confirmOptions: ["जारी रखें", "विवरण बदलें"],
+      },
+      hinglish: {
+        foundProfile: `Mujhe ek verified profile mili hai:\n\nName: **${session.citizen.fullName}**\nAddress: **${addressStr}**\n\nKaise proceed karna chahenge?`,
+        options: ["Use My Verified Details", "Apply For Someone Else"],
+        confirmUse: `Main is application ke liye aapke verified details use karunga.\n\nName: **${session.citizen.fullName}**\nAddress: **${addressStr}**\n\nContinue?`,
+        confirmOptions: ["Continue", "Modify Details"],
+      }
+    };
+
+    if (step === '1' || step === 'PRP_INIT') {
+      session.step = 'PRP_CHOICE';
+      return {
+        response: prompts[lang].foundProfile,
+        suggestions: prompts[lang].options,
+      };
+    }
+
+    if (step === 'PRP_CHOICE') {
+      const isSelf = cleanMsg.includes('use my verified details') || cleanMsg.includes('मेरे सत्यापित विवरण') || cleanMsg === 'myself' || cleanMsg === 'mere liye';
+      const isSomeoneElse = cleanMsg.includes('someone else') || cleanMsg.includes('किसी अन्य व्यक्ति') || cleanMsg.includes('kisi aur') || cleanMsg === 'someone else' || cleanMsg === 'kisi aur ke liye';
+
+      if (isSelf || cleanMsg.includes('option:use my verified details') || cleanMsg.includes('option:मेरे सत्यापित विवरण')) {
+        session.data.prpSource = 'REUSED';
+        if (targetRole === 'ROLE_SUBJECT') {
+          session.data.name = session.citizen.fullName;
+          session.data.address = addressStr;
+          session.data.district = session.citizen.district || session.citizen.city || 'Lucknow';
+          session.data.isSelf = true;
+        } else if (targetRole === 'ROLE_ORGANIZER') {
+          session.data.organizerName = session.citizen.fullName;
+          session.data.organizerAddress = addressStr;
+          session.data.organizerMobile = session.citizen.mobileNumber;
+          session.data.organizerIsApplicant = true;
+        }
+        session.step = 'PRP_CONFIRM';
+        return {
+          response: prompts[lang].confirmUse,
+          suggestions: prompts[lang].confirmOptions,
+        };
+      } else if (isSomeoneElse || cleanMsg.includes('option:apply for someone else') || cleanMsg.includes('option:किसी अन्य व्यक्ति')) {
+        session.data.prpSource = 'MANUAL';
+        if (targetRole === 'ROLE_SUBJECT') {
+          session.data.isSelf = false;
+        } else if (targetRole === 'ROLE_ORGANIZER') {
+          session.data.organizerIsApplicant = false;
+        }
+        session.step = manualStartStep;
+        return {
+          response: manualStartPrompt || '',
+          suggestions: manualStartSuggestions,
+        };
+      } else {
+        return {
+          response: prompts[lang].foundProfile,
+          suggestions: prompts[lang].options,
+        };
+      }
+    }
+
+    if (step === 'PRP_CONFIRM') {
+      const isContinue = cleanMsg === 'continue' || cleanMsg.includes('option:continue') || cleanMsg.includes('जारी रखें') || cleanMsg.includes('option:जारी रखें');
+      const isModify = cleanMsg === 'modify details' || cleanMsg.includes('option:modify details') || cleanMsg.includes('विवरण बदलें') || cleanMsg.includes('option:विवरण बदलें');
+
+      if (isContinue) {
+        return null; // Go directly to the next workflow step
+      } else if (isModify) {
+        session.data.prpSource = 'MANUAL';
+        if (targetRole === 'ROLE_SUBJECT') {
+          session.data.isSelf = false;
+        } else if (targetRole === 'ROLE_ORGANIZER') {
+          session.data.organizerIsApplicant = false;
+        }
+        session.step = manualStartStep;
+        return {
+          response: manualStartPrompt || '',
+          suggestions: manualStartSuggestions,
+        };
+      } else {
+        return {
+          response: prompts[lang].confirmUse,
+          suggestions: prompts[lang].confirmOptions,
+        };
+      }
+    }
+
+    return null;
+  }
+
   // --- Character Certificate Workflow ---
   private async runCertificateWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     const step = session.step;
@@ -2208,6 +2339,28 @@ Would you like to submit this application?
         "Thank you. Is certificate ka purpose kya hai?",
       ],
     };
+
+    if (step === '1' || step === 'PRP_CHOICE' || step === 'PRP_CONFIRM') {
+      const prpRes = await this.handleProfileReuseProtocol(
+        session,
+        msg,
+        'certificate',
+        'ROLE_SUBJECT',
+        prompts[lang][3],
+        ['Job Application', 'Passport', 'Visa', 'Higher Education', 'Government Service'],
+        '2',
+        prompts[lang][0],
+      );
+      if (prpRes !== null) {
+        return prpRes;
+      }
+      // Continue was selected
+      session.step = '5';
+      return {
+        response: prompts[lang][3],
+        suggestions: ['Job Application', 'Passport', 'Visa', 'Higher Education', 'Government Service'],
+      };
+    }
 
     if (step === 'REVIEW') {
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
@@ -2248,17 +2401,20 @@ Would you like to submit this application?
           suggestions: this.getRatingSuggestions(lang),
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
-        session.step = '2';
+        session.step = '1';
         session.data = {};
-        return {
-          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
-        };
+        const prpInit = await this.handleProfileReuseProtocol(
+          session,
+          "",
+          'certificate',
+          'ROLE_SUBJECT',
+          prompts[lang][3],
+          ['Job Application', 'Passport', 'Visa', 'Higher Education', 'Government Service'],
+          '2',
+          prompts[lang][0],
+        );
+        return prpInit!;
       }
-    }
-
-    if (step === '1') {
-      session.step = '2';
-      return { response: prompts[lang][0] };
     }
 
     if (step === '2') {
@@ -2300,18 +2456,23 @@ Would you like to submit this application?
       session.data.purpose = msg;
       session.step = 'REVIEW';
 
+      const isSelf = session.data.isSelf;
+      const sourceLabel = isSelf ? "✓ Reused From Verified Profile" : "✓ Provided Manually";
       const reviewScreen = `👮 **Please review your application.**
 
-Name: **${session.citizen.fullName}**
-Mobile: **${session.citizen.mobileNumber}**
-Applicant Name: **${session.data.name}**
-Applicant Address: **${session.data.address}**
+Applicant Name: **${session.citizen.fullName}**
+Applicant Mobile: **${session.citizen.mobileNumber}**
+Subject Name: **${session.data.name}**
+Subject Address: **${session.data.address}**
 District: **${session.data.district}**
 Purpose: **${session.data.purpose}**
 
+**Subject Information Source:**
+${sourceLabel}
+
 **Validation Status**
 
-✓ Applicant Name Valid
+✓ Subject Name Valid
 ✓ District Valid
 ✓ Purpose Valid
 ✓ Character Certificate Details Complete
@@ -2373,6 +2534,10 @@ Would you like to submit this application?
           session.data.attendance,
           resNum,
           session.citizen.id,
+          session.data.organizerName || undefined,
+          session.data.organizerAddress || undefined,
+          session.data.organizerMobile || undefined,
+          session.data.organizerIsApplicant !== undefined ? session.data.organizerIsApplicant : true
         );
         await this.prisma.trackingRecord.create({
           data: {
@@ -2401,10 +2566,10 @@ Would you like to submit this application?
           suggestions: this.getRatingSuggestions(lang),
         };
       } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
-        session.step = '2';
+        session.step = '1';
         session.data = {};
         return {
-          response: "Understood. Let's restart the form. Please select or enter the details again.\n\n" + prompts[lang][0],
+          response: "Understood. Let's restart the form. " + prompts[lang][0],
           suggestions: ['Event Permission', 'Procession Request', 'Protest Request', 'Film Shooting Request'],
         };
       }
@@ -2420,6 +2585,51 @@ Would you like to submit this application?
 
     if (step === '2') {
       if (msg) session.data.type = msg;
+      session.step = 'PRP_INIT';
+    }
+
+    if (session.step === 'PRP_INIT' || session.step === 'PRP_CHOICE' || session.step === 'PRP_CONFIRM') {
+      const prpRes = await this.handleProfileReuseProtocol(
+        session,
+        msg,
+        'event',
+        'ROLE_ORGANIZER',
+        prompts[lang][1],
+        [],
+        'ORG_NAME',
+        "Please enter the Organizer's Full Name:",
+      );
+      if (prpRes !== null) {
+        return prpRes;
+      }
+      session.step = '3';
+      return { response: prompts[lang][1] };
+    }
+
+    if (step === 'ORG_NAME') {
+      if (!this.validationService.validateName(msg)) {
+        return {
+          response: "⚠️ Please enter a valid organizer full name (first name and last name):",
+        };
+      }
+      session.data.organizerName = msg;
+      session.step = 'ORG_ADDRESS';
+      return { response: "Please enter the Organizer's Complete Address:" };
+    }
+
+    if (step === 'ORG_ADDRESS') {
+      session.data.organizerAddress = msg;
+      session.step = 'ORG_MOBILE';
+      return { response: "Please enter the Organizer's Mobile Number:" };
+    }
+
+    if (step === 'ORG_MOBILE') {
+      if (!this.validationService.validateMobile(msg)) {
+        return {
+          response: "⚠️ Please provide a valid 10-digit mobile number:",
+        };
+      }
+      session.data.organizerMobile = this.validationService.normalizeMobile(msg)!;
       session.step = '3';
       return { response: prompts[lang][1] };
     }
@@ -2456,15 +2666,23 @@ Would you like to submit this application?
       session.data.attendance = parseInt(msg) || 100;
       session.step = 'REVIEW';
 
+      const isSelf = session.data.organizerIsApplicant;
+      const sourceLabel = isSelf ? "✓ Reused From Verified Profile" : "✓ Provided Manually";
       const reviewScreen = `👮 **Please review your application.**
 
-Name: **${session.citizen.fullName}**
-Mobile: **${session.citizen.mobileNumber}**
+Applicant Name: **${session.citizen.fullName}**
+Applicant Mobile: **${session.citizen.mobileNumber}**
 Request Type: **${session.data.type}**
+Organizer Name: **${session.data.organizerName}**
+Organizer Address: **${session.data.organizerAddress}**
+Organizer Mobile: **${session.data.organizerMobile || session.citizen.mobileNumber}**
 Event Name: **${session.data.name}**
 Location: **${session.data.location}**
 Date: **${session.data.date}**
 Attendance: **${session.data.attendance}**
+
+**Organizer Information Source:**
+${sourceLabel}
 
 **Validation Status**
 
