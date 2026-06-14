@@ -46,7 +46,7 @@ const getBackendUrl = () => {
   }
   const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   return isLocalhost 
-    ? "http://localhost:3000/api" 
+    ? "http://localhost:3001/api" 
     : "https://rakku-chatbot-v1.onrender.com/api";
 };
 
