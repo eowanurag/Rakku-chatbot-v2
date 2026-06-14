@@ -37,6 +37,7 @@ import { KnowledgeService } from './knowledge/knowledge.service';
 import { IntelligenceService } from './citizen-assistance/intelligence.service';
 
 import { LocalizationModule } from './localization/localization.module';
+import { JurisdictionRoutingModule } from './jurisdiction-routing/jurisdiction-routing.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { LocalizationModule } from './localization/localization.module';
     HttpModule,
     CitizenAssistanceModule,
     LocalizationModule,
+    JurisdictionRoutingModule,
   ],
   controllers: [
     ComplaintController,

@@ -19,6 +19,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "@nestjs/event-emitter": "^3.1.0",
     "@prisma/client": "^6.0.0"
   },
   "name": "rakku-chatbot-v1",

@@ -32,68 +32,76 @@ model Citizen {
 }
 
 model Complaint {
-  id              String   @id @default(uuid())
-  referenceNumber String   @unique
-  citizenId       String
-  complaintType   String
-  incidentDetails String
-  status          String   @default("Submitted")
-  mobileBrand     String?
-  mobileModel     String?
-  mobileColor     String?
-  purchaseYear    Int?
-  imeiNumber      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  citizen         Citizen  @relation(fields: [citizenId], references: [id])
+  id                       String                  @id @default(uuid())
+  referenceNumber          String                  @unique
+  citizenId                String
+  complaintType            String
+  incidentDetails          String
+  status                   String                  @default("Submitted")
+  mobileBrand              String?
+  mobileModel              String?
+  mobileColor              String?
+  purchaseYear             Int?
+  imeiNumber               String?
+  jurisdictionResolutionId String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
+  jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
 }
 
 model Verification {
-  id               String   @id @default(uuid())
-  referenceNumber  String   @unique
-  citizenId        String
-  verificationType String
-  name             String
-  address          String
-  mobile           String
-  propertyDetails  String
-  status           String   @default("Submitted")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  citizen          Citizen  @relation(fields: [citizenId], references: [id])
+  id                       String                  @id @default(uuid())
+  referenceNumber          String                  @unique
+  citizenId                String
+  verificationType         String
+  name                     String
+  address                  String
+  mobile                   String
+  propertyDetails          String
+  status                   String                  @default("Submitted")
+  jurisdictionResolutionId String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
+  jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
 }
 
 model CharacterCertificate {
-  id              String   @id @default(uuid())
-  referenceNumber String   @unique
-  citizenId       String
-  name            String
-  address         String
-  district        String
-  purpose         String
-  status          String   @default("Submitted")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  citizen         Citizen  @relation(fields: [citizenId], references: [id])
+  id                       String                  @id @default(uuid())
+  referenceNumber          String                  @unique
+  citizenId                String
+  name                     String
+  address                  String
+  district                 String
+  purpose                  String
+  status                   String                  @default("Submitted")
+  jurisdictionResolutionId String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
+  jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
 }
 
 model EventPermission {
-  id                 String   @id @default(uuid())
-  referenceNumber    String   @unique
-  citizenId          String
-  eventType          String
-  eventName          String
-  location           String
-  date               String
-  expectedAttendance Int
-  status             String   @default("Submitted")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  citizen            Citizen  @relation(fields: [citizenId], references: [id])
-  organizerName        String?
-  organizerAddress     String?
-  organizerMobile      String?
-  organizerIsApplicant Boolean  @default(true)
+  id                       String                  @id @default(uuid())
+  referenceNumber          String                  @unique
+  citizenId                String
+  eventType                String
+  eventName                String
+  location                 String
+  date                     String
+  expectedAttendance       Int
+  status                   String                  @default("Submitted")
+  organizerName            String?
+  organizerAddress         String?
+  organizerMobile          String?
+  organizerIsApplicant     Boolean                 @default(true)
+  jurisdictionResolutionId String?
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+  citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
+  jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
 }
 
 model ChatHistory {
@@ -259,4 +267,149 @@ model CitizenFeedback {
   createdAt    DateTime @default(now())
 }
 
+// --- JURISDICTION & ROUTING PLATFORM ENUMS ---
 
+enum RoutingTargetType {
+  POLICE_STATION
+  CYBER_CELL
+  VERIFICATION_UNIT
+  OTHER
+}
+
+enum ResolutionStatus {
+  PENDING
+  CONFIRMED
+  OVERRIDDEN
+  EXPIRED
+}
+
+enum RoutingDecision {
+  AUTO_ASSIGNED
+  USER_CONFIRMED
+  USER_SELECTED
+  FALLBACK_ASSIGNED
+}
+
+enum MatchType {
+  EXACT
+  ALIAS
+  FUZZY
+  MULTIPLE
+  NONE
+}
+
+enum ResolutionSource {
+  GPS
+  TEXT_INPUT
+  PROFILE_ADDRESS
+  EVENT_LOCATION
+  PROPERTY_ADDRESS
+  MANUAL_SELECTION
+}
+
+enum ActorType {
+  CITIZEN
+  OFFICER
+  SYSTEM
+  ADMIN
+  FASTAPI
+  NESTJS
+}
+
+// --- JURISDICTION & ROUTING PLATFORM MODELS ---
+
+model PoliceStation {
+  id            String                 @id @default(uuid())
+  stationCode   String                 @unique
+  name          String
+  districtCode  String
+  cityCode      String?
+  localityCode  String?
+  latitude      Float?
+  longitude     Float?
+  phone         String?
+  isActive      Boolean                @default(true)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  mappings      JurisdictionMapping[]
+  resolutions   JurisdictionResolution[]
+}
+
+model JurisdictionRegistryVersion {
+  id          String                @id @default(uuid())
+  version     String                @unique
+  description String?
+  createdAt   DateTime              @default(now())
+  mappings    JurisdictionMapping[]
+}
+
+model JurisdictionMapping {
+  id                String                      @id @default(uuid())
+  districtCode      String
+  cityCode          String?
+  localityCode      String?
+  policeStationId   String
+  priority          Int                         @default(1)
+  registryVersionId String
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  policeStation     PoliceStation               @relation(fields: [policeStationId], references: [id])
+  registryVersion   JurisdictionRegistryVersion @relation(fields: [registryVersionId], references: [id])
+}
+
+model JurisdictionResolution {
+  id                  String                          @id @default(uuid())
+  routingTargetType   RoutingTargetType
+  routingTargetId     String
+  policeStationId     String?
+  serviceType         String
+  workflowId          String?
+  routingContext      String
+  sourceLocation      Json
+  resolutionSource    ResolutionSource
+  confidence          Float
+  matchType           MatchType
+  routingDecision     RoutingDecision
+  status              ResolutionStatus
+  jurisdictionVersion String
+  createdAt           DateTime                        @default(now())
+  updatedAt           DateTime                        @updatedAt
+  policeStation       PoliceStation?                  @relation(fields: [policeStationId], references: [id])
+  history             JurisdictionResolutionHistory[]
+  events              JurisdictionResolutionEvent[]
+  
+  // Relations to workflows
+  complaints          Complaint[]
+  verifications       Verification[]
+  certificates        CharacterCertificate[]
+  permissions         EventPermission[]
+}
+
+model JurisdictionResolutionHistory {
+  id                        String                 @id @default(uuid())
+  jurisdictionResolutionId  String
+  previousStatus            ResolutionStatus?
+  newStatus                 ResolutionStatus
+  previousStationId         String?
+  newStationId              String?
+  previousTargetType        RoutingTargetType?
+  previousTargetId          String?
+  newTargetType             RoutingTargetType?
+  newTargetId               String?
+  reason                    String?
+  actorType                 ActorType?
+  actorId                   String?
+  changedAt                 DateTime               @default(now())
+  jurisdictionResolution    JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
+}
+
+model JurisdictionResolutionEvent {
+  id                        String                 @id @default(uuid())
+  jurisdictionResolutionId  String
+  eventType                 String
+  actorType                 ActorType?
+  actorId                   String?
+  metadata                  Json?
+  createdAt                 DateTime               @default(now())
+  jurisdictionResolution    JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
+}

@@ -16,6 +16,14 @@ import { getCompletionMessage } from '../templates/completions';
 import { getEmergencyMessage } from '../templates/emergency';
 import { AnalyticsService } from '../citizen-assistance/analytics.service';
 import { IntelligenceService } from '../citizen-assistance/intelligence.service';
+import { JurisdictionService } from '../jurisdiction-routing/jurisdiction.service';
+import { JurisdictionLifecycleService } from '../jurisdiction-routing/jurisdiction-lifecycle.service';
+import { LocationResolverService } from '../jurisdiction-routing/location-resolver.service';
+import { JurisdictionRepository } from '../jurisdiction-routing/jurisdiction.repository';
+import { RoutingPolicyService } from '../jurisdiction-routing/routing-policy.service';
+import { RoutingTargetRegistryService } from '../jurisdiction-routing/routing-target-registry.service';
+import { RoutingContext, ResolutionSource, ActorType } from '../jurisdiction-routing/jurisdiction-routing.types';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 interface CitizenState {
   id?: string;
@@ -72,6 +80,8 @@ export class ChatService {
   private aiServiceUrl: string;
   private messageLibrary: any = null;
   public localizationService: LocalizationService;
+  private readonly jurisdictionService: JurisdictionService;
+  private readonly jurisdictionLifecycleService: JurisdictionLifecycleService;
 
   constructor(
     private readonly httpService: HttpService,
@@ -86,8 +96,22 @@ export class ChatService {
     private readonly validationService: ValidationService,
     private readonly intelligenceService: IntelligenceService,
     localizationService?: LocalizationService,
+    jurisdictionService?: JurisdictionService,
+    jurisdictionLifecycleService?: JurisdictionLifecycleService,
   ) {
     this.localizationService = localizationService || new LocalizationService(new MetricsService());
+    this.jurisdictionService = jurisdictionService || new JurisdictionService(
+      new LocationResolverService(),
+      new JurisdictionRepository(this.prisma),
+      new RoutingPolicyService(),
+      new RoutingTargetRegistryService(),
+      this.prisma,
+      new EventEmitter2()
+    );
+    this.jurisdictionLifecycleService = jurisdictionLifecycleService || new JurisdictionLifecycleService(
+      new JurisdictionRepository(this.prisma),
+      new EventEmitter2()
+    );
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
     this.loadMessageLibrary();
   }
@@ -491,6 +515,69 @@ export class ChatService {
       return `${day} ${month} ${year}`;
     };
 
+    const normalizeServiceType = (type: string): string => {
+      if (!type) return 'LOST_MOBILE';
+      const upper = type.toUpperCase().replace(/\s+/g, '_');
+      if (upper.includes('MOBILE')) return 'LOST_MOBILE';
+      if (upper.includes('DOC') || upper.includes('LOST_DOCUMENT')) return 'LOST_DOCUMENT';
+      if (upper.includes('CYBER')) return 'CYBER_FRAUD';
+      if (upper.includes('HARASS')) return 'HARASSMENT';
+      if (upper.includes('TENANT')) return 'TENANT_VERIFICATION';
+      if (upper.includes('EMPLOYEE')) return 'EMPLOYEE_VERIFICATION';
+      if (upper.includes('DOMESTIC') || upper.includes('HELP')) return 'DOMESTIC_HELP_VERIFICATION';
+      if (upper.includes('CERTIFICATE') || upper.includes('CHARACTER')) return 'CHARACTER_CERTIFICATE';
+      if (upper.includes('EVENT') || upper.includes('PERMISSION')) return 'EVENT_PERMISSION';
+      return upper;
+    };
+
+    const resolveAndConfirmJurisdiction = async (
+      citizenId: string,
+      serviceType: string,
+      locationText: string,
+      context: string
+    ) => {
+      let resolvedCitizenId = citizenId;
+      if (!resolvedCitizenId || resolvedCitizenId === 'default-citizen-id' || resolvedCitizenId === 'new-id') {
+        const firstCit = await this.prisma.citizen.findFirst();
+        if (firstCit) {
+          resolvedCitizenId = firstCit.id;
+        } else {
+          const newCit = await this.prisma.citizen.create({
+            data: {
+              fullName: "Default Citizen",
+              mobileNumber: "9999999999",
+              isConfirmed: true,
+            }
+          });
+          resolvedCitizenId = newCit.id;
+        }
+      }
+
+      const citizen = await this.prisma.citizen.findUnique({ where: { id: resolvedCitizenId } });
+      const lat = citizen?.latitude;
+      const lng = citizen?.longitude;
+      const hasGps = typeof lat === 'number' && typeof lng === 'number';
+      const gpsCoordinates = hasGps ? { lat: lat!, lng: lng! } : undefined;
+
+      const normalizedService = normalizeServiceType(serviceType);
+
+      const resolution = await this.jurisdictionService.resolveJurisdiction({
+        serviceType: normalizedService,
+        routingContext: context,
+        location: locationText || [citizen?.addressLine1, citizen?.addressLine2, citizen?.city, citizen?.district].filter(Boolean).join(', ') || 'Lucknow',
+        resolutionSource: hasGps ? ResolutionSource.GPS : ResolutionSource.TEXT_INPUT,
+        coordinates: gpsCoordinates,
+      });
+
+      const confirmed = await this.jurisdictionLifecycleService.confirmResolution(
+        resolution.id,
+        'USER_CONFIRMED',
+        ActorType.SYSTEM
+      );
+
+      return confirmed;
+    };
+
     try {
       if (Array.isArray(dbAction)) {
         let citizenResult = null;
@@ -553,6 +640,20 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+          
+          let complaintResolutionId: string | null = null;
+          try {
+            const resolution = await resolveAndConfirmJurisdiction(
+              dbAction.data.citizenId,
+              dbAction.data.type,
+              '',
+              RoutingContext.INCIDENT_LOCATION
+            );
+            complaintResolutionId = resolution.id;
+          } catch (resErr) {
+            this.logger.warn(`Failed to resolve/confirm jurisdiction: ${resErr.message}`);
+          }
+
           await this.prisma.complaint.update({
             where: { referenceNumber: dbAction.data.refNum },
             data: {
@@ -561,6 +662,7 @@ export class ChatService {
               mobileColor: dbAction.data.mobileColor || null,
               purchaseYear: dbAction.data.purchaseYear || null,
               imeiNumber: dbAction.data.imeiNumber || null,
+              jurisdictionResolutionId: complaintResolutionId,
             }
           });
           await this.prisma.trackingRecord.create({
@@ -586,6 +688,27 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+
+          let verificationResolutionId: string | null = null;
+          try {
+            const resolution = await resolveAndConfirmJurisdiction(
+              dbAction.data.citizenId,
+              dbAction.data.type,
+              dbAction.data.address || dbAction.data.propertyDetails || '',
+              RoutingContext.PROPERTY_ADDRESS
+            );
+            verificationResolutionId = resolution.id;
+          } catch (resErr) {
+            this.logger.warn(`Failed to resolve/confirm jurisdiction: ${resErr.message}`);
+          }
+
+          await this.prisma.verification.update({
+            where: { referenceNumber: dbAction.data.refNum },
+            data: {
+              jurisdictionResolutionId: verificationResolutionId,
+            }
+          });
+
           await this.prisma.trackingRecord.create({
             data: {
               referenceNumber: dbAction.data.refNum,
@@ -608,6 +731,27 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+
+          let certificateResolutionId: string | null = null;
+          try {
+            const resolution = await resolveAndConfirmJurisdiction(
+              dbAction.data.citizenId,
+              'CHARACTER_CERTIFICATE',
+              dbAction.data.address || dbAction.data.district || '',
+              RoutingContext.HOME_ADDRESS
+            );
+            certificateResolutionId = resolution.id;
+          } catch (resErr) {
+            this.logger.warn(`Failed to resolve/confirm jurisdiction: ${resErr.message}`);
+          }
+
+          await this.prisma.characterCertificate.update({
+            where: { referenceNumber: dbAction.data.refNum },
+            data: {
+              jurisdictionResolutionId: certificateResolutionId,
+            }
+          });
+
           await this.prisma.trackingRecord.create({
             data: {
               referenceNumber: dbAction.data.refNum,
@@ -631,6 +775,27 @@ export class ChatService {
             dbAction.data.refNum,
             dbAction.data.citizenId,
           );
+
+          let eventResolutionId: string | null = null;
+          try {
+            const resolution = await resolveAndConfirmJurisdiction(
+              dbAction.data.citizenId,
+              dbAction.data.type,
+              dbAction.data.location || '',
+              RoutingContext.EVENT_LOCATION
+            );
+            eventResolutionId = resolution.id;
+          } catch (resErr) {
+            this.logger.warn(`Failed to resolve/confirm jurisdiction: ${resErr.message}`);
+          }
+
+          await this.prisma.eventPermission.update({
+            where: { referenceNumber: dbAction.data.refNum },
+            data: {
+              jurisdictionResolutionId: eventResolutionId,
+            }
+          });
+
           await this.prisma.trackingRecord.create({
             data: {
               referenceNumber: dbAction.data.refNum,

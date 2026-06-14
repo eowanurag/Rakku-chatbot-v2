@@ -1,0 +1,505 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for backend/src/localization/localization.constants.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../../prettify.css" />
+    <link rel="stylesheet" href="../../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">backend/src/localization</a> localization.constants.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>4/4</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/0</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">100% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>4/4</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line high'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { LocationRegistryItem } from './localization.types';
+&nbsp;
+export const SUPPORTED_LANGUAGES = ['en', 'hi', 'hinglish'];
+&nbsp;
+export const REVIEW_SECTIONS = {
+  applicant: 'REVIEW_APPLICANT_PROFILE',
+  subject: 'REVIEW_CANDIDATE_DETAILS',
+  service: 'REVIEW_SERVICE_TYPE',
+  validation: 'REVIEW_VALIDATION_STATUS',
+  incident: 'REVIEW_INCIDENT_DETAILS',
+  device: 'REVIEW_DEVICE_INFORMATION',
+  ready: 'REVIEW_READY_FOR_SUBMISSION'
+};
+&nbsp;
+export const REVIEW_FIELDS = {
+  name: 'REVIEW_CONTACT',
+  mobile: 'REVIEW_CONTACT',
+  address: 'REVIEW_ADDRESS',
+  location: 'REVIEW_LOCATION',
+  type: 'REVIEW_SERVICE_TYPE',
+  deviceInfo: 'REVIEW_DEVICE_INFORMATION'
+};
+&nbsp;
+export const LocationRegistry: LocationRegistryItem[] = [
+  // --- STATES &amp; UNION TERRITORIES (36) ---
+  { type: 'STATE', code: 'AP', en: 'Andhra Pradesh', hi: 'आंध्र प्रदेश', hinglish: 'Andhra Pradesh' },
+  { type: 'STATE', code: 'AR', en: 'Arunachal Pradesh', hi: 'अरुणाचल प्रदेश', hinglish: 'Arunachal Pradesh' },
+  { type: 'STATE', code: 'AS', en: 'Assam', hi: 'असम', hinglish: 'Assam' },
+  { type: 'STATE', code: 'BR', en: 'Bihar', hi: 'बिहार', hinglish: 'Bihar' },
+  { type: 'STATE', code: 'CG', en: 'Chhattisgarh', hi: 'छत्तीसगढ़', hinglish: 'Chhattisgarh' },
+  { type: 'STATE', code: 'GA', en: 'Goa', hi: 'गोवा', hinglish: 'Goa' },
+  { type: 'STATE', code: 'GJ', en: 'Gujarat', hi: 'गुजरात', hinglish: 'Gujarat' },
+  { type: 'STATE', code: 'HR', en: 'Haryana', hi: 'हरियाणा', hinglish: 'Haryana' },
+  { type: 'STATE', code: 'HP', en: 'Himachal Pradesh', hi: 'हिमाचल प्रदेश', hinglish: 'Himachal Pradesh' },
+  { type: 'STATE', code: 'JH', en: 'Jharkhand', hi: 'झारखंड', hinglish: 'Jharkhand' },
+  { type: 'STATE', code: 'KA', en: 'Karnataka', hi: 'कर्नाटक', hinglish: 'Karnataka' },
+  { type: 'STATE', code: 'KL', en: 'Kerala', hi: 'केरल', hinglish: 'Kerala' },
+  { type: 'STATE', code: 'MP', en: 'Madhya Pradesh', hi: 'मध्य प्रदेश', hinglish: 'Madhya Pradesh' },
+  { type: 'STATE', code: 'MH', en: 'Maharashtra', hi: 'महाराष्ट्र', hinglish: 'Maharashtra' },
+  { type: 'STATE', code: 'MN', en: 'Manipur', hi: 'मणिपुर', hinglish: 'Manipur' },
+  { type: 'STATE', code: 'ML', en: 'Meghalaya', hi: 'मेघालय', hinglish: 'Meghalaya' },
+  { type: 'STATE', code: 'MZ', en: 'Mizoram', hi: 'मिजोरम', hinglish: 'Mizoram' },
+  { type: 'STATE', code: 'NL', en: 'Nagaland', hi: 'नागालैंड', hinglish: 'Nagaland' },
+  { type: 'STATE', code: 'OD', en: 'Odisha', hi: 'ओडिशा', hinglish: 'Odisha' },
+  { type: 'STATE', code: 'PB', en: 'Punjab', hi: 'पंजाब', hinglish: 'Punjab' },
+  { type: 'STATE', code: 'RJ', en: 'Rajasthan', hi: 'राजस्थान', hinglish: 'Rajasthan' },
+  { type: 'STATE', code: 'SK', en: 'Sikkim', hi: 'सिक्किम', hinglish: 'Sikkim' },
+  { type: 'STATE', code: 'TN', en: 'Tamil Nadu', hi: 'तमिलनाडु', hinglish: 'Tamil Nadu' },
+  { type: 'STATE', code: 'TG', en: 'Telangana', hi: 'तेलंगाना', hinglish: 'Telangana' },
+  { type: 'STATE', code: 'TR', en: 'Tripura', hi: 'त्रिपुरा', hinglish: 'Tripura' },
+  { type: 'STATE', code: 'UP', en: 'Uttar Pradesh', hi: 'उत्तर प्रदेश', hinglish: 'Uttar Pradesh' },
+  { type: 'STATE', code: 'UK', en: 'Uttarakhand', hi: 'उत्तराखंड', hinglish: 'Uttarakhand' },
+  { type: 'STATE', code: 'WB', en: 'West Bengal', hi: 'पश्चिम बंगाल', hinglish: 'West Bengal' },
+  // Union Territories
+  { type: 'STATE', code: 'AN', en: 'Andaman and Nicobar Islands', hi: 'अंडमान और निकोबार द्वीप समूह', hinglish: 'Andaman and Nicobar Islands' },
+  { type: 'STATE', code: 'CH', en: 'Chandigarh', hi: 'चंडीगढ़', hinglish: 'Chandigarh' },
+  { type: 'STATE', code: 'DN', en: 'Dadra and Nagar Haveli and Daman and Diu', hi: 'दादरा और नगर हवेली तथा दमन और दीव', hinglish: 'Dadra and Nagar Haveli and Daman and Diu' },
+  { type: 'STATE', code: 'DL', en: 'Delhi', hi: 'दिल्ली', hinglish: 'Delhi' },
+  { type: 'STATE', code: 'JK', en: 'Jammu and Kashmir', hi: 'जम्मू और कश्मीर', hinglish: 'Jammu and Kashmir' },
+  { type: 'STATE', code: 'LA', en: 'Ladakh', hi: 'लद्दाख', hinglish: 'Ladakh' },
+  { type: 'STATE', code: 'LD', en: 'Lakshadweep', hi: 'लक्षद्वीप', hinglish: 'Lakshadweep' },
+  { type: 'STATE', code: 'PY', en: 'Puducherry', hi: 'पुदुचेरी', hinglish: 'Puducherry' },
+&nbsp;
+  // --- UTTAR PRADESH DISTRICTS (75) ---
+  { type: 'DISTRICT', code: 'AGRA', stateCode: 'UP', en: 'Agra', hi: 'आगरा', hinglish: 'Agra' },
+  { type: 'DISTRICT', code: 'ALIGARH', stateCode: 'UP', en: 'Aligarh', hi: 'अलीगढ़', hinglish: 'Aligarh' },
+  { type: 'DISTRICT', code: 'PRAYAGRAJ', stateCode: 'UP', en: 'Prayagraj', hi: 'प्रयागराज', hinglish: 'Prayagraj' },
+  { type: 'DISTRICT', code: 'AMBEDKAR_NAGAR', stateCode: 'UP', en: 'Ambedkar Nagar', hi: 'अम्बेडकर नगर', hinglish: 'Ambedkar Nagar' },
+  { type: 'DISTRICT', code: 'AMETHI', stateCode: 'UP', en: 'Amethi', hi: 'अमेठी', hinglish: 'Amethi' },
+  { type: 'DISTRICT', code: 'AMROHA', stateCode: 'UP', en: 'Amroha', hi: 'अमरोहा', hinglish: 'Amroha' },
+  { type: 'DISTRICT', code: 'AURAIYA', stateCode: 'UP', en: 'Auraiya', hi: 'औरैया', hinglish: 'Auraiya' },
+  { type: 'DISTRICT', code: 'AZAMGARH', stateCode: 'UP', en: 'Azamgarh', hi: 'आज़मगढ़', hinglish: 'Azamgarh' },
+  { type: 'DISTRICT', code: 'BAGHPAT', stateCode: 'UP', en: 'Baghpat', hi: 'बागपत', hinglish: 'Baghpat' },
+  { type: 'DISTRICT', code: 'BAHRAICH', stateCode: 'UP', en: 'Bahraich', hi: 'बहराइच', hinglish: 'Bahraich' },
+  { type: 'DISTRICT', code: 'BALLIA', stateCode: 'UP', en: 'Ballia', hi: 'बलिया', hinglish: 'Ballia' },
+  { type: 'DISTRICT', code: 'BALRAMPUR', stateCode: 'UP', en: 'Balrampur', hi: 'बलरामपुर', hinglish: 'Balrampur' },
+  { type: 'DISTRICT', code: 'BANDA', stateCode: 'UP', en: 'Banda', hi: 'बाँदा', hinglish: 'Banda' },
+  { type: 'DISTRICT', code: 'BARABANKI', stateCode: 'UP', en: 'Barabanki', hi: 'बाराबंकी', hinglish: 'Barabanki' },
+  { type: 'DISTRICT', code: 'BAREILLY', stateCode: 'UP', en: 'Bareilly', hi: 'बरेली', hinglish: 'Bareilly' },
+  { type: 'DISTRICT', code: 'BASTI', stateCode: 'UP', en: 'Basti', hi: 'बस्ती', hinglish: 'Basti' },
+  { type: 'DISTRICT', code: 'BHADOHI', stateCode: 'UP', en: 'Bhadohi', hi: 'भदोही', hinglish: 'Bhadohi' },
+  { type: 'DISTRICT', code: 'BIJNOR', stateCode: 'UP', en: 'Bijnor', hi: 'बिजनौर', hinglish: 'Bijnor' },
+  { type: 'DISTRICT', code: 'BUDAUN', stateCode: 'UP', en: 'Budaun', hi: 'बदायूँ', hinglish: 'Budaun' },
+  { type: 'DISTRICT', code: 'BULANDSHAHR', stateCode: 'UP', en: 'Bulandshahr', hi: 'बुलंदशहर', hinglish: 'Bulandshahr' },
+  { type: 'DISTRICT', code: 'CHANDAULI', stateCode: 'UP', en: 'Chandauli', hi: 'चंदौली', hinglish: 'Chandauli' },
+  { type: 'DISTRICT', code: 'CHITRAKOOT', stateCode: 'UP', en: 'Chitrakoot', hi: 'चित्रकूट', hinglish: 'Chitrakoot' },
+  { type: 'DISTRICT', code: 'DEORIA', stateCode: 'UP', en: 'Deoria', hi: 'देवरिया', hinglish: 'Deoria' },
+  { type: 'DISTRICT', code: 'ETAH', stateCode: 'UP', en: 'Etah', hi: 'एटा', hinglish: 'Etah' },
+  { type: 'DISTRICT', code: 'ETAWAH', stateCode: 'UP', en: 'Etawah', hi: 'इटावा', hinglish: 'Etawah' },
+  { type: 'DISTRICT', code: 'AYODHYA', stateCode: 'UP', en: 'Ayodhya', hi: 'अयोध्या', hinglish: 'Ayodhya' },
+  { type: 'DISTRICT', code: 'FARRUKHABAD', stateCode: 'UP', en: 'Farrukhabad', hi: 'फर्रुखाबाद', hinglish: 'Farrukhabad' },
+  { type: 'DISTRICT', code: 'FATEHPUR', stateCode: 'UP', en: 'Fatehpur', hi: 'फतेहपुर', hinglish: 'Fatehpur' },
+  { type: 'DISTRICT', code: 'FIROZABAD', stateCode: 'UP', en: 'Firozabad', hi: 'फिरोज़ाबाद', hinglish: 'Firozabad' },
+  { type: 'DISTRICT', code: 'GAUTAM_BUDDHA_NAGAR', stateCode: 'UP', en: 'Gautam Buddha Nagar', hi: 'गौतम बुद्ध नगर', hinglish: 'Gautam Buddha Nagar' },
+  { type: 'DISTRICT', code: 'GHAZIABAD', stateCode: 'UP', en: 'Ghaziabad', hi: 'गाजियाबाद', hinglish: 'Ghaziabad' },
+  { type: 'DISTRICT', code: 'GHAZIPUR', stateCode: 'UP', en: 'Ghazipur', hi: 'गाज़ीपुर', hinglish: 'Ghazipur' },
+  { type: 'DISTRICT', code: 'GONDA', stateCode: 'UP', en: 'Gonda', hi: 'गोंडा', hinglish: 'Gonda' },
+  { type: 'DISTRICT', code: 'GORAKHPUR', stateCode: 'UP', en: 'Gorakhpur', hi: 'गोरखपुर', hinglish: 'Gorakhpur' },
+  { type: 'DISTRICT', code: 'HAMIRPUR', stateCode: 'UP', en: 'Hamirpur', hi: 'हमीरपुर', hinglish: 'Hamirpur' },
+  { type: 'DISTRICT', code: 'HAPUR', stateCode: 'UP', en: 'Hapur', hi: 'हापुड़', hinglish: 'Hapur' },
+  { type: 'DISTRICT', code: 'HARDOI', stateCode: 'UP', en: 'Hardoi', hi: 'हरदोई', hinglish: 'Hardoi' },
+  { type: 'DISTRICT', code: 'HATHRAS', stateCode: 'UP', en: 'Hathras', hi: 'हाथरस', hinglish: 'Hathras' },
+  { type: 'DISTRICT', code: 'JALAUN', stateCode: 'UP', en: 'Jalaun', hi: 'जालौन', hinglish: 'Jalaun' },
+  { type: 'DISTRICT', code: 'JAUNPUR', stateCode: 'UP', en: 'Jaunpur', hi: 'जौनपुर', hinglish: 'Jaunpur' },
+  { type: 'DISTRICT', code: 'JHANSI', stateCode: 'UP', en: 'Jhansi', hi: 'झाँसी', hinglish: 'Jhansi' },
+  { type: 'DISTRICT', code: 'KANNAUJ', stateCode: 'UP', en: 'Kannauj', hi: 'कन्नौज', hinglish: 'Kannauj' },
+  { type: 'DISTRICT', code: 'KANPUR_DEHAT', stateCode: 'UP', en: 'Kanpur Dehat', hi: 'कानपुर देहात', hinglish: 'Kanpur Dehat' },
+  { type: 'DISTRICT', code: 'KANPUR_NAGAR', stateCode: 'UP', en: 'Kanpur Nagar', hi: 'कानपुर नगर', hinglish: 'Kanpur Nagar' },
+  { type: 'DISTRICT', code: 'KASGANJ', stateCode: 'UP', en: 'Kasganj', hi: 'कासगंज', hinglish: 'Kasganj' },
+  { type: 'DISTRICT', code: 'KAUSHAMBI', stateCode: 'UP', en: 'Kaushambi', hi: 'कौशाम्बी', hinglish: 'Kaushambi' },
+  { type: 'DISTRICT', code: 'LAKHIMPUR_KHERI', stateCode: 'UP', en: 'Lakhimpur Kheri', hi: 'लखीमपुर खीरी', hinglish: 'Lakhimpur Kheri' },
+  { type: 'DISTRICT', code: 'KUSHINAGAR', stateCode: 'UP', en: 'Kushinagar', hi: 'कुशीनगर', hinglish: 'Kushinagar' },
+  { type: 'DISTRICT', code: 'LALITPUR', stateCode: 'UP', en: 'Lalitpur', hi: 'ललितपुर', hinglish: 'Lalitpur' },
+  { type: 'DISTRICT', code: 'LUCKNOW', stateCode: 'UP', en: 'Lucknow', hi: 'लखनऊ', hinglish: 'Lucknow' },
+  { type: 'DISTRICT', code: 'MAHARAJGANJ', stateCode: 'UP', en: 'Maharajganj', hi: 'महराजगंज', hinglish: 'Maharajganj' },
+  { type: 'DISTRICT', code: 'MAHOBA', stateCode: 'UP', en: 'Mahoba', hi: 'महोबा', hinglish: 'Mahoba' },
+  { type: 'DISTRICT', code: 'MAINPURI', stateCode: 'UP', en: 'Mainpuri', hi: 'मैनपुरी', hinglish: 'Mainpuri' },
+  { type: 'DISTRICT', code: 'MATHURA', stateCode: 'UP', en: 'Mathura', hi: 'मथुरा', hinglish: 'Mathura' },
+  { type: 'DISTRICT', code: 'MAU', stateCode: 'UP', en: 'Mau', hi: 'मऊ', hinglish: 'Mau' },
+  { type: 'DISTRICT', code: 'MEERUT', stateCode: 'UP', en: 'Meerut', hi: 'मेरठ', hinglish: 'Meerut' },
+  { type: 'DISTRICT', code: 'MIRZAPUR', stateCode: 'UP', en: 'Mirzapur', hi: 'मिर्ज़ापुर', hinglish: 'Mirzapur' },
+  { type: 'DISTRICT', code: 'MORADABAD', stateCode: 'UP', en: 'Moradabad', hi: 'मुरादाबाद', hinglish: 'Moradabad' },
+  { type: 'DISTRICT', code: 'MUZAFFARNAGAR', stateCode: 'UP', en: 'Muzaffarnagar', hi: 'मुज़फ्फरनगर', hinglish: 'Muzaffarnagar' },
+  { type: 'DISTRICT', code: 'PILIBHIT', stateCode: 'UP', en: 'Pilibhit', hi: 'पीलीभीत', hinglish: 'Pilibhit' },
+  { type: 'DISTRICT', code: 'PRATAPGARH', stateCode: 'UP', en: 'Pratapgarh', hi: 'प्रतापगढ़', hinglish: 'Pratapgarh' },
+  { type: 'DISTRICT', code: 'RAE_BARELI', stateCode: 'UP', en: 'Rae Bareli', hi: 'रायबरेली', hinglish: 'Rae Bareli' },
+  { type: 'DISTRICT', code: 'RAMPUR', stateCode: 'UP', en: 'Rampur', hi: 'रामपुर', hinglish: 'Rampur' },
+  { type: 'DISTRICT', code: 'SAHARANPUR', stateCode: 'UP', en: 'Saharanpur', hi: 'सहारनपुर', hinglish: 'Saharanpur' },
+  { type: 'DISTRICT', code: 'SAMBHAL', stateCode: 'UP', en: 'Sambhal', hi: 'संभल', hinglish: 'Sambhal' },
+  { type: 'DISTRICT', code: 'SANT_KABIR_NAGAR', stateCode: 'UP', en: 'Sant Kabir Nagar', hi: 'संत कबीर नगर', hinglish: 'Sant Kabir Nagar' },
+  { type: 'DISTRICT', code: 'SHAHJAHANPUR', stateCode: 'UP', en: 'Shahjahanpur', hi: 'शाहजहाँपुर', hinglish: 'Shahjahanpur' },
+  { type: 'DISTRICT', code: 'SHAMLI', stateCode: 'UP', en: 'Shamli', hi: 'शामली', hinglish: 'Shamli' },
+  { type: 'DISTRICT', code: 'SHRAVASTI', stateCode: 'UP', en: 'Shravasti', hi: 'श्रावस्ती', hinglish: 'Shravasti' },
+  { type: 'DISTRICT', code: 'SIDDHARTHNAGAR', stateCode: 'UP', en: 'Siddharthnagar', hi: 'सिद्धार्थनगर', hinglish: 'Siddharthnagar' },
+  { type: 'DISTRICT', code: 'SITAPUR', stateCode: 'UP', en: 'Sitapur', hi: 'सीतापुर', hinglish: 'Sitapur' },
+  { type: 'DISTRICT', code: 'SONBHADRA', stateCode: 'UP', en: 'Sonbhadra', hi: 'सोनभद्र', hinglish: 'Sonbhadra' },
+  { type: 'DISTRICT', code: 'SULTANPUR', stateCode: 'UP', en: 'Sultanpur', hi: 'सुल्तानपुर', hinglish: 'Sultanpur' },
+  { type: 'DISTRICT', code: 'UNNAO', stateCode: 'UP', en: 'Unnao', hi: 'उन्नाव', hinglish: 'Unnao' },
+  { type: 'DISTRICT', code: 'VARANASI', stateCode: 'UP', en: 'Varanasi', hi: 'वाराणसी', hinglish: 'Varanasi' }
+];
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-06-14T11:58:48.841Z
+            </div>
+        <script src="../../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../../sorter.js"></script>
+        <script src="../../../block-navigation.js"></script>
+    </body>
+</html>
+    

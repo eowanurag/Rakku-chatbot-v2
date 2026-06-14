@@ -1,0 +1,79 @@
+[
+  {
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "GOMTI_NAGAR",
+    "stationCode": "UP-LKO-GOM-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "HAZRATGANJ",
+    "stationCode": "UP-LKO-HAZ-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "ALIGANJ",
+    "stationCode": "UP-LKO-ALI-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "CHARBAGH",
+    "stationCode": "UP-LKO-CHA-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "INDIRA_NAGAR",
+    "stationCode": "UP-LKO-IND-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "KANPUR_NAGAR",
+    "cityCode": "KANPUR",
+    "localityCode": "KALYANPUR",
+    "stationCode": "UP-KAN-KAL-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "GAUTAM_BUDDHA_NAGAR",
+    "cityCode": "NOIDA",
+    "localityCode": "SECTOR_62",
+    "stationCode": "UP-GBN-SEC-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "VARANASI",
+    "cityCode": "VARANASI",
+    "localityCode": "CANTONMENT",
+    "stationCode": "UP-VAR-CAN-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "GHAZIABAD",
+    "cityCode": "GHAZIABAD",
+    "localityCode": "INDIRAPURAM",
+    "stationCode": "UP-GZB-IND-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "PRAYAGRAJ",
+    "cityCode": "PRAYAGRAJ",
+    "localityCode": "CIVIL_LINES",
+    "stationCode": "UP-PRG-CIV-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "BARABANKI",
+    "cityCode": "BANKI",
+    "localityCode": "BANKI",
+    "stationCode": "UP-BAR-BNK-001",
+    "priority": 1
+  }
+]
