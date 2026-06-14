@@ -80,6 +80,7 @@ describe('Stability and Resilience Regression Suite', () => {
     await chatService.sendMessage("Rahul Roy", sess);
     await chatService.sendMessage("9988776655", sess);
     await chatService.sendMessage("Kanpur", sess);
+    await chatService.sendMessage("Confirm", sess); // Confirm location
     const confirmationPrompt = await chatService.sendMessage("Sector 1, Kanpur - 208002", sess);
     expect(confirmationPrompt.response).toContain("Please review your details");
 
@@ -111,6 +112,7 @@ describe('Stability and Resilience Regression Suite', () => {
     await chatService.sendMessage("Test User", deadEndSess);
     await chatService.sendMessage("9111222333", deadEndSess);
     await chatService.sendMessage("Lucknow", deadEndSess);
+    await chatService.sendMessage("Confirm", deadEndSess); // Confirm location
     await chatService.sendMessage("Gomti Nagar, Lucknow - 226010", deadEndSess);
     await chatService.sendMessage("option:Confirm Details", deadEndSess); // triggers mock return 'Invalid step'
 

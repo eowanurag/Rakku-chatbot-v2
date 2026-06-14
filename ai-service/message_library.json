@@ -516,6 +516,76 @@
       "en": "Employee Verification",
       "hi": "कर्मचारी सत्यापन",
       "hinglish": "Employee Verification"
+    },
+    "WELCOME_MESSAGE": {
+      "en": "👮 Welcome to Rakku\n\nI'm your Digital Police Assistant.\n\nI can help you with:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n📍 [Find Nearby Police Station](option:nearest police station)\n🆘 [Emergency Help](option:Emergency Contacts)\n\nPlease choose your preferred language:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nYou can also simply tell me what you need help with.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
+      "hi": "👮 रक्कू में आपका स्वागत है\n\nमैं आपका डिजिटल पुलिस सहायक हूँ।\n\nमैं आपकी मदद कर सकता हूँ:\n\n🚔 [शिकायत दर्ज करें](option:🚔 File a Complaint)\n🏠 [किरायेदार सत्यापन](option:🏠 Tenant Verification)\n📜 [चरित्र प्रमाण पत्र](option:📜 Character Certificate)\n🎭 [कार्यक्रम अनुमति](option:🎭 Event Permission)\n🔍 [आवेदन की स्थिति](option:🔍 Track Application)\n📍 [नजदीकी थाना खोजें](option:nearest police station)\n🆘 [आपातकालीन सहायता](option:Emergency Contacts)\n\nकृपया अपनी पसंदीदा भाषा चुनें:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nआप सीधे मुझे यह भी बता सकते हैं कि आपको किस चीज़ में मदद चाहिए।\n\nउदाहरण:\n\n\"मेरा फोन चोरी हो गया\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\"",
+      "hinglish": "👮 Rakku mein aapka swagat hai\n\nMain aapka Digital Police Assistant hoon.\n\nMain aapki help kar sakta hoon:\n\n🚔 [Filing a Complaint](option:🚔 File a Complaint)\n🏠 [Tenant Verification](option:🏠 Tenant Verification)\n📜 [Character Certificate](option:📜 Character Certificate)\n🎭 [Event Permission](option:🎭 Event Permission)\n🔍 [Application Tracking](option:🔍 Track Application)\n📍 [Find Nearby Police Station](option:nearest police station)\n🆘 [Emergency Help](option:Emergency Contacts)\n\nPlease apni preferred language select karein:\n\n• [English](option:English)\n• [हिंदी](option:हिंदी)\n• [Hinglish](option:Hinglish)\n\nAap mujhe directly bhi bata sakte hain ki aapko kis cheez mein help chahiye.\n\nExamples:\n\n\"My phone was stolen\"\n\n\"मुझे चरित्र प्रमाण पत्र चाहिए\"\n\n\"Tenant verification karna hai\""
+    },
+    "LANGUAGE_SELECTION_RESPONSE": {
+      "en": "Hello and welcome.\n\nHow can I assist you today?",
+      "hi": "नमस्ते।\n\nमैं आपकी सहायता के लिए उपलब्ध हूँ।\n\nआज मैं आपकी किस प्रकार सहायता कर सकता हूँ?",
+      "hinglish": "Namaste.\n\nMain aapki madad ke liye yahan hoon.\n\nAaj aapko kis cheez mein madad chahiye?"
+    },
+    "EMPATHY_THEFT_PHONE": {
+      "en": "I'm sorry to hear that your phone was stolen.{servicesInfo}I'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे यह सुनकर दुख हुआ कि आपका मोबाइल चोरी हो गया है।{servicesInfo}मैं शिकायत प्रक्रिया में आपका मार्गदर्शन करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear that aapka phone chori ho gaya hai.{servicesInfo}Main complaint process mein aapki madad karunga.\n\n"
+    },
+    "EMPATHY_THEFT_WALLET": {
+      "en": "I'm sorry to hear that your wallet was stolen.{servicesInfo}I'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे यह सुनकर दुख हुआ कि आपका बटुआ / पर्स चोरी हो गया है।{servicesInfo}मैं शिकायत प्रक्रिया में आपका मार्गदर्शन करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear that aapka wallet chori ho gaya hai.{servicesInfo}Main complaint process mein aapki madad karunga.\n\n"
+    },
+    "EMPATHY_THEFT_DOCUMENT": {
+      "en": "I'm sorry to hear that your document was stolen.{servicesInfo}I'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे यह सुनकर दुख हुआ कि आपका दस्तावेज़ चोरी हो गया है।{servicesInfo}मैं शिकायत प्रक्रिया में आपका मार्गदर्शन करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear that aapka document chori ho gaya hai.{servicesInfo}Main complaint process mein aapki madad karunga.\n\n"
+    },
+    "EMPATHY_THEFT_BAG": {
+      "en": "I'm sorry to hear that your bag was stolen.{servicesInfo}I'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे यह सुनकर दुख हुआ कि आपका बैग चोरी हो गया है।{servicesInfo}मैं शिकायत प्रक्रिया में आपका मार्गदर्शन करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear that aapka bag chori ho gaya hai.{servicesInfo}Main complaint process mein aapki madad karunga.\n\n"
+    },
+    "EMPATHY_THEFT_PROPERTY": {
+      "en": "I'm sorry to hear that your property was stolen.{servicesInfo}I'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे यह सुनकर दुख हुआ कि आपका सामान चोरी हो गया है।{servicesInfo}मैं शिकायत प्रक्रिया में आपका मार्गदर्शन करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear that aapka property chori ho gaya hai.{servicesInfo}Main complaint process mein aapki madad karunga.\n\n"
+    },
+    "RECOMMENDED_SERVICES_THEFT": {
+      "en": "\n\n*Recommended Services:*\n- [🚔 File Complaint](option:🚔 File a Complaint)\n- [📱 Lost Article Report](option:Lost Article Report)\n- [📍 Nearest Police Station](option:nearest police station)\n\n",
+      "hi": "\n\n*अनुशंसित सेवाएं:*\n- [🚔 शिकायत दर्ज करें](option:🚔 File a Complaint)\n- [📱 खोई हुई वस्तु रिपोर्ट](option:Lost Article Report)\n- [📍 निकटतम पुलिस स्टेशन](option:nearest police station)\n\n",
+      "hinglish": "\n\n*Recommended Services:*\n- [🚔 File Complaint](option:🚔 File a Complaint)\n- [📱 Lost Article Report](option:Lost Article Report)\n- [📍 Nearest Police Station](option:nearest police station)\n\n"
+    },
+    "EMPATHY_LOST": {
+      "en": "I'm sorry that happened.\n\nI'll help you understand the next steps.\n\n",
+      "hi": "मुझे खेद है कि ऐसा हुआ।\n\nमैं आपको अगले कदम समझने में मदद करूँगा।\n\n",
+      "hinglish": "I'm sorry that happened.\n\nMain aapko next steps samajhne mein madad karunga.\n\n"
+    },
+    "EMPATHY_HARASSMENT": {
+      "en": "I'm sorry to hear you're experiencing harassment. Your safety and peace of mind are important.\n\nI'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे यह सुनकर खेद है कि आप उत्पीड़न का सामना कर रहे हैं। आपकी सुरक्षा और मानसिक शांति अत्यंत महत्वपूर्ण हैं।\n\nमैं शिकायत प्रक्रिया में आपका मार्गदर्शन करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear you're facing harassment. Aapki safety kafi important hai.\n\nMain complaint process mein aapki madad karunga.\n\n"
+    },
+    "EMPATHY_FRAUD": {
+      "en": "I'm sorry to hear that you have been defrauded. Financial scams can be extremely stressful.\n\nI'll help guide you through the complaint process.\n\n",
+      "hi": "मुझे दुख है कि आपके साथ धोखाधड़ी हुई है। वित्तीय धोखाधड़ी बेहद तनावपूर्ण हो सकती है।\n\nमैं शिकायत प्रक्रिया में आपकी सहायता करूँगा।\n\n",
+      "hinglish": "I'm sorry to hear that aapke sath fraud hua hai. Financial scams kafi stressful ho sakte hain.\n\nMain complaint process mein aapki madad karunga.\n\n"
+    },
+    "EMPATHY_DISTRESS": {
+      "en": "I understand this is a very difficult and stressful situation. Please remain calm, I am here to assist you.\n\n",
+      "hi": "मैं समझ सकता हूँ कि यह एक कठिन और तनावपूर्ण स्थिति है। कृपया शांत रहें, मैं यहाँ आपकी सहायता के लिए हूँ।\n\n",
+      "hinglish": "Main samajh sakta hoon ki yeh kafi difficult aur stressful situation hai. Please tension na lein, main aapki madad ke liye yahan hoon.\n\n"
+    },
+    "COMPLETION_MESSAGE": {
+      "en": "✅ Your request has been recorded successfully.\n\nReference Number:\n{refNum}\n\nPlease save this number for future tracking.\n\nIs there anything else I can help you with today?",
+      "hi": "✅ आपका अनुरोध सफलतापूर्वक दर्ज कर लिया गया है।\n\nसंदर्भ संख्या:\n{refNum}\n\nकृपया भविष्य में ट्रैकिंग के लिए इस नंबर को सुरक्षित रखें।\n\nक्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?",
+      "hinglish": "✅ Aapka request successfully record ho gaya hai.\n\nReference Number:\n{refNum}\n\nPlease future tracking ke liye is number ko save kar lein.\n\nIs there anything else I can help you with today?"
+    },
+    "EMERGENCY_MESSAGE": {
+      "en": "⚠️ This appears to be an emergency situation.\n\nPlease contact UP Police Emergency Services immediately by dialing 112.\n\nIf someone is in immediate danger, do not wait for an online response.",
+      "hi": "⚠️ यह एक आपातकालीन स्थिति लगती है।\n\nकृपया तुरंत 112 डायल करके उत्तर प्रदेश पुलिस आपातकालीन सेवाओं से संपर्क करें।\n\nयदि कोई तत्काल खतरे में है, तो ऑनलाइन प्रतिक्रिया की प्रतीक्षा न करें।",
+      "hinglish": "⚠️ Yeh emergency situation lag rahi hai.\n\nPlease immediate help ke liye UP Police ko 112 dial karke contact karein.\n\nAgar koi immediate danger mein hai, toh online response ka wait na karein."
     }
   }
 }

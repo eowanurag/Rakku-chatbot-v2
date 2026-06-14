@@ -9,7 +9,8 @@ import { VerificationService } from '../verification/verification.service';
 import { CertificateService } from '../certificate/certificate.service';
 import { EventService } from '../event/event.service';
 import { TrackingService } from '../tracking/tracking.service';
-import { WELCOME_MESSAGE, LANGUAGE_SELECTION_RESPONSES } from '../templates/greetings';
+import { LocalizationService, MetricsService } from '../localization/localization.service';
+import { getWelcomeMessage, getLanguageSelectionResponse } from '../templates/greetings';
 import { getEmpathyMessage } from '../templates/empathy';
 import { getCompletionMessage } from '../templates/completions';
 import { getEmergencyMessage } from '../templates/emergency';
@@ -56,7 +57,7 @@ const TRANSLATIONS = {
   hi: {
     cancel: "वर्तमान अनुरोध रद्द कर दिया गया है। मैं आपकी और क्या सहायता कर सकता हूँ?",
     invalidStep: "मुझे शायद ठीक से समझ नहीं आया। क्या आप कृपया वह जानकारी किसी अन्य तरीके से प्रदान कर सकते हैं?",
-    upcopApp: "\n\n*अधिक आधिकारिक सेवाओं के लिए, कृपया [गूगल प्ले स्टोर](https://play.google.com/store/apps/details?id=com.up.uppolice) से आधिकारिक **UPCOP मोबाइल ऐप** डाउनलोड करें।* ",
+    upcopApp: "\n\n*अधिक आधिकारिक सेवाओं के लिए, कृपया [गूगल प्ले स्टोर](https://play.google.com/store/apps/details?id=com.up.uppolice) से आधिकारिक **UPCOP मोबाइल ऐप** डाउनलोड करें।*",
   },
   hinglish: {
     cancel: "Request cancel kar di gayi hai. Aapko aur kis cheez me help chahiye?",
@@ -70,6 +71,7 @@ export class ChatService {
   private readonly logger = new Logger(ChatService.name);
   private aiServiceUrl: string;
   private messageLibrary: any = null;
+  public localizationService: LocalizationService;
 
   constructor(
     private readonly httpService: HttpService,
@@ -83,7 +85,9 @@ export class ChatService {
     private readonly prisma: PrismaService,
     private readonly validationService: ValidationService,
     private readonly intelligenceService: IntelligenceService,
+    localizationService?: LocalizationService,
   ) {
+    this.localizationService = localizationService || new LocalizationService(new MetricsService());
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
     this.loadMessageLibrary();
   }
@@ -724,7 +728,7 @@ export class ChatService {
           state.step = 'START';
           state.data = {};
           return {
-            response: TRANSLATIONS[lang].cancel,
+            response: this.localizationService.translate('cancel', lang),
             suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
           };
         case 'TRACK_APPLICATION':
@@ -734,7 +738,7 @@ export class ChatService {
         case 'CHANGE_LANGUAGE':
           state.languageSelected = false;
           return {
-            response: WELCOME_MESSAGE,
+            response: getWelcomeMessage(lang, this.localizationService),
             suggestions: ['English', 'हिंदी', 'Hinglish'],
           };
       }
@@ -931,7 +935,7 @@ export class ChatService {
       state.step = 'START';
       state.data = {};
       return {
-        response: getEmergencyMessage(state.language),
+        response: getEmergencyMessage(state.language, this.localizationService),
         suggestions: ['🚔 File a Complaint', '🔍 Track Status'],
       };
     }
@@ -956,7 +960,7 @@ export class ChatService {
       if (matchedLang) {
         this.analyticsService.trackLanguage(state.language);
         return {
-          response: LANGUAGE_SELECTION_RESPONSES[state.language],
+          response: getLanguageSelectionResponse(state.language, this.localizationService),
           suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
         };
       }
@@ -995,7 +999,7 @@ export class ChatService {
         }
       } else {
         return {
-          response: WELCOME_MESSAGE,
+          response: getWelcomeMessage('en', this.localizationService),
           suggestions: ['English', 'हिंदी', 'Hinglish'],
         };
       }
@@ -1009,7 +1013,7 @@ export class ChatService {
       state.step = 'START';
       state.data = {};
       return {
-        response: TRANSLATIONS[lang].cancel,
+        response: this.localizationService.translate('cancel', lang),
         suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
       };
     }
@@ -1072,7 +1076,7 @@ export class ChatService {
       }
 
       return {
-        response: WELCOME_MESSAGE,
+        response: getWelcomeMessage('en', this.localizationService),
         suggestions: ['English', 'हिंदी', 'Hinglish'],
       };
     }
@@ -1090,7 +1094,7 @@ export class ChatService {
     // Process Active Workflows
     let empathyPrepend = "";
     if (message && !state.data.empathyShown) {
-      empathyPrepend = getEmpathyMessage(message, lang);
+      empathyPrepend = getEmpathyMessage(message, lang, this.localizationService);
       if (empathyPrepend) {
         state.data.empathyShown = true;
       }
@@ -1114,7 +1118,7 @@ export class ChatService {
         res = await this.runTrackingWorkflow(state, message);
         break;
       default:
-        res = { response: TRANSLATIONS[lang].invalidStep };
+        res = { response: this.localizationService.translate('invalidStep', lang) };
     }
 
     // Enhancement 6: Dead-end detection
@@ -1749,6 +1753,7 @@ Let's continue with your request.`;
   }
 
   private calculateReadiness(session: ChatSessionState, requiredFields: string[]): { score: number; checklist: string; valid: boolean } {
+    const lang = session.language;
     const nameValid = this.validationService.validateName(session.citizen.fullName);
     const mobileValid = this.validationService.validateMobile(session.citizen.mobileNumber);
     const locationValid = !!(session.citizen.city || session.citizen.district);
@@ -1760,11 +1765,16 @@ Let's continue with your request.`;
     if (locationValid) score += 25;
     if (fieldsComplete) score += 25;
     
-    const checklist = `${nameValid ? '✓' : '✗'} Name Valid\n` +
-                      `${mobileValid ? '✓' : '✗'} Mobile Valid\n` +
-                      `${locationValid ? '✓' : '✗'} Location Confirmed\n` +
-                      `${fieldsComplete ? '✓' : '✗'} Complaint Complete\n\n` +
-                      `Readiness Score: ${score}`;
+    const labelName = this.localizationService.translate('CHECK_APPLICANT_COMPLETE', lang);
+    const labelMobile = this.localizationService.translate('CHECK_CONTACT_VALID', lang);
+    const labelLoc = this.localizationService.translate('CHECK_LOCATION_CONFIRMED', lang);
+    const labelFields = this.localizationService.translate('CHECK_REQUIRED_FIELDS', lang);
+
+    const checklist = `${nameValid ? '✓' : '✗'} ${labelName}\n` +
+                      `${mobileValid ? '✓' : '✗'} ${labelMobile}\n` +
+                      `${locationValid ? '✓' : '✗'} ${labelLoc}\n` +
+                      `${fieldsComplete ? '✓' : '✗'} ${labelFields}\n\n` +
+                      `${this.localizationService.translate('REVIEW_READY_FOR_SUBMISSION', lang)}: ${score}`;
                       
     return { score, checklist, valid: score === 100 };
   }
@@ -2027,7 +2037,7 @@ ${readiness.checklist}
       };
     }
 
-    return { response: TRANSLATIONS[lang].invalidStep };
+    return { response: this.localizationService.translate('invalidStep', lang) };
   }
 
   // --- Verification Workflow ---
@@ -2087,7 +2097,7 @@ ${readiness.checklist}
         });
         session.data = {};
         
-        const rawCompMsg = getCompletionMessage(resNum, lang);
+        const rawCompMsg = getCompletionMessage(resNum, lang, this.localizationService);
         let cleanCompMsg = rawCompMsg;
         if (lang === 'hi') {
           cleanCompMsg = cleanCompMsg.replace('क्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?', '').trim();
@@ -2388,7 +2398,7 @@ Would you like to submit this application?
         });
         session.data = {};
 
-        const rawCompMsg = getCompletionMessage(resNum, lang);
+        const rawCompMsg = getCompletionMessage(resNum, lang, this.localizationService);
         let cleanCompMsg = rawCompMsg;
         if (lang === 'hi') {
           cleanCompMsg = cleanCompMsg.replace('क्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?', '').trim();
@@ -2553,7 +2563,7 @@ Would you like to submit this application?
         });
         session.data = {};
 
-        const rawCompMsg = getCompletionMessage(resNum, lang);
+        const rawCompMsg = getCompletionMessage(resNum, lang, this.localizationService);
         let cleanCompMsg = rawCompMsg;
         if (lang === 'hi') {
           cleanCompMsg = cleanCompMsg.replace('क्या मैं आज आपकी किसी और चीज़ में सहायता कर सकता हूँ?', '').trim();
@@ -2708,18 +2718,24 @@ Would you like to submit this application?
 
   private async renderActiveWorkflowReviewScreen(state: ChatSessionState): Promise<{ response: string; suggestions?: string[] }> {
     const lang = state.language;
+    const header = this.localizationService.translate('REVIEW_SCREEN_HEADER', lang);
+    const labelValidationStatus = this.localizationService.translate('REVIEW_VALIDATION_STATUS', lang);
+    
+    let submitPrompt = lang === 'hi' ? 'क्या आप इस आवेदन को जमा करना चाहते हैं?' : (lang === 'hinglish' ? 'Kya aap ye application submit karna chahte hain?' : 'Would you like to submit this application?');
+    let submitLabel = lang === 'hi' ? 'आवेदन सबमिट करें' : (lang === 'hinglish' ? 'Application submit karein' : 'Submit Application');
+    let modifyLabel = lang === 'hi' ? 'विवरण बदलें' : (lang === 'hinglish' ? 'Details modify karein' : 'Modify Details');
+
     if (state.workflow === 'complaint') {
       const readiness = this.calculateReadiness(state, ['type', 'location', 'time', 'description']);
-      let reviewScreen = `👮 **Please review your application.**
-
-Name: **${state.citizen.fullName}**
-Mobile: **${state.citizen.mobileNumber}**
-District: **${state.citizen.city || 'Lucknow'}**
-Complaint Type: **${state.data.type}**
-`;
+      let reviewScreen = `${header}\n\n`;
+      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_LOCATION', lang)}: **${this.localizationService.localizeLocation(state.citizen.city || state.citizen.district || 'Lucknow', lang)}**\n`;
+      reviewScreen += `${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}: **${state.data.type}**\n`;
 
       if (state.data.brand) {
-        reviewScreen += `\n📱 **Device Information**\n`;
+        reviewScreen += `\n📱 **${this.localizationService.translate('REVIEW_DEVICE_INFORMATION', lang)}**\n`;
         reviewScreen += `Brand: **${state.data.brand}**\n`;
         if (state.data.model) {
           reviewScreen += `Model: **${state.data.model}**\n`;
@@ -2728,116 +2744,127 @@ Complaint Type: **${state.data.type}**
           reviewScreen += `Color: **${state.data.color}**\n`;
         }
         if (state.data.year) {
-          reviewScreen += `Manufacturing/Purchase Year: **${state.data.year}**\n`;
+          reviewScreen += `Year: **${state.data.year}**\n`;
         }
         reviewScreen += `IMEI: **${state.data.imei || 'Not Provided'}**\n`;
       }
 
-      reviewScreen += `Incident Location: **${state.data.location}**
-Incident Date: **${state.data.time}**
-Description: **${state.data.description}**
+      reviewScreen += `\n**${this.localizationService.translate('REVIEW_INCIDENT_DETAILS', lang)}**\n`;
+      reviewScreen += `Incident Location: **${state.data.location}**\n`;
+      reviewScreen += `Incident Date: **${state.data.time}**\n`;
+      reviewScreen += `Description: **${state.data.description}**\n\n`;
 
-**Validation Status**
+      reviewScreen += `**${labelValidationStatus}**\n\n${readiness.checklist}\n\n`;
 
-${readiness.checklist}
-
-`;
       let sugs: string[];
       if (readiness.valid) {
-        reviewScreen += `Would you like to submit this application?
-
-- [Submit Application](option:Submit Application)
-- [Modify Details](option:Modify Details)`;
-        sugs = ['Submit Application', 'Modify Details'];
+        reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
+        sugs = [submitLabel, modifyLabel];
       } else {
-        reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.
-
-- [Modify Details](option:Modify Details)`;
-        sugs = ['Modify Details'];
+        reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields.\n\n- [${modifyLabel}](option:Modify Details)`;
+        sugs = [modifyLabel];
       }
       return {
         response: reviewScreen,
         suggestions: sugs,
       };
     } else if (state.workflow === 'verification') {
-      const reviewScreen = `👮 **Please review your application.**
+      const labelCandidateName = lang === 'hi' ? 'उम्मीदवार का नाम' : (lang === 'hinglish' ? 'Candidate Name' : 'Candidate Name');
+      const labelCandidateMobile = lang === 'hi' ? 'उम्मीदवार का मोबाइल' : (lang === 'hinglish' ? 'Candidate Mobile' : 'Candidate Mobile');
+      const labelCandidateAddress = lang === 'hi' ? 'उम्मीदवार का पता' : (lang === 'hinglish' ? 'Candidate Address' : 'Candidate Address');
+      const labelPropertyDetails = lang === 'hi' ? 'संपत्ति का विवरण' : (lang === 'hinglish' ? 'Property Details' : 'Property Details');
 
-Name: **${state.citizen.fullName}**
-Mobile: **${state.citizen.mobileNumber}**
-Verification Type: **${state.data.type}**
-Candidate Name: **${state.data.name}**
-Candidate Mobile: **${state.data.mobile}**
-Candidate Address: **${state.data.address}**
-Property Details: **${state.data.propertyDetails}**
+      let checklist = `✓ ${lang === 'hi' ? 'सत्यापन विवरण पूर्ण' : 'Verification Details Complete'}\n✓ ${lang === 'hi' ? 'जमा करने के लिए तैयार' : 'Ready for Submission'}`;
 
-**Validation Status**
+      let reviewScreen = `${header}\n\n`;
+      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n`;
+      reviewScreen += `${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}: **${state.data.type}**\n\n`;
 
-✓ Candidate Name Valid
-✓ Candidate Mobile Valid
-✓ Property Address Valid
-✓ Verification Details Complete
-✓ Ready for Submission
+      reviewScreen += `**${this.localizationService.translate('REVIEW_CANDIDATE_DETAILS', lang)}**\n`;
+      reviewScreen += `${labelCandidateName}: **${state.data.name}**\n`;
+      reviewScreen += `${labelCandidateMobile}: **${state.data.mobile}**\n`;
+      reviewScreen += `${labelCandidateAddress}: **${state.data.address}**\n`;
+      reviewScreen += `${labelPropertyDetails}: **${state.data.propertyDetails}**\n\n`;
 
-Would you like to submit this application?
+      reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;
+      reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
 
-- [Submit Application](option:Submit Application)
-- [Modify Details](option:Modify Details)`;
       return {
         response: reviewScreen,
-        suggestions: ['Submit Application', 'Modify Details'],
+        suggestions: [submitLabel, modifyLabel],
       };
     } else if (state.workflow === 'certificate') {
-      const reviewScreen = `👮 **Please review your application.**
+      const labelSubjectName = lang === 'hi' ? 'विषय का नाम' : (lang === 'hinglish' ? 'Subject Name' : 'Subject Name');
+      const labelSubjectAddress = lang === 'hi' ? 'विषय का पता' : (lang === 'hinglish' ? 'Subject Address' : 'Subject Address');
+      const labelDistrict = lang === 'hi' ? 'ज़िला' : (lang === 'hinglish' ? 'District' : 'District');
+      const labelPurpose = lang === 'hi' ? 'उद्देश्य' : (lang === 'hinglish' ? 'Purpose' : 'Purpose');
+      const isPRPUsed = state.data.prpUsed;
+      const sourceLabel = isPRPUsed
+        ? `✓ ${lang === 'hi' ? 'सत्यापित प्रोफ़ाइल से पुनः उपयोग किया गया' : (lang === 'hinglish' ? 'Verified profile se reused' : 'Reused From Verified Profile')}`
+        : `✓ ${lang === 'hi' ? 'मैन्युअल रूप से प्रदान किया गया' : (lang === 'hinglish' ? 'Manually provide kiya gaya' : 'Provided Manually')}`;
 
-Name: **${state.citizen.fullName}**
-Mobile: **${state.citizen.mobileNumber}**
-Applicant Name: **${state.data.name}**
-Applicant Address: **${state.data.address}**
-District: **${state.data.district}**
-Purpose: **${state.data.purpose}**
+      let checklist = `✓ ${lang === 'hi' ? 'विषय का नाम मान्य' : 'Subject Name Valid'}\n✓ ${lang === 'hi' ? 'उद्देश्य मान्य' : 'Purpose Valid'}\n✓ ${lang === 'hi' ? 'विवरण पूर्ण' : 'Details Complete'}`;
 
-**Validation Status**
+      let reviewScreen = `${header}\n\n`;
+      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n\n`;
 
-✓ Applicant Name Valid
-✓ District Valid
-✓ Purpose Valid
-✓ Character Certificate Details Complete
-✓ Ready for Submission
+      reviewScreen += `**${this.localizationService.translate('REVIEW_CANDIDATE_DETAILS', lang)}**\n`;
+      reviewScreen += `Subject Information Source: **${sourceLabel}**\n`;
+      reviewScreen += `${labelSubjectName}: **${state.data.name}**\n`;
+      reviewScreen += `${labelSubjectAddress}: **${state.data.address}**\n`;
+      reviewScreen += `${labelDistrict}: **${this.localizationService.localizeLocation(state.data.district || 'Lucknow', lang)}**\n`;
+      reviewScreen += `${labelPurpose}: **${state.data.purpose}**\n\n`;
 
-Would you like to submit this application?
+      reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;
+      reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
 
-- [Submit Application](option:Submit Application)
-- [Modify Details](option:Modify Details)`;
       return {
         response: reviewScreen,
-        suggestions: ['Submit Application', 'Modify Details'],
+        suggestions: [submitLabel, modifyLabel],
       };
     } else if (state.workflow === 'event') {
-      const reviewScreen = `👮 **Please review your application.**
+      const labelEventName = lang === 'hi' ? 'कार्यक्रम का नाम' : (lang === 'hinglish' ? 'Event Name' : 'Event Name');
+      const labelLocation = lang === 'hi' ? 'स्थान' : (lang === 'hinglish' ? 'Location' : 'Location');
+      const labelDate = lang === 'hi' ? 'दिनांक' : (lang === 'hinglish' ? 'Date' : 'Date');
+      const labelAttendance = lang === 'hi' ? 'अपेक्षित उपस्थिति' : (lang === 'hinglish' ? 'Expected Attendance' : 'Expected Attendance');
+      
+      const labelOrganizerName = lang === 'hi' ? 'आयोजक का नाम' : (lang === 'hinglish' ? 'Organizer Name' : 'Organizer Name');
+      const labelOrganizerAddress = lang === 'hi' ? 'आयोजक का पता' : (lang === 'hinglish' ? 'Organizer Address' : 'Organizer Address');
+      const labelOrganizerMobile = lang === 'hi' ? 'आयोजक का मोबाइल' : (lang === 'hinglish' ? 'Organizer Mobile' : 'Organizer Mobile');
 
-Name: **${state.citizen.fullName}**
-Mobile: **${state.citizen.mobileNumber}**
-Request Type: **${state.data.type}**
-Event Name: **${state.data.name}**
-Location: **${state.data.location}**
-Date: **${state.data.date}**
-Attendance: **${state.data.attendance}**
+      const isPRPUsed = state.data.prpUsed;
+      const sourceLabel = isPRPUsed
+        ? `✓ ${lang === 'hi' ? 'सत्यापित प्रोफ़ाइल से पुनः उपयोग किया गया' : (lang === 'hinglish' ? 'Verified profile se reused' : 'Reused From Verified Profile')}`
+        : `✓ ${lang === 'hi' ? 'मैन्युअल रूप से प्रदान किया गया' : (lang === 'hinglish' ? 'Manually provide kiya gaya' : 'Provided Manually')}`;
 
-**Validation Status**
+      let checklist = `✓ ${lang === 'hi' ? 'कार्यक्रम का नाम मान्य' : 'Event Name Valid'}\n✓ ${lang === 'hi' ? 'दिनांक मान्य' : 'Date Valid'}\n✓ ${lang === 'hi' ? 'विवरण पूर्ण' : 'Details Complete'}`;
 
-✓ Event Name Valid
-✓ Date Valid
-✓ Expected Attendance Valid
-✓ Event Permission Details Complete
-✓ Ready for Submission
+      let reviewScreen = `${header}\n\n`;
+      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n\n`;
 
-Would you like to submit this application?
+      reviewScreen += `**Organizer Information Source: ${sourceLabel}**\n`;
+      reviewScreen += `${labelOrganizerName}: **${state.data.organizerName || state.citizen.fullName}**\n`;
+      reviewScreen += `${labelOrganizerAddress}: **${state.data.organizerAddress || state.citizen.addressLine1}**\n`;
+      reviewScreen += `${labelOrganizerMobile}: **${state.data.organizerMobile || state.citizen.mobileNumber}**\n\n`;
 
-- [Submit Application](option:Submit Application)
-- [Modify Details](option:Modify Details)`;
+      reviewScreen += `**${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}**\n`;
+      reviewScreen += `${labelEventName}: **${state.data.name}**\n`;
+      reviewScreen += `${labelLocation}: **${state.data.location}**\n`;
+      reviewScreen += `${labelDate}: **${state.data.date}**\n`;
+      reviewScreen += `${labelAttendance}: **${state.data.attendance}**\n\n`;
+
+      reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;
+      reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
+
       return {
         response: reviewScreen,
-        suggestions: ['Submit Application', 'Modify Details'],
+        suggestions: [submitLabel, modifyLabel],
       };
     }
     return { response: 'State details updated. Please continue.' };

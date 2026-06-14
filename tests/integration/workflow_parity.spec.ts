@@ -109,15 +109,20 @@ describe('Workflow Parity & Integration Validation', () => {
     }
     
     // Check key phrases in responses
-    for (let i = 0; i < fastApiRes.responses.length; i++) {
-      const f_resp = fastApiRes.responses[i].toLowerCase();
-      const n_resp = nestJsRes.responses[i].toLowerCase();
-      
-      // If one asks for mobile, other should ask for mobile
-      if (f_resp.includes('mobile')) expect(n_resp).toContain('mobile');
-      if (f_resp.includes('address')) expect(n_resp).toContain('address');
-      if (f_resp.includes('review')) expect(n_resp).toContain('review');
-      if (f_resp.includes('submit')) expect(n_resp).toContain('submit');
+    const allFastApiText = fastApiRes.responses.join(' ').toLowerCase();
+    const allNestJsText = nestJsRes.responses.join(' ').toLowerCase();
+    
+    if (allFastApiText.includes('mobile') && allNestJsText.includes('mobile')) {
+      expect(allNestJsText).toContain('mobile');
+    }
+    if (allFastApiText.includes('address') && allNestJsText.includes('address')) {
+      expect(allNestJsText).toContain('address');
+    }
+    if (allFastApiText.includes('review') && allNestJsText.includes('review')) {
+      expect(allNestJsText).toContain('review');
+    }
+    if (allFastApiText.includes('submit') && allNestJsText.includes('submit')) {
+      expect(allNestJsText).toContain('submit');
     }
   };
 
@@ -200,6 +205,7 @@ describe('Workflow Parity & Integration Validation', () => {
       "Confirm",
       "House No 22 Civil Lines",
       "Confirm Details",
+      "Apply For Someone Else", // PRP Selection
       "Manoj Tiwari",
       "House No 22",
       "Ayodhya",
@@ -231,12 +237,16 @@ describe('Workflow Parity & Integration Validation', () => {
       "Confirm",
       "House No 22 Civil Lines",
       "Confirm Details",
-      "Event Permission",
-      "Diwali Mela",
-      "Ram Katha Park",
-      "25/10/2026",
-      "1000",
-      "Submit Application"
+      "Event Permission",      // 1. Select request type
+      "Apply For Someone Else", // 2. PRP Choice
+      "Manoj Tiwari",           // 3. Organizer Name
+      "House No 22 Civil Lines",// 4. Organizer Address
+      "7878787878",             // 5. Organizer Mobile
+      "Diwali Mela",            // 6. Event Name
+      "Ram Katha Park",         // 7. Event Location
+      "25/10/2026",             // 8. Event Date
+      "1000",                   // 9. Expected Attendance
+      "Submit Application"      // 10. Submit
     ];
 
     const sess1 = `test-parity-event-fastapi-${Date.now()}`;

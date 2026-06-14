@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Workflow Parity Snapshot Tests should match snapshot for Application Tracking 1`] = `"❌ No application found matching reference number \`UP-CMP-2026-123456\`. Please check and try again."`;
+
+exports[`Workflow Parity Snapshot Tests should match snapshot for Lost Mobile workflow 1`] = `
+"👮 **Please review your application.**
+
+Name: **Manoj Tiwari**
+Mobile: **7878787878**
+District: **Ayodhya**
+Complaint Type: **Lost Mobile**
+
+📱 **Device Information**
+Brand: **Samsung**
+Model: **M34**
+Color: **Black**
+Manufacturing/Purchase Year: **2023**
+IMEI: **Not Provided**
+Incident Location: **Ayodhya**
+Incident Date: **10/06/2026**
+Description: **Lost mobile phone near temple**
+
+**Validation Status**
+
+✓ Applicant Information Complete
+✓ Contact Details Valid
+✓ Location Confirmed
+✓ Required Fields Complete
+
+Ready for Submission: 100
+
+Would you like to submit this application?
+
+- [Submit Application](option:Submit Application)
+- [Modify Details](option:Modify Details)"
+`;

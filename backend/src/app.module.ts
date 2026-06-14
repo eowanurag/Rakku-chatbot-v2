@@ -36,6 +36,8 @@ import { KnowledgeController } from './knowledge/knowledge.controller';
 import { KnowledgeService } from './knowledge/knowledge.service';
 import { IntelligenceService } from './citizen-assistance/intelligence.service';
 
+import { LocalizationModule } from './localization/localization.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -43,6 +45,7 @@ import { IntelligenceService } from './citizen-assistance/intelligence.service';
     }),
     HttpModule,
     CitizenAssistanceModule,
+    LocalizationModule,
   ],
   controllers: [
     ComplaintController,

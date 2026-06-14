@@ -1,4 +1,10 @@
-export function getCompletionMessage(refNum: string, lang: 'en' | 'hi' | 'hinglish'): string {
+import { LocalizationService } from '../localization/localization.service';
+
+export function getCompletionMessage(refNum: string, lang: string, localizationService?: LocalizationService): string {
+  if (localizationService) {
+    return localizationService.translate('COMPLETION_MESSAGE', lang, { refNum });
+  }
+  
   const messages = {
     en: `✅ Your request has been recorded successfully.
 
@@ -25,6 +31,5 @@ Please future tracking ke liye is number ko save kar lein.
 
 Is there anything else I can help you with today?`
   };
-  return messages[lang];
+  return messages[lang as 'en' | 'hi' | 'hinglish'] || messages['en'];
 }
-

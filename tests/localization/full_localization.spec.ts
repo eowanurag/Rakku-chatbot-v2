@@ -109,8 +109,8 @@ describe('Full Localization & Translation Leakage Test Suite', () => {
     const finalReview = await chatService.sendMessage('Hazratganj market near park', sess);
     
     // Checklist validations check (✓ / ✗ validation indicators)
-    expect(finalReview.response).toContain('Name Valid');
-    expect(finalReview.response).toContain('Mobile Valid');
-    expect(finalReview.response).toContain('Location Confirmed');
+    expect(finalReview.response).toContain('आवेदक की जानकारी पूर्ण');
+    expect(finalReview.response).toContain('सम्पर्क विवरण मान्य');
+    expect(finalReview.response).toContain('स्थान की पुष्टि की गई');
   });
 });

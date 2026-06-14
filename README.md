@@ -179,6 +179,7 @@ Rakku-chatbot-v1/
 - **State Machine Sequences**: Automatically handles complex welcome experience state flows and timed auto-idle transitions.
 - **Multilingual Support**: Supports English, Hindi, and Hinglish.
 - **Workflow Automation & Smart Validation**: In-context slot filling and validations.
+- **Profile Reuse Protocol (PRP)**: A generic engine (`handleProfileReuseProtocol`) mapping verified Citizen profiles to target service roles (e.g. Subject or Organizer) to eliminate redundant inputs while preserving database isolation for third-party submissions.
 
 ## Testing & Quality Assurance
 
@@ -273,6 +274,7 @@ npm run build
 | v0.2 | Citizen Identification | Profile Verification |
 | v0.3 | Workflow Parity | FastAPI + NestJS Sync |
 | v0.4 | MTF Testing Framework | QA & Stability |
+| v0.5 | 2026-06-14 | Profile Reuse Protocol (PRP) Engine & Schema Upgrades |
 
 ## Contributing
 

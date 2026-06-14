@@ -1,4 +1,10 @@
-export function getEmergencyMessage(lang: 'en' | 'hi' | 'hinglish'): string {
+import { LocalizationService } from '../localization/localization.service';
+
+export function getEmergencyMessage(lang: string, localizationService?: LocalizationService): string {
+  if (localizationService) {
+    return localizationService.translate('EMERGENCY_MESSAGE', lang);
+  }
+  
   const messages = {
     en: `⚠️ This appears to be an emergency situation.
 
@@ -16,6 +22,5 @@ Please immediate help ke liye UP Police ko 112 dial karke contact karein.
 
 Agar koi immediate danger mein hai, toh online response ka wait na karein.`
   };
-  return messages[lang];
+  return messages[lang as 'en' | 'hi' | 'hinglish'] || messages['en'];
 }
-
