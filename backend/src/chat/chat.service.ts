@@ -82,6 +82,7 @@ export class ChatService {
   public localizationService: LocalizationService;
   private readonly jurisdictionService: JurisdictionService;
   private readonly jurisdictionLifecycleService: JurisdictionLifecycleService;
+  private readonly routingTargetRegistryService: RoutingTargetRegistryService;
 
   constructor(
     private readonly httpService: HttpService,
@@ -98,13 +99,15 @@ export class ChatService {
     localizationService?: LocalizationService,
     jurisdictionService?: JurisdictionService,
     jurisdictionLifecycleService?: JurisdictionLifecycleService,
+    routingTargetRegistryService?: RoutingTargetRegistryService,
   ) {
     this.localizationService = localizationService || new LocalizationService(new MetricsService());
+    this.routingTargetRegistryService = routingTargetRegistryService || new RoutingTargetRegistryService(this.prisma);
     this.jurisdictionService = jurisdictionService || new JurisdictionService(
       new LocationResolverService(),
       new JurisdictionRepository(this.prisma),
       new RoutingPolicyService(),
-      new RoutingTargetRegistryService(),
+      this.routingTargetRegistryService,
       this.prisma,
       new EventEmitter2()
     );
@@ -534,7 +537,7 @@ export class ChatService {
       citizenId: string,
       serviceType: string,
       locationText: string,
-      context: string
+      context: RoutingContext
     ) => {
       let resolvedCitizenId = citizenId;
       if (!resolvedCitizenId || resolvedCitizenId === 'default-citizen-id' || resolvedCitizenId === 'new-id') {
@@ -738,7 +741,7 @@ export class ChatService {
               dbAction.data.citizenId,
               'CHARACTER_CERTIFICATE',
               dbAction.data.address || dbAction.data.district || '',
-              RoutingContext.HOME_ADDRESS
+              RoutingContext.APPLICANT_ADDRESS
             );
             certificateResolutionId = resolution.id;
           } catch (resErr) {
