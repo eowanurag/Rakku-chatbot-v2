@@ -11,17 +11,20 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { IntelligenceService } from '../citizen-assistance/intelligence.service';
 
+import { SubmissionFingerprintService } from '../security/submission-fingerprint.service';
+
 async function runAudit() {
   console.log("Starting Rakku master audit simulation...");
   const prisma = new PrismaService();
+  const fingerprint = new SubmissionFingerprintService(prisma);
   const config = new ConfigService();
   const validation = new ValidationService();
-  const complaint = new ComplaintService(prisma);
+  const complaint = new ComplaintService(prisma, fingerprint);
   const verification = new VerificationService(prisma);
-  const certificate = new CertificateService(prisma);
-  const event = new EventService(prisma);
+  const certificate = new CertificateService(prisma, fingerprint);
+  const event = new EventService(prisma, fingerprint);
   const tracking = new TrackingService(prisma);
-  const intelligence = new IntelligenceService(prisma);
+  const intelligence = new IntelligenceService(prisma, fingerprint);
   const analytics = new AnalyticsService();
   const httpService = new HttpService();
   

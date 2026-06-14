@@ -83,18 +83,18 @@ describe('Feedback Regression Test Suite', () => {
     expect(compSubmit.response).toContain('Was this service helpful to you?');
 
     // Click rating 5
-    const prevFeedbackCount = await prisma.citizenFeedback.count();
+    const prevFeedbackCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     const feedRes = await chatService.sendMessage('5', sess);
     expect(feedRes.response).toContain('Thank you for your feedback');
 
-    const newFeedbackCount = await prisma.citizenFeedback.count();
+    const newFeedbackCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     expect(newFeedbackCount - prevFeedbackCount).toBe(1);
   }, 30000);
 
   it('should process citizen_feedback database actions from AI Service', async () => {
     // Manually execute the DB Action to test the executeDbAction routing
     const sess = getNewSession();
-    const prevFeedbackCount = await prisma.citizenFeedback.count();
+    const prevFeedbackCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
 
     const dbAction = {
       type: 'citizen_feedback',
@@ -111,7 +111,7 @@ describe('Feedback Regression Test Suite', () => {
     // Call the internal executeDbAction directly using array wrapper or individual action.
     await (chatService as any).executeDbAction(dbAction);
 
-    const newFeedbackCount = await prisma.citizenFeedback.count();
+    const newFeedbackCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     expect(newFeedbackCount - prevFeedbackCount).toBe(1);
 
     const feedbackRecord = await prisma.citizenFeedback.findFirst({

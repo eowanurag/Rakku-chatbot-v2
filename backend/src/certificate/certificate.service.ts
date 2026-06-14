@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { SubmissionFingerprintService } from '../security/submission-fingerprint.service';
 
 export interface CertificateData {
   id: string;
@@ -19,7 +20,14 @@ export class CertificateService {
   private readonly logger = new Logger(CertificateService.name);
   private inMemoryCertificates: any[] = [];
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private fingerprintService?: SubmissionFingerprintService
+  ) {
+    if (!this.fingerprintService) {
+      this.fingerprintService = new SubmissionFingerprintService(this.prisma);
+    }
+  }
 
   private generateRefNumber(): string {
     const year = new Date().getFullYear();
@@ -51,9 +59,22 @@ export class CertificateService {
     purpose: string,
     preGeneratedRefNum?: string,
     citizenId?: string,
+    usedProfileReuse: boolean = false,
+    profileSnapshot?: any,
+    profileSnapshotVersion: number = 1,
   ): Promise<CertificateData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
     const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
+
+    const fingerprint = this.fingerprintService.generateFingerprint(resolvedCitizenId, 'Certificate', { name, address, district, purpose });
+    if (await this.fingerprintService.isDuplicate(fingerprint, 'Certificate')) {
+      throw new BadRequestException({
+        success: false,
+        message: "Duplicate submission detected. Please wait before submitting again."
+      });
+    }
+    await this.fingerprintService.recordFingerprint(fingerprint, resolvedCitizenId, 'Certificate');
+
     try {
       return await this.prisma.characterCertificate.create({
         data: {
@@ -63,6 +84,9 @@ export class CertificateService {
           district,
           purpose,
           citizenId: resolvedCitizenId,
+          usedProfileReuse,
+          profileSnapshot: profileSnapshot || null,
+          profileSnapshotVersion,
         },
       }) as unknown as CertificateData;
     } catch (e) {

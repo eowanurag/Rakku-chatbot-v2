@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { JurisdictionService } from '../jurisdiction-routing/jurisdiction.service';
 import { RoutingContext, ResolutionSource } from '../jurisdiction-routing/jurisdiction-routing.types';
+import { RoutingTargetRegistryService } from '../jurisdiction-routing/routing-target-registry.service';
 
 export interface PoliceStation {
   id: string;
@@ -18,7 +19,8 @@ export class PoliceStationService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jurisdictionService: JurisdictionService
+    private readonly jurisdictionService: JurisdictionService,
+    private readonly targetRegistry: RoutingTargetRegistryService
   ) {}
 
   async getAll(): Promise<any[]> {
@@ -28,8 +30,9 @@ export class PoliceStationService {
   async findByCity(cityQuery: string): Promise<{
     success: boolean;
     station: any;
-    distanceKm: string;
+    distanceKm: string | null;
     mapsUrl: string;
+    message?: string;
     demoMode?: boolean;
     suggestions?: string[];
   }> {
@@ -49,6 +52,25 @@ export class PoliceStationService {
       });
 
       if (dbStation) {
+        const isPlaceholder = this.targetRegistry.isPlaceholderStation(resolution.policeStationId);
+
+        if (isPlaceholder) {
+          return {
+            success: true,
+            station: {
+              id: dbStation.id,
+              name: dbStation.name,
+              address: `${dbStation.localityCode || ''}, ${dbStation.cityCode || ''}, Uttar Pradesh`,
+              phone: null,
+              latitude: null,
+              longitude: null,
+            },
+            distanceKm: null,
+            mapsUrl: '',
+            message: "Jurisdiction identified.\n\nThis district is currently using a provisional routing configuration.\n\nYour request has been routed successfully and will be reviewed by the appropriate authority.",
+          };
+        }
+
         const formattedDistance = 'Distance unavailable for manual search';
         const mapsUrl = dbStation.latitude && dbStation.longitude
           ? `https://www.google.com/maps/search/?api=1&query=${dbStation.latitude},${dbStation.longitude}`
@@ -83,8 +105,9 @@ export class PoliceStationService {
   async findNearest(lat: number, lng: number): Promise<{
     success: boolean;
     station: any;
-    distanceKm: string;
+    distanceKm: string | null;
     mapsUrl: string;
+    message?: string;
   }> {
     const resolution = await this.jurisdictionService.resolveJurisdiction({
       serviceType: 'POLICE_STATION_FINDER',
@@ -99,23 +122,44 @@ export class PoliceStationService {
         where: { id: resolution.policeStationId },
       });
 
-      if (dbStation && dbStation.latitude && dbStation.longitude) {
-        const distance = this.calculateDistance(lat, lng, dbStation.latitude, dbStation.longitude);
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${dbStation.latitude},${dbStation.longitude}`;
+      if (dbStation) {
+        const isPlaceholder = this.targetRegistry.isPlaceholderStation(resolution.policeStationId);
 
-        return {
-          success: true,
-          station: {
-            id: dbStation.id,
-            name: dbStation.name,
-            address: `${dbStation.localityCode || ''}, ${dbStation.cityCode || ''}, Uttar Pradesh`,
-            phone: dbStation.phone || '0522-XXXXXXX',
-            latitude: dbStation.latitude,
-            longitude: dbStation.longitude,
-          },
-          distanceKm: distance.toFixed(2),
-          mapsUrl,
-        };
+        if (isPlaceholder) {
+          return {
+            success: true,
+            station: {
+              id: dbStation.id,
+              name: dbStation.name,
+              address: `${dbStation.localityCode || ''}, ${dbStation.cityCode || ''}, Uttar Pradesh`,
+              phone: null,
+              latitude: null,
+              longitude: null,
+            },
+            distanceKm: null,
+            mapsUrl: '',
+            message: "Jurisdiction identified.\n\nThis district is currently using a provisional routing configuration.\n\nYour request has been routed successfully and will be reviewed by the appropriate authority.",
+          };
+        }
+
+        if (dbStation.latitude && dbStation.longitude) {
+          const distance = this.calculateDistance(lat, lng, dbStation.latitude, dbStation.longitude);
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${dbStation.latitude},${dbStation.longitude}`;
+
+          return {
+            success: true,
+            station: {
+              id: dbStation.id,
+              name: dbStation.name,
+              address: `${dbStation.localityCode || ''}, ${dbStation.cityCode || ''}, Uttar Pradesh`,
+              phone: dbStation.phone || '0522-XXXXXXX',
+              latitude: dbStation.latitude,
+              longitude: dbStation.longitude,
+            },
+            distanceKm: distance.toFixed(2),
+            mapsUrl,
+          };
+        }
       }
     }
 

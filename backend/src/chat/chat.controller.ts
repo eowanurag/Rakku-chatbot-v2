@@ -1,10 +1,12 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { ChatService } from './chat.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('chat')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   @Post()
   async sendMessage(
     @Body() body: { message: string; sessionId: string; latitude?: number; longitude?: number; language?: string },

@@ -11,6 +11,7 @@ import {
   RoutingDecision,
   MatchType,
   ResolutionSource,
+  ResolutionEventType,
 } from './jurisdiction-routing.types';
 
 @Injectable()
@@ -155,7 +156,7 @@ export class JurisdictionService {
     // Create business event
     await this.repository.createEvent({
       jurisdictionResolutionId: resolutionEntity.id,
-      eventType: 'RESOLUTION_CREATED',
+      eventType: ResolutionEventType.RESOLUTION_CREATED,
       metadata: {
         source: params.resolutionSource,
         confidence,

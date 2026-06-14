@@ -122,6 +122,19 @@ export class RoutingTargetRegistryService implements OnModuleInit {
     return this.stationsMap.get(code);
   }
 
+  isPlaceholderStation(stationId: string): boolean {
+    let foundCode: string | undefined = undefined;
+    for (const [code, id] of this.stationsMap.entries()) {
+      if (id === stationId) {
+        foundCode = code;
+        break;
+      }
+    }
+    if (!foundCode) return false;
+    const raw = this.stationsData?.find((s: any) => s.stationCode === foundCode);
+    return !!(raw?.isPlaceholder || raw?.verificationStatus === 'UNVERIFIED');
+  }
+
   async validateTarget(targetType: string, targetId: string): Promise<boolean> {
     if (targetType === 'POLICE_STATION' || targetType === 'CYBER_CELL' || targetType === 'VERIFICATION_UNIT') {
       const station = await this.prisma.policeStation.findUnique({

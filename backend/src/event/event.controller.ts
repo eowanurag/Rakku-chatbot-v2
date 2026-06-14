@@ -1,10 +1,12 @@
 import { Controller, Post, Get, Put, Body, Param, NotFoundException } from '@nestjs/common';
 import { EventService } from './event.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('event')
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   @Post()
   async create(
     @Body() body: {

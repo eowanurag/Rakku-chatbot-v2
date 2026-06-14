@@ -2,7 +2,8 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { LocationRegistry, SUPPORTED_LANGUAGES, REVIEW_SECTIONS, REVIEW_FIELDS } from './localization.constants';
-import { LanguageCode, LocationRegistryItem, MissingTranslationEvent } from './localization.types';
+import { LanguageCode, LocationRegistryItem, MissingTranslationEvent, LocalizationMissingTranslationEvent, LocalizationFallbackEvent, LanguageSwitchEvent, LocalizationErrorEvent } from './localization.types';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class MetricsService {
@@ -26,7 +27,10 @@ export class LocalizationService implements OnModuleInit {
   private messageLibrary: any = null;
   private missingKeysCount = 0;
 
-  constructor(private readonly metricsService: MetricsService) {
+  constructor(
+    private readonly metricsService: MetricsService,
+    private readonly eventEmitter?: EventEmitter2,
+  ) {
     this.loadMessageLibrary();
   }
 
@@ -83,22 +87,28 @@ export class LocalizationService implements OnModuleInit {
       }
 
       for (const lang of SUPPORTED_LANGUAGES) {
+        if (lang in translation) {
+          const val = translation[lang];
+          if (val === undefined || val === null || val === '') {
+            throw new Error(`Localization System Error: key "${key}" language "${lang}" has an empty translation.`);
+          }
+        }
+      }
+      for (const lang of SUPPORTED_LANGUAGES) {
         if (!(lang in translation)) {
           throw new Error(`Localization System Error: key "${key}" is missing language "${lang}".`);
         }
-        const val = translation[lang];
-        if (typeof val !== 'string' || val.trim() === '') {
-          throw new Error(`Localization System Error: key "${key}" has an empty translation for language "${lang}".`);
-        }
       }
     }
-
-    this.logger.log(`Validation successful. ${keys.length} keys verified for languages: [${SUPPORTED_LANGUAGES.join(', ')}].`);
   }
 
-  public translate(key: string, language: LanguageCode, params?: Record<string, string>, workflow?: string): string {
+  public translate(key: string, language: LanguageCode = 'en', params?: Record<string, string | number>, sessionId?: string, workflow?: string): string {
     if (!this.messageLibrary) {
-      this.loadMessageLibrary();
+      try {
+        this.loadMessageLibrary();
+      } catch (err) {
+        this.eventEmitter?.emit('LocalizationError', new LocalizationErrorEvent(err.message, sessionId, { key, language }));
+      }
     }
 
     const messages = this.messageLibrary?.messages || {};
@@ -108,6 +118,9 @@ export class LocalizationService implements OnModuleInit {
       this.logger.warn(`Missing translation key: "${key}"`, { key, language, workflow });
       this.metricsService.increment('localization.missing_key');
       this.missingKeysCount++;
+      if (sessionId) {
+        this.eventEmitter?.emit('LocalizationMissingTranslation', new LocalizationMissingTranslationEvent(sessionId, key, language, workflow));
+      }
       return key;
     }
 
@@ -117,7 +130,11 @@ export class LocalizationService implements OnModuleInit {
       this.metricsService.increment('localization.missing_key');
       this.missingKeysCount++;
       // Fallback to English
-      text = translation['en'] || key;
+      const fallback = translation['en'] || key;
+      if (sessionId) {
+        this.eventEmitter?.emit('LocalizationFallback', new LocalizationFallbackEvent(sessionId, key, language, 'en', workflow));
+      }
+      text = fallback;
     }
 
     if (params && typeof text === 'string') {
@@ -127,6 +144,10 @@ export class LocalizationService implements OnModuleInit {
     }
 
     return text;
+  }
+
+  public logLanguageSwitch(sessionId: string, from: string, to: string) {
+    this.eventEmitter?.emit('LanguageSwitch', new LanguageSwitchEvent(sessionId, from, to));
   }
 
   public localizeLocation(code: string, language: LanguageCode): string {

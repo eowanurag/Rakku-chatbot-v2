@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { IntelligenceService } from './intelligence.service';
 import { PrismaService } from '../prisma.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('intelligence')
 export class IntelligenceController {
@@ -25,7 +26,7 @@ export class IntelligenceController {
     const completionRate = totalWorkflows > 0 ? (completedWorkflows / totalWorkflows) * 100 : 88.5;
 
     // Satisfaction score from feedbacks
-    const feedbacks = await this.prisma.feedback.findMany();
+    const feedbacks = await this.prisma.citizenFeedback.findMany();
     const avgRating = feedbacks.length > 0 
       ? feedbacks.reduce((acc, curr) => acc + curr.rating, 0) / feedbacks.length 
       : 4.5;
@@ -101,6 +102,7 @@ export class IntelligenceController {
     return questions;
   }
 
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   @Post('feedback')
   async submitFeedback(
     @Body() body: { sessionId: string; citizenId?: string; workflowType?: string; rating: number; comments?: string },

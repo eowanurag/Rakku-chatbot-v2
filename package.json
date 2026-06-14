@@ -8,6 +8,7 @@
     "test:stability": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/stability_test.ts"
   },
   "devDependencies": {
+    "@nestjs/testing": "^10.4.15",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.9.2",
     "@types/supertest": "^7.2.0",

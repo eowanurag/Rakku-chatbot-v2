@@ -2,6 +2,8 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { LocationRegistry } from '../localization/localization.constants';
+
 @Injectable()
 export class JurisdictionSeedValidator implements OnModuleInit {
   private readonly logger = new Logger(JurisdictionSeedValidator.name);
@@ -64,15 +66,76 @@ export class JurisdictionSeedValidator implements OnModuleInit {
     const mappings: any[] = JSON.parse(fs.readFileSync(mappingsPath, 'utf8'));
     const policies: Record<string, string> = JSON.parse(fs.readFileSync(policiesPath, 'utf8'));
 
-    const stationCodes = new Set(stations.map(s => s.stationCode));
+    // 1. Coverage check: all 75 UP districts from LocationRegistry represented
+    const upDistricts = LocationRegistry.filter(entry => entry.type === 'DISTRICT' && entry.stateCode === 'UP');
+    const upDistrictCodes = new Set(upDistricts.map(d => d.code));
+    
+    // Check coverage in stations
+    const stationDistricts = new Set(stations.map(s => s.districtCode));
+    for (const code of upDistrictCodes) {
+      if (!stationDistricts.has(code)) {
+        throw new Error(`Seed dataset validation failed: District "${code}" is not represented in stations.json`);
+      }
+    }
+
+    // Check coverage in mappings
+    const mappedDistricts = new Set(mappings.map(m => m.districtCode));
+    for (const code of upDistrictCodes) {
+      if (!mappedDistricts.has(code)) {
+        throw new Error(`Seed dataset validation failed: District "${code}" is not represented in jurisdiction-mappings.json`);
+      }
+    }
+
+    // 2. Duplicate StationCode detection
+    const stationCodes = new Set<string>();
+    for (const station of stations) {
+      if (stationCodes.has(station.stationCode)) {
+        throw new Error(`Seed dataset validation failed: Duplicate stationCode found: "${station.stationCode}"`);
+      }
+      stationCodes.add(station.stationCode);
+    }
+
+    // 3. Mapping Integrity: every mapping references an existing stationCode
+    const duplicateMappings = new Set<string>();
     for (const mapping of mappings) {
       if (!stationCodes.has(mapping.stationCode)) {
         throw new Error(
           `Seed dataset validation failed: mapping for ${mapping.localityCode || mapping.cityCode || mapping.districtCode} references invalid stationCode "${mapping.stationCode}"`
         );
       }
+      // 4. Duplicate district mappings check
+      const mappingKey = `${mapping.districtCode}:${mapping.cityCode || ''}:${mapping.localityCode || ''}`;
+      if (duplicateMappings.has(mappingKey)) {
+        throw new Error(`Seed dataset validation failed: Duplicate mapping entry found for: "${mappingKey}"`);
+      }
+      duplicateMappings.add(mappingKey);
     }
 
+    // 5. District Integrity: every station references a valid district from LocationRegistry
+    const allRegisteredDistrictCodes = new Set(LocationRegistry.filter(e => e.type === 'DISTRICT').map(e => e.code));
+    for (const station of stations) {
+      if (!allRegisteredDistrictCodes.has(station.districtCode)) {
+        throw new Error(`Seed dataset validation failed: Station "${station.stationCode}" references unregistered district "${station.districtCode}"`);
+      }
+    }
+
+    // 6. Manifest Checksum validation
+    const verifiedCount = stations.filter(s => !s.isPlaceholder).length;
+    const placeholderCount = stations.filter(s => s.isPlaceholder).length;
+    const manifestVerified = manifest.coverage?.verifiedStations || 0;
+    const manifestPlaceholder = manifest.coverage?.placeholderStations || 0;
+
+    if (verifiedCount !== manifestVerified) {
+      throw new Error(`Seed dataset validation failed: Manifest verifiedStations count (${manifestVerified}) does not match actual verified stations (${verifiedCount})`);
+    }
+    if (placeholderCount !== manifestPlaceholder) {
+      throw new Error(`Seed dataset validation failed: Manifest placeholderStations count (${manifestPlaceholder}) does not match actual placeholder stations (${placeholderCount})`);
+    }
+    if (stations.length !== (manifestVerified + manifestPlaceholder)) {
+      throw new Error(`Seed dataset validation failed: Total stations count (${stations.length}) does not match verified + placeholder sum (${manifestVerified + manifestPlaceholder})`);
+    }
+
+    // Required workflow routing policies check
     const requiredWorkflows = [
       'LOST_MOBILE',
       'LOST_DOCUMENT',

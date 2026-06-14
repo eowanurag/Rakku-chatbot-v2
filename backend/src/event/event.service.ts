@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { SubmissionFingerprintService } from '../security/submission-fingerprint.service';
 
 export interface EventPermissionData {
   id: string;
@@ -24,7 +25,14 @@ export class EventService {
   private readonly logger = new Logger(EventService.name);
   private inMemoryEvents: any[] = [];
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private fingerprintService?: SubmissionFingerprintService
+  ) {
+    if (!this.fingerprintService) {
+      this.fingerprintService = new SubmissionFingerprintService(this.prisma);
+    }
+  }
 
   private generateRefNumber(): string {
     const year = new Date().getFullYear();
@@ -58,12 +66,26 @@ export class EventService {
     preGeneratedRefNum?: string,
     citizenId?: string,
     organizerName?: string,
+
     organizerAddress?: string,
     organizerMobile?: string,
     organizerIsApplicant: boolean = true,
+    usedProfileReuse: boolean = false,
+    profileSnapshot?: any,
+    profileSnapshotVersion: number = 1,
   ): Promise<EventPermissionData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
     const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
+
+    const fingerprint = this.fingerprintService.generateFingerprint(resolvedCitizenId, 'Event', { type, eventName, location, date, expectedAttendance });
+    if (await this.fingerprintService.isDuplicate(fingerprint, 'Event')) {
+      throw new BadRequestException({
+        success: false,
+        message: "Duplicate submission detected. Please wait before submitting again."
+      });
+    }
+    await this.fingerprintService.recordFingerprint(fingerprint, resolvedCitizenId, 'Event');
+
     try {
       return await this.prisma.eventPermission.create({
         data: {
@@ -78,6 +100,9 @@ export class EventService {
           organizerAddress: organizerAddress || null,
           organizerMobile: organizerMobile || null,
           organizerIsApplicant,
+          usedProfileReuse,
+          profileSnapshot: profileSnapshot || null,
+          profileSnapshotVersion,
         },
       }) as unknown as EventPermissionData;
     } catch (e) {

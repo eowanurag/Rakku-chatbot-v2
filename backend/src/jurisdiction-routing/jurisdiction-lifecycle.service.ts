@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JurisdictionRepository } from './jurisdiction.repository';
-import { ResolutionStatus, ActorType, RoutingDecision } from './jurisdiction-routing.types';
+import { ResolutionStatus, ActorType, RoutingDecision, ResolutionEventType } from './jurisdiction-routing.types';
 
 @Injectable()
 export class JurisdictionLifecycleService {
@@ -43,7 +43,7 @@ export class JurisdictionLifecycleService {
 
     await this.repository.createEvent({
       jurisdictionResolutionId: resolutionId,
-      eventType: decision,
+      eventType: decision === 'USER_CONFIRMED' ? ResolutionEventType.USER_CONFIRMED : ResolutionEventType.USER_SELECTED,
       actorType,
       actorId,
     });
@@ -88,7 +88,7 @@ export class JurisdictionLifecycleService {
 
     await this.repository.createEvent({
       jurisdictionResolutionId: resolutionId,
-      eventType: 'OVERRIDDEN',
+      eventType: ResolutionEventType.OVERRIDDEN,
       actorType,
       actorId,
       metadata: { reason },
@@ -130,7 +130,7 @@ export class JurisdictionLifecycleService {
 
     await this.repository.createEvent({
       jurisdictionResolutionId: resolutionId,
-      eventType: 'EXPIRED',
+      eventType: ResolutionEventType.EXPIRED,
       actorType,
       actorId,
       metadata: { reason },

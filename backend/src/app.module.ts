@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { PrismaService } from './prisma.service';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { SubmissionFingerprintService } from './security/submission-fingerprint.service';
 
 // Citizen Assistance
 import { CitizenAssistanceModule } from './citizen-assistance/citizen-assistance.module';
@@ -38,6 +41,7 @@ import { IntelligenceService } from './citizen-assistance/intelligence.service';
 
 import { LocalizationModule } from './localization/localization.module';
 import { JurisdictionRoutingModule } from './jurisdiction-routing/jurisdiction-routing.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -45,9 +49,14 @@ import { JurisdictionRoutingModule } from './jurisdiction-routing/jurisdiction-r
       isGlobal: true,
     }),
     HttpModule,
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 60,
+    }]),
     CitizenAssistanceModule,
     LocalizationModule,
     JurisdictionRoutingModule,
+    NotificationModule,
   ],
   controllers: [
     ComplaintController,
@@ -69,6 +78,13 @@ import { JurisdictionRoutingModule } from './jurisdiction-routing/jurisdiction-r
     ValidationService,
     KnowledgeService,
     IntelligenceService,
+    SubmissionFingerprintService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
+  exports: [SubmissionFingerprintService],
 })
 export class AppModule {}
+

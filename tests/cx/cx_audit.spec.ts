@@ -76,6 +76,7 @@ describe('Citizen Experience (CX) Quality Audit Test', () => {
   it('Stage 3: Incident Details & Empathy Check', async () => {
     await chatService.sendMessage("9876543210", sess);
     await chatService.sendMessage("Noida", sess);
+    await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("Sector 15, Noida - 201301", sess);
     
     // Confirm details

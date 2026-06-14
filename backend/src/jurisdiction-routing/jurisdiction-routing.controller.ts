@@ -4,6 +4,7 @@ import { JurisdictionLifecycleService } from './jurisdiction-lifecycle.service';
 import { JurisdictionAnalyticsService } from './jurisdiction-analytics.service';
 import { JurisdictionRepository } from './jurisdiction.repository';
 import { LocationResolutionInput, ActorType, ResolutionSource, RoutingContext } from './jurisdiction-routing.types';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller()
 export class JurisdictionRoutingController {
@@ -45,6 +46,7 @@ export class JurisdictionRoutingController {
     return this.service.resolveJurisdiction(body);
   }
 
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   @Post('citizen-assistance/jurisdiction/lifecycle')
   async updateLifecycle(
     @Body()

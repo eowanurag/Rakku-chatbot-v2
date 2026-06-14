@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { SubmissionFingerprintService } from '../security/submission-fingerprint.service';
 
 export interface ComplaintData {
   id: string;
@@ -17,7 +18,14 @@ export class ComplaintService {
   private readonly logger = new Logger(ComplaintService.name);
   private inMemoryComplaints: any[] = [];
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private fingerprintService?: SubmissionFingerprintService
+  ) {
+    if (!this.fingerprintService) {
+      this.fingerprintService = new SubmissionFingerprintService(this.prisma);
+    }
+  }
 
   private generateRefNumber(): string {
     const year = new Date().getFullYear();
@@ -45,8 +53,19 @@ export class ComplaintService {
   async createComplaint(type: string, details: string, preGeneratedRefNum?: string, citizenId?: string): Promise<ComplaintData> {
     const refNum = preGeneratedRefNum || this.generateRefNumber();
     const resolvedCitizenId = citizenId || await this.getOrCreateDefaultCitizenId();
+
+    const fingerprint = this.fingerprintService.generateFingerprint(resolvedCitizenId, 'Complaint', { type, details });
+    if (await this.fingerprintService.isDuplicate(fingerprint, 'Complaint')) {
+      throw new BadRequestException({
+        success: false,
+        message: "Duplicate submission detected. Please wait before submitting again."
+      });
+    }
+    await this.fingerprintService.recordFingerprint(fingerprint, resolvedCitizenId, 'Complaint');
+
     try {
       return await this.prisma.complaint.create({
+
         data: {
           referenceNumber: refNum,
           complaintType: type,

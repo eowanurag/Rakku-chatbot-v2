@@ -84,7 +84,7 @@ describe('JurisdictionRepository Tests', () => {
 
     const evt = await repository.createEvent({
       jurisdictionResolutionId: res.id,
-      eventType: 'TEST_EVENT',
+      eventType: 'RESOLUTION_CREATED',
       actorType: ActorType.CITIZEN,
       metadata: { debug: true },
     });

@@ -726,6 +726,27 @@ export class ChatService {
           });
           break;
         case 'certificate':
+          const usedProfileReuseCert = dbAction.data.usedProfileReuse === true || dbAction.data.isSelf === true;
+          let profileSnapshotCert: any = null;
+          if (usedProfileReuseCert && dbAction.data.citizenId) {
+            const citizen = await this.prisma.citizen.findUnique({ where: { id: dbAction.data.citizenId } });
+            if (citizen) {
+              profileSnapshotCert = {
+                fullName: citizen.fullName,
+                mobileNumber: citizen.mobileNumber,
+                email: citizen.email,
+                addressLine1: citizen.addressLine1,
+                addressLine2: citizen.addressLine2,
+                city: citizen.city,
+                district: citizen.district,
+                state: citizen.state,
+                pincode: citizen.pincode,
+                latitude: citizen.latitude,
+                longitude: citizen.longitude,
+                locality: citizen.locality,
+              };
+            }
+          }
           const cert = await this.certificateService.createCertificate(
             dbAction.data.name,
             dbAction.data.address,
@@ -733,6 +754,9 @@ export class ChatService {
             dbAction.data.purpose,
             dbAction.data.refNum,
             dbAction.data.citizenId,
+            usedProfileReuseCert,
+            profileSnapshotCert,
+            1,
           );
 
           let certificateResolutionId: string | null = null;
@@ -769,6 +793,27 @@ export class ChatService {
           });
           break;
         case 'event':
+          const usedProfileReuseEvt = dbAction.data.usedProfileReuse === true || dbAction.data.isSelf === true;
+          let profileSnapshotEvt: any = null;
+          if (usedProfileReuseEvt && dbAction.data.citizenId) {
+            const citizen = await this.prisma.citizen.findUnique({ where: { id: dbAction.data.citizenId } });
+            if (citizen) {
+              profileSnapshotEvt = {
+                fullName: citizen.fullName,
+                mobileNumber: citizen.mobileNumber,
+                email: citizen.email,
+                addressLine1: citizen.addressLine1,
+                addressLine2: citizen.addressLine2,
+                city: citizen.city,
+                district: citizen.district,
+                state: citizen.state,
+                pincode: citizen.pincode,
+                latitude: citizen.latitude,
+                longitude: citizen.longitude,
+                locality: citizen.locality,
+              };
+            }
+          }
           const evt = await this.eventService.createEventPermission(
             dbAction.data.type,
             dbAction.data.name,
@@ -777,6 +822,13 @@ export class ChatService {
             dbAction.data.attendance,
             dbAction.data.refNum,
             dbAction.data.citizenId,
+            dbAction.data.organizerName,
+            dbAction.data.organizerAddress,
+            dbAction.data.organizerMobile,
+            dbAction.data.organizerIsApplicant !== false,
+            usedProfileReuseEvt,
+            profileSnapshotEvt,
+            1,
           );
 
           let eventResolutionId: string | null = null;
@@ -1111,24 +1163,28 @@ export class ChatService {
     // Language selection
     if (!state.languageSelected) {
       let matchedLang = false;
+      const oldLang = state.language;
+      let newLang: 'en' | 'hi' | 'hinglish' | null = null;
       if (cleanMsg === 'english' || cleanMsg.includes('option:english')) {
-        state.language = 'en';
-        state.languageSelected = true;
+        newLang = 'en';
         matchedLang = true;
       } else if (cleanMsg === 'हिंदी' || cleanMsg.includes('hindi') || cleanMsg.includes('option:हिंदी') || cleanMsg.includes('option:हिंदी (hindi)')) {
-        state.language = 'hi';
-        state.languageSelected = true;
+        newLang = 'hi';
         matchedLang = true;
       } else if (cleanMsg === 'hinglish' || cleanMsg.includes('option:hinglish')) {
-        state.language = 'hinglish';
-        state.languageSelected = true;
+        newLang = 'hinglish';
         matchedLang = true;
       }
 
-      if (matchedLang) {
+      if (matchedLang && newLang) {
+        if (oldLang !== newLang) {
+          this.localizationService.logLanguageSwitch(sessionId, oldLang, newLang);
+        }
+        state.language = newLang;
+        state.languageSelected = true;
         this.analyticsService.trackLanguage(state.language);
         return {
-          response: getLanguageSelectionResponse(state.language, this.localizationService),
+          response: getLanguageSelectionResponse(state.language, this.localizationService, sessionId),
           suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
         };
       }
@@ -1181,7 +1237,7 @@ export class ChatService {
       state.step = 'START';
       state.data = {};
       return {
-        response: this.localizationService.translate('cancel', lang),
+        response: this.localizationService.translate('cancel', lang, undefined, undefined, sessionId),
         suggestions: ['🚔 File a Complaint', '🏠 Tenant Verification', '📜 Character Certificate', '🎭 Event Permission', '🔍 Track Application'],
       };
     }
@@ -1262,7 +1318,7 @@ export class ChatService {
     // Process Active Workflows
     let empathyPrepend = "";
     if (message && !state.data.empathyShown) {
-      empathyPrepend = getEmpathyMessage(message, lang, this.localizationService);
+      empathyPrepend = getEmpathyMessage(message, lang, this.localizationService, sessionId);
       if (empathyPrepend) {
         state.data.empathyShown = true;
       }
@@ -2544,6 +2600,21 @@ Would you like to submit this application?
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         session.step = 'ASK_FEEDBACK';
         const resNum = `UP-CC-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        const usedProfileReuseCert = session.data.isSelf === true;
+        const profileSnapshotCert = usedProfileReuseCert ? {
+          fullName: session.citizen.fullName,
+          mobileNumber: session.citizen.mobileNumber,
+          email: session.citizen.email,
+          addressLine1: session.citizen.addressLine1,
+          addressLine2: session.citizen.addressLine2,
+          city: session.citizen.city,
+          district: session.citizen.district,
+          state: session.citizen.state,
+          pincode: session.citizen.pincode,
+          latitude: session.citizen.latitude,
+          longitude: session.citizen.longitude,
+          locality: session.citizen.locality,
+        } : null;
         const record = await this.certificateService.createCertificate(
           session.data.name,
           session.data.address,
@@ -2551,6 +2622,9 @@ Would you like to submit this application?
           session.data.purpose,
           resNum,
           session.citizen.id,
+          usedProfileReuseCert,
+          profileSnapshotCert,
+          1,
         );
         await this.prisma.trackingRecord.create({
           data: {
@@ -2704,6 +2778,21 @@ Would you like to submit this application?
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         session.step = 'ASK_FEEDBACK';
         const resNum = `UP-EP-2026-${Math.floor(100000 + Math.random() * 900000)}`;
+        const usedProfileReuseEvt = session.data.isSelf === true;
+        const profileSnapshotEvt = usedProfileReuseEvt ? {
+          fullName: session.citizen.fullName,
+          mobileNumber: session.citizen.mobileNumber,
+          email: session.citizen.email,
+          addressLine1: session.citizen.addressLine1,
+          addressLine2: session.citizen.addressLine2,
+          city: session.citizen.city,
+          district: session.citizen.district,
+          state: session.citizen.state,
+          pincode: session.citizen.pincode,
+          latitude: session.citizen.latitude,
+          longitude: session.citizen.longitude,
+          locality: session.citizen.locality,
+        } : null;
         const record = await this.eventService.createEventPermission(
           session.data.type,
           session.data.name,
@@ -2715,7 +2804,10 @@ Would you like to submit this application?
           session.data.organizerName || undefined,
           session.data.organizerAddress || undefined,
           session.data.organizerMobile || undefined,
-          session.data.organizerIsApplicant !== undefined ? session.data.organizerIsApplicant : true
+          session.data.organizerIsApplicant !== undefined ? session.data.organizerIsApplicant : true,
+          usedProfileReuseEvt,
+          profileSnapshotEvt,
+          1,
         );
         await this.prisma.trackingRecord.create({
           data: {

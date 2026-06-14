@@ -5,7 +5,9 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
+    "prebuild": "node -e \"const fs = require('fs'); const path = require('path'); const src = path.resolve('../shared/jurisdiction-data'); const dest = path.resolve('./src/jurisdiction-routing/jurisdiction-data'); if (fs.existsSync(src)) { fs.mkdirSync(dest, { recursive: true }); for (const file of fs.readdirSync(src)) { fs.copyFileSync(path.join(src, file), path.join(dest, file)); } }\"",
     "build": "nest build",
+    "postbuild": "node -e \"const fs = require('fs'); const path = require('path'); const src = path.resolve('./src/jurisdiction-routing/jurisdiction-data'); const dest = path.resolve('./dist/jurisdiction-routing/jurisdiction-data'); if (fs.existsSync(src)) { fs.mkdirSync(dest, { recursive: true }); for (const file of fs.readdirSync(src)) { fs.copyFileSync(path.join(src, file), path.join(dest, file)); } }\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -21,6 +23,7 @@
     "@nestjs/core": "^10.4.15",
     "@nestjs/event-emitter": "^3.1.0",
     "@nestjs/platform-express": "^10.4.15",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/client": "^6.0.0",
     "axios": "^1.7.9",
     "class-transformer": "^0.5.1",
@@ -32,6 +35,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
+    "@nestjs/testing": "^10.4.15",
     "@types/express": "^5.0.0",
     "@types/morgan": "^1.9.10",
     "@types/node": "^22.10.1",

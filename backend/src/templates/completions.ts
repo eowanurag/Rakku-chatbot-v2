@@ -1,8 +1,8 @@
 import { LocalizationService } from '../localization/localization.service';
 
-export function getCompletionMessage(refNum: string, lang: string, localizationService?: LocalizationService): string {
+export function getCompletionMessage(refNum: string, lang: string, localizationService?: LocalizationService, sessionId?: string): string {
   if (localizationService) {
-    return localizationService.translate('COMPLETION_MESSAGE', lang, { refNum });
+    return localizationService.translate('COMPLETION_MESSAGE', lang, { refNum }, undefined, sessionId);
   }
   
   const messages = {

@@ -21,6 +21,7 @@ model Citizen {
   latitude             Float?
   longitude            Float?
   locality             String?
+  /// @deprecated Deprecated in Staging. Removal planned in V1 Release Candidate.
   nearestPoliceStation String?
   isConfirmed          Boolean                @default(false)
   createdAt            DateTime               @default(now())
@@ -29,6 +30,7 @@ model Citizen {
   complaints           Complaint[]
   permissions          EventPermission[]
   verifications        Verification[]
+  notifications        Notification[]
 }
 
 model Complaint {
@@ -77,6 +79,9 @@ model CharacterCertificate {
   purpose                  String
   status                   String                  @default("Submitted")
   jurisdictionResolutionId String?
+  usedProfileReuse         Boolean                 @default(false)
+  profileSnapshot          Json?
+  profileSnapshotVersion   Int                     @default(1)
   createdAt                DateTime                @default(now())
   updatedAt                DateTime                @updatedAt
   citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
@@ -98,6 +103,9 @@ model EventPermission {
   organizerMobile          String?
   organizerIsApplicant     Boolean                 @default(true)
   jurisdictionResolutionId String?
+  usedProfileReuse         Boolean                 @default(false)
+  profileSnapshot          Json?
+  profileSnapshotVersion   Int                     @default(1)
   createdAt                DateTime                @default(now())
   updatedAt                DateTime                @updatedAt
   citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
@@ -172,17 +180,6 @@ model ConversationSentiment {
   createdAt    DateTime @default(now())
 }
 
-model Feedback {
-  id           String   @id @default(uuid())
-  sessionId    String
-  citizenId    String?
-  workflowType String?
-  rating       Int
-  comments     String?
-  category     String?
-  subcategory  String?
-  createdAt    DateTime @default(now())
-}
 
 model UnansweredQuestion {
   id        String   @id @default(uuid())
@@ -364,7 +361,7 @@ model JurisdictionResolution {
   policeStationId     String?
   serviceType         String
   workflowId          String?
-  routingContext      String
+  routingContext      RoutingContext
   sourceLocation      Json
   resolutionSource    ResolutionSource
   confidence          Float
@@ -406,10 +403,71 @@ model JurisdictionResolutionHistory {
 model JurisdictionResolutionEvent {
   id                        String                 @id @default(uuid())
   jurisdictionResolutionId  String
-  eventType                 String
+  eventType                 ResolutionEventType
   actorType                 ActorType?
   actorId                   String?
   metadata                  Json?
   createdAt                 DateTime               @default(now())
   jurisdictionResolution    JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
 }
+
+enum NotificationChannel {
+  SMS
+  WHATSAPP
+  EMAIL
+  PUSH
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+model Notification {
+  id            String               @id @default(uuid())
+  citizenId     String?
+  citizen       Citizen?             @relation(fields: [citizenId], references: [id])
+  channel       NotificationChannel
+  status        NotificationStatus
+  template      String
+  workflowType  String?
+  workflowId    String?
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+  sentAt        DateTime?
+}
+
+enum RoutingContext {
+  INCIDENT_LOCATION
+  APPLICANT_ADDRESS
+  PROPERTY_ADDRESS
+  EVENT_LOCATION
+  WORKPLACE_ADDRESS
+  OTHER
+}
+
+enum ResolutionEventType {
+  RESOLUTION_CREATED
+  AUTO_ASSIGNED
+  USER_CONFIRMED
+  USER_SELECTED
+  FALLBACK_ASSIGNED
+  OVERRIDDEN
+  EXPIRED
+}
+
+model SubmissionFingerprint {
+  id          String   @id @default(uuid())
+  fingerprint String   @unique
+  citizenId   String?
+  serviceType String
+  createdAt   DateTime @default(now())
+
+  @@index([citizenId])
+  @@index([serviceType])
+  @@index([createdAt])
+}
+
+

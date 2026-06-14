@@ -7,6 +7,8 @@ import {
   MatchType,
   ResolutionSource,
   ActorType,
+  ResolutionEventType,
+  RoutingContext,
 } from './jurisdiction-routing.types';
 
 @Injectable()
@@ -19,7 +21,7 @@ export class JurisdictionRepository {
     policeStationId?: string;
     serviceType: string;
     workflowId?: string;
-    routingContext: string;
+    routingContext: RoutingContext;
     sourceLocation: any;
     resolutionSource: ResolutionSource;
     confidence: number;
@@ -116,7 +118,7 @@ export class JurisdictionRepository {
 
   async createEvent(data: {
     jurisdictionResolutionId: string;
-    eventType: string;
+    eventType: ResolutionEventType;
     actorType?: ActorType;
     actorId?: string;
     metadata?: any;

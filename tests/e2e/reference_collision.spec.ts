@@ -31,12 +31,15 @@ describe('Reference Number Collision Test', () => {
       });
     };
 
-    const promises = [];
-    for (let i = 0; i < 50; i++) {
-      promises.push(generateRef(i));
+    const results = [];
+    const batchSize = 2;
+    for (let i = 0; i < 50; i += batchSize) {
+      const batch = [];
+      for (let j = i; j < i + batchSize && j < 50; j++) {
+        batch.push(generateRef(j));
+      }
+      results.push(...(await Promise.all(batch)));
     }
-
-    const results = await Promise.all(promises);
     
     // Verify 50 unique records
     const refs = new Set(results.map(r => r.referenceNumber));

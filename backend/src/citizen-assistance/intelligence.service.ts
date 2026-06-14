@@ -1,11 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
+import { SubmissionFingerprintService } from '../security/submission-fingerprint.service';
 
 @Injectable()
 export class IntelligenceService {
   private readonly logger = new Logger(IntelligenceService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  private fingerprintService: SubmissionFingerprintService;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    fingerprintService?: SubmissionFingerprintService
+  ) {
+    this.fingerprintService = fingerprintService || new SubmissionFingerprintService(this.prisma);
+  }
 
   async logInsight(sessionId: string, citizenId: string | null, workflowType: string | null, intent: string, score: number, language: string) {
     try {
@@ -60,8 +68,19 @@ export class IntelligenceService {
     if (text.includes('verify') || text.includes('verification') || text.includes('tenant') || text.includes('employee') || text.includes('domestic') || text.includes('satyapan') || text.includes('किरायेदार')) {
       return { category: 'VERIFICATION_ISSUE' };
     }
-    if (text.includes('slow') || text.includes('response') || text.includes('time') || text.includes('lag') || text.includes('delay') || text.includes('wait') || text.includes('time limit')) {
-      return { category: 'SLOW_RESPONSE' };
+    if (
+      text.includes('slow') ||
+      text.includes('lag') ||
+      text.includes('delay') ||
+      text.includes('response time') ||
+      text.includes('performance') ||
+      text.includes('loading') ||
+      text.includes('takes too long') ||
+      text.includes('slow response') ||
+      text.includes('wait') ||
+      text.includes('time limit')
+    ) {
+      return { category: 'PERFORMANCE' };
     }
     if (text.includes('ui') || text.includes('interface') || text.includes('button') || text.includes('screen') || text.includes('display') || text.includes('color') || text.includes('font') || text.includes('layout')) {
       return { category: 'UI_PROBLEM' };
@@ -70,21 +89,19 @@ export class IntelligenceService {
   }
 
   async saveFeedback(sessionId: string, citizenId: string | null, workflowType: string | null, rating: number, comments?: string, category?: string, subcategory?: string) {
+    const fingerprint = this.fingerprintService.generateFingerprint(citizenId, 'Feedback', { rating, comments });
+    if (await this.fingerprintService.isDuplicate(fingerprint, 'Feedback')) {
+      throw new BadRequestException({
+        success: false,
+        message: "Duplicate submission detected. Please wait before submitting again."
+      });
+    }
+    await this.fingerprintService.recordFingerprint(fingerprint, citizenId, 'Feedback');
+
     try {
       const classification = this.classifyFeedback(comments);
       const finalCategory = category || classification.category;
       const finalSubcategory = subcategory || classification.subcategory || null;
-      await this.prisma.feedback.create({
-        data: {
-          sessionId,
-          citizenId,
-          workflowType,
-          rating,
-          comments: comments === undefined ? null : comments,
-          category: finalCategory,
-          subcategory: finalSubcategory,
-        },
-      });
       await this.prisma.citizenFeedback.create({
         data: {
           sessionId,
@@ -100,6 +117,7 @@ export class IntelligenceService {
       this.logger.error(`Failed to save user feedback: ${e.message}`);
     }
   }
+
 
   async logUnansweredQuestion(question: string, language: string) {
     try {

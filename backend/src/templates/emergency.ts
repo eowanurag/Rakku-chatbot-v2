@@ -1,8 +1,8 @@
 import { LocalizationService } from '../localization/localization.service';
 
-export function getEmergencyMessage(lang: string, localizationService?: LocalizationService): string {
+export function getEmergencyMessage(lang: string, localizationService?: LocalizationService, sessionId?: string): string {
   if (localizationService) {
-    return localizationService.translate('EMERGENCY_MESSAGE', lang);
+    return localizationService.translate('EMERGENCY_MESSAGE', lang, undefined, undefined, sessionId);
   }
   
   const messages = {

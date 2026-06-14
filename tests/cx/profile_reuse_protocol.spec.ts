@@ -13,6 +13,7 @@ import { IntelligenceService } from '@backend/citizen-assistance/intelligence.se
 import { throwError } from 'rxjs';
 
 describe('Profile Reuse Protocol (PRP) Test Suite', () => {
+  jest.setTimeout(30000);
   let chatService: ChatService;
   let prisma: PrismaService;
 

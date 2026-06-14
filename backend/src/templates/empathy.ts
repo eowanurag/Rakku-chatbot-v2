@@ -1,6 +1,6 @@
 import { LocalizationService } from '../localization/localization.service';
 
-export function getEmpathyMessage(message: string, lang: string, localizationService?: LocalizationService): string {
+export function getEmpathyMessage(message: string, lang: string, localizationService?: LocalizationService, sessionId?: string): string {
   const cleanMsg = message.toLowerCase();
 
   const isEmployee = cleanMsg.includes('employee') || cleanMsg.includes('कर्मचारी');
@@ -9,13 +9,13 @@ export function getEmpathyMessage(message: string, lang: string, localizationSer
 
   if (localizationService) {
     if (isEmployee) {
-      return localizationService.translate('EMPATHY_EMPLOYEE_VERIFICATION', lang) + '\n\n';
+      return localizationService.translate('EMPATHY_EMPLOYEE_VERIFICATION', lang, undefined, undefined, sessionId) + '\n\n';
     }
     if (isTenant) {
-      return localizationService.translate('EMPATHY_TENANT_VERIFICATION', lang) + '\n\n';
+      return localizationService.translate('EMPATHY_TENANT_VERIFICATION', lang, undefined, undefined, sessionId) + '\n\n';
     }
     if (isCharacter) {
-      return localizationService.translate('EMPATHY_CHARACTER_CERTIFICATE', lang) + '\n\n';
+      return localizationService.translate('EMPATHY_CHARACTER_CERTIFICATE', lang, undefined, undefined, sessionId) + '\n\n';
     }
   }
 
@@ -49,20 +49,20 @@ export function getEmpathyMessage(message: string, lang: string, localizationSer
 
   if (localizationService) {
     if (isTheft) {
-      const servicesInfo = localizationService.translate('RECOMMENDED_SERVICES_THEFT', lang);
-      return localizationService.translate(`EMPATHY_THEFT_${itemType}`, lang, { servicesInfo });
+      const servicesInfo = localizationService.translate('RECOMMENDED_SERVICES_THEFT', lang, undefined, undefined, sessionId);
+      return localizationService.translate(`EMPATHY_THEFT_${itemType}`, lang, { servicesInfo }, undefined, sessionId);
     }
     if (isLost) {
-      return localizationService.translate('EMPATHY_LOST', lang);
+      return localizationService.translate('EMPATHY_LOST', lang, undefined, undefined, sessionId);
     }
     if (isHarassment) {
-      return localizationService.translate('EMPATHY_HARASSMENT', lang);
+      return localizationService.translate('EMPATHY_HARASSMENT', lang, undefined, undefined, sessionId);
     }
     if (isFraud) {
-      return localizationService.translate('EMPATHY_FRAUD', lang);
+      return localizationService.translate('EMPATHY_FRAUD', lang, undefined, undefined, sessionId);
     }
     if (isDistress) {
-      return localizationService.translate('EMPATHY_DISTRESS', lang);
+      return localizationService.translate('EMPATHY_DISTRESS', lang, undefined, undefined, sessionId);
     }
   }
 

@@ -1,5 +1,8 @@
 {
-  "version": "2026.01",
-  "generatedAt": "2026-06-14",
-  "description": "UP Initial Jurisdiction Dataset"
+  "version": "2026.02",
+  "coverage": {
+    "districts": 75,
+    "verifiedStations": 18,
+    "placeholderStations": 58
+  }
 }

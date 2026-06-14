@@ -88,11 +88,11 @@ describe('Feedback Intelligence Test Suite', () => {
     expect(commentAsk.suggestions).toContain('Skip');
 
     // Send skip
-    const prevCount = await prisma.citizenFeedback.count();
+    const prevCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     const finalRes = await chatService.sendMessage('Skip', sess);
     expect(finalRes.response).toContain('Thank you for your feedback');
 
-    const newCount = await prisma.citizenFeedback.count();
+    const newCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     expect(newCount - prevCount).toBe(1);
 
     const record = await prisma.citizenFeedback.findFirst({
@@ -117,11 +117,11 @@ describe('Feedback Intelligence Test Suite', () => {
     expect(rejectRes.response).toContain('Comments are required');
 
     // Now send actual comment indicating localization issue
-    const prevCount = await prisma.citizenFeedback.count();
+    const prevCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     const finalRes = await chatService.sendMessage('हिन्दी मे बात करों', sess);
     expect(finalRes.response).toContain('Thank you for your feedback');
 
-    const newCount = await prisma.citizenFeedback.count();
+    const newCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     expect(newCount - prevCount).toBe(1);
 
     const record = await prisma.citizenFeedback.findFirst({
@@ -140,7 +140,7 @@ describe('Feedback Intelligence Test Suite', () => {
     await chatService.sendMessage('1', sess);
 
     // Send comment about location
-    const prevCount = await prisma.citizenFeedback.count();
+    const prevCount = await prisma.citizenFeedback.count({ where: { sessionId: sess } });
     const finalRes = await chatService.sendMessage('the location detection has a zila/district error', sess);
     expect(finalRes.response).toContain('Thank you for your feedback');
 

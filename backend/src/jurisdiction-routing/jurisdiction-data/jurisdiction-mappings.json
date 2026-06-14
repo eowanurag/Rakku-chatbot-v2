@@ -2,36 +2,8 @@
   {
     "districtCode": "LUCKNOW",
     "cityCode": "LUCKNOW",
-    "localityCode": "GOMTI_NAGAR",
-    "stationCode": "UP-LKO-GOM-001",
-    "priority": 1
-  },
-  {
-    "districtCode": "LUCKNOW",
-    "cityCode": "LUCKNOW",
     "localityCode": "HAZRATGANJ",
     "stationCode": "UP-LKO-HAZ-001",
-    "priority": 1
-  },
-  {
-    "districtCode": "LUCKNOW",
-    "cityCode": "LUCKNOW",
-    "localityCode": "ALIGANJ",
-    "stationCode": "UP-LKO-ALI-001",
-    "priority": 1
-  },
-  {
-    "districtCode": "LUCKNOW",
-    "cityCode": "LUCKNOW",
-    "localityCode": "CHARBAGH",
-    "stationCode": "UP-LKO-CHA-001",
-    "priority": 1
-  },
-  {
-    "districtCode": "LUCKNOW",
-    "cityCode": "LUCKNOW",
-    "localityCode": "INDIRA_NAGAR",
-    "stationCode": "UP-LKO-IND-001",
     "priority": 1
   },
   {
@@ -74,6 +46,489 @@
     "cityCode": "BANKI",
     "localityCode": "BANKI",
     "stationCode": "UP-BAR-BNK-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "AGRA",
+    "cityCode": "AGRA",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-AGR-HAR-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "ALIGARH",
+    "cityCode": "ALIGARH",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-ALI-CIV-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "AMETHI",
+    "cityCode": "AMETHI",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-AME-GAU-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "BAREILLY",
+    "cityCode": "BAREILLY",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-BAR-IZT-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "GORAKHPUR",
+    "cityCode": "GORAKHPUR",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-GOR-CAN-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "MEERUT",
+    "cityCode": "MEERUT",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-MEE-CIV-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "AYODHYA",
+    "cityCode": "AYODHYA",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-AYO-COT-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "GAUTAM_BUDDHA_NAGAR",
+    "cityCode": "NOIDA",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-NOI-SEC-002",
+    "priority": 1
+  },
+  {
+    "districtCode": "MATHURA",
+    "cityCode": "MATHURA",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-MAT-KOT-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "JHANSI",
+    "cityCode": "JHANSI",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-JHA-KOT-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "MIRZAPUR",
+    "cityCode": "MIRZAPUR",
+    "localityCode": "DEFAULT",
+    "stationCode": "UP-MIR-KOT-001",
+    "priority": 1
+  },
+  {
+    "districtCode": "AMBEDKAR_NAGAR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_AMBEDKAR_NAGAR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "AMROHA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_AMROHA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "AURAIYA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_AURAIYA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "AZAMGARH",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_AZAMGARH_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BAGHPAT",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BAGHPAT_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BAHRAICH",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BAHRAICH_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BALLIA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BALLIA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BALRAMPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BALRAMPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BANDA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BANDA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BASTI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BASTI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BHADOHI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BHADOHI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BIJNOR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BIJNOR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BUDAUN",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BUDAUN_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "BULANDSHAHR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_BULANDSHAHR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "CHANDAULI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_CHANDAULI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "CHITRAKOOT",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_CHITRAKOOT_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "DEORIA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_DEORIA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "ETAH",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_ETAH_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "ETAWAH",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_ETAWAH_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "FARRUKHABAD",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_FARRUKHABAD_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "FATEHPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_FATEHPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "FIROZABAD",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_FIROZABAD_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "GHAZIPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_GHAZIPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "GONDA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_GONDA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "HAMIRPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_HAMIRPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "HAPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_HAPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "HARDOI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_HARDOI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "HATHRAS",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_HATHRAS_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "JALAUN",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_JALAUN_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "JAUNPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_JAUNPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "KANNAUJ",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_KANNAUJ_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "KANPUR_DEHAT",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_KANPUR_DEHAT_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "KASGANJ",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_KASGANJ_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "KAUSHAMBI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_KAUSHAMBI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "LAKHIMPUR_KHERI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_LAKHIMPUR_KHERI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "KUSHINAGAR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_KUSHINAGAR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "LALITPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_LALITPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "MAHARAJGANJ",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_MAHARAJGANJ_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "MAHOBA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_MAHOBA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "MAINPURI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_MAINPURI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "MAU",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_MAU_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "MORADABAD",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_MORADABAD_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "MUZAFFARNAGAR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_MUZAFFARNAGAR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "PILIBHIT",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_PILIBHIT_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "PRATAPGARH",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_PRATAPGARH_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "RAE_BARELI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_RAE_BARELI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "RAMPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_RAMPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SAHARANPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SAHARANPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SAMBHAL",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SAMBHAL_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SANT_KABIR_NAGAR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SANT_KABIR_NAGAR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SHAHJAHANPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SHAHJAHANPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SHAMLI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SHAMLI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SHRAVASTI",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SHRAVASTI_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SIDDHARTHNAGAR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SIDDHARTHNAGAR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SITAPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SITAPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SONBHADRA",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SONBHADRA_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "SULTANPUR",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_SULTANPUR_DEFAULT",
+    "priority": 1
+  },
+  {
+    "districtCode": "UNNAO",
+    "cityCode": "DEFAULT",
+    "localityCode": "DEFAULT",
+    "stationCode": "PS_UNNAO_DEFAULT",
     "priority": 1
   }
 ]

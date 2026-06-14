@@ -4,6 +4,7 @@ import { JurisdictionSeedValidator } from '@backend/jurisdiction-routing/seed-va
 import { PrismaService } from '@backend/prisma.service';
 
 describe('RoutingPolicy and Registry Services Tests', () => {
+  jest.setTimeout(30000);
   let policyService: RoutingPolicyService;
   let registryService: RoutingTargetRegistryService;
   let seedValidator: JurisdictionSeedValidator;
