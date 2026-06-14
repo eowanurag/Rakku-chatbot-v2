@@ -13,13 +13,19 @@ export class JurisdictionSeedValidator implements OnModuleInit {
   getDatasetPath(): string {
     const pathsToTry = [
       path.resolve(process.cwd(), 'shared/jurisdiction-data'),
+      path.resolve(__dirname, 'jurisdiction-data'),
       path.resolve(__dirname, '../../shared/jurisdiction-data'),
       path.resolve(__dirname, '../../../shared/jurisdiction-data'),
       path.resolve(__dirname, '../../../../shared/jurisdiction-data'),
+      path.resolve(process.cwd(), 'src/jurisdiction-routing/jurisdiction-data'),
+      path.resolve(process.cwd(), 'dist/jurisdiction-routing/jurisdiction-data'),
+      path.resolve(process.cwd(), 'backend/src/jurisdiction-routing/jurisdiction-data'),
     ];
 
     for (const p of pathsToTry) {
+      this.logger.log(`Checking candidate seed directory path: ${p}`);
       if (fs.existsSync(p) && fs.existsSync(path.join(p, 'manifest.json'))) {
+        this.logger.log(`Successfully resolved seed directory at: ${p}`);
         return p;
       }
     }

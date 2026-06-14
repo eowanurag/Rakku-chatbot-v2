@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -15,14 +15,21 @@ export class RoutingTargetRegistryService implements OnModuleInit {
   }
 
   private getDatasetPath(): string {
+    const logger = new Logger(RoutingTargetRegistryService.name);
     const pathsToTry = [
       path.resolve(process.cwd(), 'shared/jurisdiction-data'),
+      path.resolve(__dirname, 'jurisdiction-data'),
       path.resolve(__dirname, '../../shared/jurisdiction-data'),
       path.resolve(__dirname, '../../../shared/jurisdiction-data'),
+      path.resolve(process.cwd(), 'src/jurisdiction-routing/jurisdiction-data'),
+      path.resolve(process.cwd(), 'dist/jurisdiction-routing/jurisdiction-data'),
+      path.resolve(process.cwd(), 'backend/src/jurisdiction-routing/jurisdiction-data'),
     ];
 
     for (const p of pathsToTry) {
+      logger.log(`Checking candidate seed directory path: ${p}`);
       if (fs.existsSync(p) && fs.existsSync(path.join(p, 'manifest.json'))) {
+        logger.log(`Successfully resolved seed directory at: ${p}`);
         return p;
       }
     }

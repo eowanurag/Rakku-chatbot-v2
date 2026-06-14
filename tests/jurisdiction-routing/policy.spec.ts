@@ -43,6 +43,13 @@ describe('RoutingPolicy and Registry Services Tests', () => {
 
   it('validates the seed datasets', () => {
     expect(() => seedValidator.onModuleInit()).not.toThrow();
-    expect(seedValidator.getDatasetPath()).toBeDefined();
+    const resolvedPath = seedValidator.getDatasetPath();
+    expect(resolvedPath).toBeDefined();
+    const fs = require('fs');
+    const path = require('path');
+    expect(fs.existsSync(path.join(resolvedPath, 'manifest.json'))).toBe(true);
+    expect(fs.existsSync(path.join(resolvedPath, 'stations.json'))).toBe(true);
+    expect(fs.existsSync(path.join(resolvedPath, 'jurisdiction-mappings.json'))).toBe(true);
+    expect(fs.existsSync(path.join(resolvedPath, 'routing-policies.json'))).toBe(true);
   });
 });

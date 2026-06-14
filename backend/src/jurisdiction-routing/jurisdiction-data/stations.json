@@ -1,0 +1,123 @@
+[
+  {
+    "stationCode": "UP-LKO-HAZ-001",
+    "name": "Hazratganj Police Station",
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "HAZRATGANJ",
+    "latitude": 26.8467,
+    "longitude": 80.9462,
+    "phone": "0522-2200201",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-LKO-GOM-001",
+    "name": "Gomti Nagar Police Station",
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "GOMTI_NAGAR",
+    "latitude": 26.853,
+    "longitude": 81.0005,
+    "phone": "0522-2300304",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-LKO-ALI-001",
+    "name": "Aliganj Police Station",
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "ALIGANJ",
+    "latitude": 26.89,
+    "longitude": 80.9385,
+    "phone": "0522-2400405",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-LKO-CHA-001",
+    "name": "Charbagh GRP Police Station",
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "CHARBAGH",
+    "latitude": 26.8322,
+    "longitude": 80.9234,
+    "phone": "0522-2500506",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-LKO-IND-001",
+    "name": "Indira Nagar Police Station",
+    "districtCode": "LUCKNOW",
+    "cityCode": "LUCKNOW",
+    "localityCode": "INDIRA_NAGAR",
+    "latitude": 26.885,
+    "longitude": 80.998,
+    "phone": "0522-2600607",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-KAN-KAL-001",
+    "name": "Kalyanpur Police Station",
+    "districtCode": "KANPUR_NAGAR",
+    "cityCode": "KANPUR",
+    "localityCode": "KALYANPUR",
+    "latitude": 26.495,
+    "longitude": 80.258,
+    "phone": "0512-XXXXXXX",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-GBN-SEC-001",
+    "name": "Sector 58 Police Station",
+    "districtCode": "GAUTAM_BUDDHA_NAGAR",
+    "cityCode": "NOIDA",
+    "localityCode": "SECTOR_62",
+    "latitude": 28.598,
+    "longitude": 77.368,
+    "phone": "0120-XXXXXXX",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-VAR-CAN-001",
+    "name": "Cantonment Police Station",
+    "districtCode": "VARANASI",
+    "cityCode": "VARANASI",
+    "localityCode": "CANTONMENT",
+    "latitude": 25.328,
+    "longitude": 82.99,
+    "phone": "0542-XXXXXXX",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-GZB-IND-001",
+    "name": "Indirapuram Police Station",
+    "districtCode": "GHAZIABAD",
+    "cityCode": "GHAZIABAD",
+    "localityCode": "INDIRAPURAM",
+    "latitude": 28.636,
+    "longitude": 77.371,
+    "phone": "0120-YYYYYYY",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-PRG-CIV-001",
+    "name": "Civil Lines Police Station",
+    "districtCode": "PRAYAGRAJ",
+    "cityCode": "PRAYAGRAJ",
+    "localityCode": "CIVIL_LINES",
+    "latitude": 25.451,
+    "longitude": 81.841,
+    "phone": "0532-ZZZZZZZ",
+    "isActive": true
+  },
+  {
+    "stationCode": "UP-BAR-BNK-001",
+    "name": "Kotwali Banki Police Station",
+    "districtCode": "BARABANKI",
+    "cityCode": "BANKI",
+    "localityCode": "BANKI",
+    "latitude": 26.924,
+    "longitude": 81.189,
+    "phone": "05248-XXXXXX",
+    "isActive": true
+  }
+]
