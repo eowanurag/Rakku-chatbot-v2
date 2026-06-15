@@ -525,7 +525,8 @@ class WorkflowEngine:
             "killing", "ongoing crime", "stolen vehicle", "fire", "accident", "मदद", "खतरा", "हमला", "आग",
             "ongoing attack", "kidnapping", "burglary in progress", "immediate danger", "violence",
             "suicide", "self-harm", "injured", "अपहरण", "हत्या", "हिंसा", "धमकी", "आत्महत्या", "दुर्घटना", "घायल",
-            "attacking me", "someone is attacking", "attacking me right now"
+            "attacking me", "someone is attacking", "attacking me right now", "आपातकालीन", "सहायता",
+            "emergency help", "emergency contacts", "आपातकालीन सहायता"
         ]
         return any(word in clean_text for word in emergency_words)
 

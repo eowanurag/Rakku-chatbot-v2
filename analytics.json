@@ -1,5 +1,5 @@
 {
-  "help_requests": 7707,
+  "help_requests": 7712,
   "police_station_searches": 0,
   "helpline_recommendations": {
     "112": 4
@@ -7,7 +7,7 @@
   "emergency_overrides": 3,
   "language_distribution": {
     "en": 404,
-    "hi": 38,
-    "hinglish": 0
+    "hi": 39,
+    "hinglish": 1
   }
 }

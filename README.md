@@ -273,7 +273,7 @@ npm run build
 | v1.0-RC1 | 2026-06-14 | Rate Limiting, Fingerprint Lifecycle, 75 District Coverage, Placeholder UX Masking, Operational Validation |
 | v1.0-RC2 | 2026-06-15 | PRP Hardening: Review cards, source badges, screen reader announcements, and 6 dedicated integration tests |
 | v1.0-RC3 | 2026-06-15 | Feedback Intelligence: Category mapping alignment, rating pipelines, and 8 dedicated integration tests |
-| v1.0 | 2026-06-15 | V1 Production Ready: Release Candidate Audit & Hardening (100/100 readiness score, full-system verification) |
+| v1.0 | 2026-06-15 | V1 Production Ready: Release Candidate Audit, Localization Parity Hardening, and full-system verification |
 
 ## Contributing
 

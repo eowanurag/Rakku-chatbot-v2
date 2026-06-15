@@ -1144,11 +1144,11 @@ export class ChatService {
       }
     }
 
-    // 1. Emergency Checks
     const emergencyKeywords = [
       'danger', 'assault', 'threat', 'life', 'weapon', 'murder', 'burglar', 'attack', 'emergency',
       'मदद', 'खतरा', 'हमला', 'kidnapping', 'burglary', 'ongoing attack', 'burglary in progress', 'immediate danger',
-      'attacking me', 'someone is attacking', 'attacking me right now'
+      'attacking me', 'someone is attacking', 'attacking me right now', 'आपातकालीन', 'सहायता',
+      'emergency help', 'emergency contacts', 'आपातकालीन सहायता'
     ];
     if (emergencyKeywords.some(keyword => cleanMsg.includes(keyword))) {
       state.workflow = null;
