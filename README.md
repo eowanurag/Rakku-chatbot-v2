@@ -88,12 +88,14 @@ Supabase/PostgreSQL
 
 ```text
 Rakku-chatbot-v1/
-├── docker-compose.yml               # Environment variables template
+├── docker-compose.yml               # Docker configuration
 ├── .env.example                     # Environment variables template
 ├── README.md                        # Project documentation
+├── COMPREHENSIVE_GUIDE.md           # Developer onboarding guide
 ├── shared/
 │   ├── message_library.json         # All conversational strings
-│   └── officer_persona.md           # Persona guardrails for the AI
+│   ├── officer_persona.md           # Persona guardrails for the AI
+│   └── jurisdiction-data/           # 75 UP districts metadata
 ├── frontend/
 │   ├── package.json                 # Frontend dependencies
 │   ├── next.config.js               # Next.js configuration
@@ -102,11 +104,10 @@ Rakku-chatbot-v1/
 │   └── src/
 │       ├── app/
 │       │   ├── chat/
-│       │   │   ├── page.tsx         # Chat page component
-│       │   │   └── components/     # Chat UI components (ChatBubble, TypingIndicator, etc.)
+│       │   │   └── page.tsx         # Chat page component
 │       │   ├── admin/               # Admin dashboard components
 │       │   ├── track/               # Application tracking UI
-│       │   └── layout/              # Shared layout components (Header, Footer)
+│       │   └── dashboard/           # Citizen Services Hub
 │       ├── components/
 │       │   ├── chat/
 │       │   │   ├── ChatBubble.tsx
@@ -115,20 +116,11 @@ Rakku-chatbot-v1/
 │       │   ├── dashboard/
 │       │   │   ├── ApplicationCard.tsx
 │       │   │   └── ServiceCard.tsx
-│       │   ├── layout/
-│       │   │   ├── ErrorBoundary.tsx
-│       │   │   ├── Footer.tsx
-│       │   │   └── Header.tsx
 │       │   ├── review/
 │       │   │   ├── ApplicantReviewCard.tsx
 │       │   │   ├── ServiceReviewCard.tsx
 │       │   │   └── ValidationStatusCard.tsx
-│       │   ├── tracking/
-│       │   │   └── TrackingTimeline.tsx
 │       │   └── ui/
-│       │       ├── EmptyState.tsx
-│       │       ├── LoadingCard.tsx
-│       │       ├── PageContainer.tsx
 │       │       └── StatusBadge.tsx
 │       └── services/
 │           └── api.ts               # API client wrapper
@@ -142,16 +134,18 @@ Rakku-chatbot-v1/
 │       ├── chat/
 │       │   ├── chat.service.ts      # Chat fallback logic
 │       │   └── chat.controller.ts   # Chat HTTP endpoints
-│       ├── validation/
-│       │   └── validation.service.ts # Input validation utilities
-│       └── ...                      # Additional services/modules
+│       ├── security/
+│       │   ├── rate-limiter/        # Rate limiting logic
+│       │   └── fingerprint/         # DB-backed fingerprint guard
+│       └── jurisdiction-routing/    # 75-district router
 └── ai-service/
     ├── requirements.txt             # Python dependencies
-    ├── main.py                       # FastAPI entrypoint
-    ├── workflow_engine.py            # Slot‑filling state machine
-    ├── gemini_client.py              # Gemini API integration
-    └── utils/
-        └── helpers.ts                # Helper functions for AI service
+    ├── main.py                      # FastAPI entrypoint
+    ├── workflow_engine.py           # Slot-filling state machine
+    ├── gemini_client.py             # Gemini API client
+    ├── rag_engine.py                # Local Vector RAG search
+    ├── knowledge_base.json          # Policy/FAQ database
+    └── Dockerfile                   # Docker container configuration
 ```
 
 ## Features
@@ -179,7 +173,8 @@ Rakku-chatbot-v1/
 - **State Machine Sequences**: Automatically handles complex welcome experience state flows and timed auto-idle transitions.
 - **Multilingual Support**: Supports English, Hindi, and Hinglish.
 - **Workflow Automation & Smart Validation**: In-context slot filling and validations.
-- **Profile Reuse Protocol (PRP)**: A generic engine (`handleProfileReuseProtocol`) mapping verified Citizen profiles to target service roles (e.g. Subject or Organizer) to eliminate redundant inputs while preserving database isolation for third-party submissions.
+- **Profile Reuse Protocol (PRP)**: A generic engine (`handleProfileReuseProtocol`) mapping verified Citizen profiles to target service roles (e.g. Subject or Organizer) to eliminate redundant inputs while preserving database isolation for third-party submissions. Enforces high-contrast UI review cards, dynamic profile source badges (`Verified Profile` or `Manual Entry`), and screen reader live accessibility announcements (`Announcements.announce`) vocalizing pre-fill triggers.
+- **Feedback Intelligence**: Supports multi-category feedback collection (e.g. PERFORMANCE, ACCESSIBILITY, CLARITY, ACCURACY, OTHER) with matching FastAPI backend/NestJS fallback processing, rating pipelines, and frontend verification.
 - **Jurisdiction Dataset Coverage**: Fully maps all 75 Uttar Pradesh districts. Validates data integrity on system boot.
 - **Placeholder Routing UX**: Masks GPS coordinates, phone numbers, and maps URLs for unverified district placeholders and presents a provisional routing notice.
 
@@ -258,7 +253,7 @@ npm run build
 
 ## Project Status
 
-**Current Phase:** V1 RELEASE CANDIDATE READY (100% Verification Score)
+**Current Phase:** V1 PRODUCTION READY (100% Verification Score)
 **Next Milestone:** Production Deployment & Monitoring
 
 **Key Focus Areas:**
@@ -276,6 +271,9 @@ npm run build
 | v0.4 | MTF Testing Framework | QA & Stability |
 | v0.5 | 2026-06-14 | Profile Reuse Protocol (PRP) Engine & Schema Upgrades |
 | v1.0-RC1 | 2026-06-14 | Rate Limiting, Fingerprint Lifecycle, 75 District Coverage, Placeholder UX Masking, Operational Validation |
+| v1.0-RC2 | 2026-06-15 | PRP Hardening: Review cards, source badges, screen reader announcements, and 6 dedicated integration tests |
+| v1.0-RC3 | 2026-06-15 | Feedback Intelligence: Category mapping alignment, rating pipelines, and 8 dedicated integration tests |
+| v1.0 | 2026-06-15 | V1 Production Ready: Release Candidate Audit & Hardening (100/100 readiness score, full-system verification) |
 
 ## Contributing
 

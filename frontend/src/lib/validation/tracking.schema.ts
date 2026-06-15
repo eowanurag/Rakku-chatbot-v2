@@ -14,7 +14,7 @@ export const ApplicationTrackingStatusSchema = z.object({
   status: z.string(),
   updatedAt: z.string(),
   milestones: z.array(TrackingMilestoneSchema),
-  details: z.record(z.any()).optional(),
+  details: z.record(z.string(), z.any()).optional(),
 });
 
 export type ApplicationTrackingStatusDto = z.infer<typeof ApplicationTrackingStatusSchema>;
