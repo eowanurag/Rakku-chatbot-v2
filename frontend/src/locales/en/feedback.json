@@ -1,0 +1,20 @@
+{
+  "categories": {
+    "LOCALIZATION": "Localization Issues",
+    "CONFUSING_FLOW": "Confusing Workflow",
+    "DUPLICATE_DATA_COLLECTION": "Duplicate Data Collection",
+    "LOCATION_ERROR": "Location Error",
+    "TRACKING_ISSUE": "Tracking Issue",
+    "VERIFICATION_ISSUE": "Verification Issue",
+    "UI_PROBLEM": "UI Problem",
+    "PERFORMANCE": "Performance Issue",
+    "OTHER": "Other"
+  },
+  "rating": {
+    "title": "Rate our Service",
+    "comment_optional": "Comments (Optional)",
+    "comment_required": "Comments (Required)",
+    "skip": "Skip",
+    "submit": "Submit"
+  }
+}

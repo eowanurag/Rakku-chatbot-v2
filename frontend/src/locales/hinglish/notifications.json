@@ -1,0 +1,7 @@
+{
+  "application_approved": "Application {{applicationId}} approve ho gayi hai.",
+  "application_rejected": "Application {{applicationId}} reject ho gayi hai.",
+  "additional_info_required": "Application {{applicationId}} ke liye extra info chahiye.",
+  "verification_completed": "Verification completed successfully.",
+  "certificate_generated": "{{name}} ke liye Character Certificate generate ho gaya hai."
+}

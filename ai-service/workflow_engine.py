@@ -73,10 +73,11 @@ def classify_feedback(comments: str) -> str:
     if any(w in text for w in ['verify', 'verification', 'tenant', 'employee', 'domestic', 'satyapan', 'किरायेदार']):
         return 'VERIFICATION_ISSUE'
     if any(w in text for w in ['slow', 'response', 'time', 'lag', 'delay', 'wait', 'time limit']):
-        return 'SLOW_RESPONSE'
+        return 'PERFORMANCE'
     if any(w in text for w in ['ui', 'interface', 'button', 'screen', 'display', 'color', 'font', 'layout']):
         return 'UI_PROBLEM'
     return 'OTHER'
+
 
 def load_message_library():
     global MESSAGE_LIBRARY
@@ -1152,7 +1153,13 @@ class WorkflowEngine:
         # Main active workflow logic
         session.currentWorkflowState = "SERVICE_COLLECTION"
         fields = self.get_workflow_fields(session)
-        
+
+        # PRP flow interceptor
+        if self.requires_profile_reuse(session.workflow) and (str(session.step) in ['1', 'PRP_INIT', 'PRP_CHOICE', 'PRP_CONFIRM', 'ORG_NAME', 'ORG_ADDRESS', 'ORG_MOBILE']):
+            prp_res = self.handle_profile_reuse_protocol_flow(session, message)
+            if prp_res is not None:
+                return prp_res
+
         # Auto-detect fields on start
         if session.step == 0:
             if session.workflow == "complaint":
@@ -1301,7 +1308,194 @@ class WorkflowEngine:
             }
         }
         return errors.get(workflow, {}).get(field_name, "⚠️ I may not have understood correctly. Could you please provide that information in a different way?")
+    def requires_profile_reuse(self, workflow: str) -> bool:
+        return workflow in ['certificate', 'event']
 
+    def handle_profile_reuse_protocol_flow(self, session: WorkflowSession, message: str) -> dict | None:
+        lang = session.language
+        clean_msg = message.strip().lower()
+        step = str(session.step)
+
+        address_parts = [
+            session.addressLine1,
+            session.addressLine2,
+            session.city,
+            session.pincode
+        ]
+        address_str = ", ".join([p for p in address_parts if p])
+
+        prompts = {
+            "en": {
+                "foundProfile": f"I found a verified profile:\n\nName: **{session.fullName}**\nAddress: **{address_str}**\n\nHow would you like to proceed?",
+                "options": ["Use My Verified Details", "Apply For Someone Else"],
+                "confirmUse": f"I will use your verified details for this application.\n\nName: **{session.fullName}**\nAddress: **{address_str}**\n\nContinue?",
+                "confirmOptions": ["Continue", "Modify Details"],
+            },
+            "hi": {
+                "foundProfile": f"मुझे एक सत्यापित प्रोफ़ाइल मिली है:\n\nनाम: **{session.fullName}**\nपता: **{address_str}**\n\nआप कैसे आगे बढ़ना चाहेंगे?",
+                "options": ["मेरे सत्यापित विवरण का उपयोग करें", "किसी अन्य व्यक्ति के लिए आवेदन करें"],
+                "confirmUse": f"मैं इस आवेदन के लिए आपके सत्यापित विवरणों का उपयोग करूँगा।\n\nनाम: **{session.fullName}**\nपता: **{address_str}**\n\nजारी रखें?",
+                "confirmOptions": ["जारी रखें", "विवरण बदलें"],
+            },
+            "hinglish": {
+                "foundProfile": f"Mujhe ek verified profile mili hai:\n\nName: **{session.fullName}**\nAddress: **{address_str}**\n\nKaise proceed karna chahenge?",
+                "options": ["Use My Verified Details", "Apply For Someone Else"],
+                "confirmUse": f"Main is application ke liye aapke verified details use karunga.\n\nName: **{session.fullName}**\nAddress: **{address_str}**\n\nContinue?",
+                "confirmOptions": ["Continue", "Modify Details"],
+            }
+        }
+
+        if step in ['1', 'PRP_INIT']:
+            session.step = 'PRP_CHOICE'
+            return {
+                "intercepted": True,
+                "response": prompts[lang]["foundProfile"],
+                "suggestions": prompts[lang]["options"]
+            }
+
+        if step == 'PRP_CHOICE':
+            is_self = "use my verified details" in clean_msg or "मेरे सत्यापित विवरण" in clean_msg or clean_msg == "myself" or clean_msg == "mere liye" or "option:use my verified details" in clean_msg or "option:mere सत्यापित विवरण" in clean_msg
+            is_someone_else = "someone else" in clean_msg or "किसी अन्य व्यक्ति" in clean_msg or "kisi aur" in clean_msg or clean_msg == "someone else" or clean_msg == "kisi aur ke liye" or "option:apply for someone else" in clean_msg or "option:किसी अन्य व्यक्ति" in clean_msg
+
+            if is_self:
+                session.data["prpSource"] = "REUSED"
+                if session.workflow == "certificate":
+                    session.data["name"] = session.fullName
+                    session.data["address"] = address_str
+                    session.data["district"] = session.district or session.city or 'Lucknow'
+                    session.data["isSelf"] = True
+                elif session.workflow == "event":
+                    session.data["organizerName"] = session.fullName
+                    session.data["organizerAddress"] = address_str
+                    session.data["organizerMobile"] = session.mobileNumber
+                    session.data["organizerIsApplicant"] = True
+                    session.data["isSelf"] = True
+                session.step = 'PRP_CONFIRM'
+                return {
+                    "intercepted": True,
+                    "response": prompts[lang]["confirmUse"],
+                    "suggestions": prompts[lang]["confirmOptions"]
+                }
+            elif is_someone_else:
+                session.data["prpSource"] = "MANUAL"
+                if session.workflow == "certificate":
+                    session.data["isSelf"] = False
+                    session.step = 2
+                    first_field = self.workflow_fields["certificate"][0]
+                    session.currentExpectedField = first_field["name"]
+                    return {
+                        "intercepted": True,
+                        "response": self._format_question(session, first_field, lang, 2),
+                        "suggestions": first_field.get("suggestions", [])
+                    }
+                elif session.workflow == "event":
+                    session.data["organizerIsApplicant"] = False
+                    session.step = "ORG_NAME"
+                    session.currentExpectedField = "organizerName"
+                    return {
+                        "intercepted": True,
+                        "response": "Please enter the Organizer's Full Name:",
+                        "suggestions": []
+                    }
+            else:
+                return {
+                    "intercepted": True,
+                    "response": prompts[lang]["foundProfile"],
+                    "suggestions": prompts[lang]["options"]
+                }
+
+        if step == 'PRP_CONFIRM':
+            is_continue = clean_msg == 'continue' or "option:continue" in clean_msg or "जारी रखें" in clean_msg or "option:जारी रखें" in clean_msg
+            is_modify = clean_msg == 'modify details' or "option:modify details" in clean_msg or "विवरण बदलें" in clean_msg or "option:विवरण बदलें" in clean_msg
+
+            if is_continue:
+                if session.workflow == "certificate":
+                    session.step = 4
+                    purpose_field = self.workflow_fields["certificate"][3]
+                    session.currentExpectedField = purpose_field["name"]
+                    return {
+                        "intercepted": True,
+                        "response": self._format_question(session, purpose_field, lang, 4),
+                        "suggestions": purpose_field.get("suggestions", [])
+                    }
+                elif session.workflow == "event":
+                    session.step = 2
+                    name_field = self.workflow_fields["event"][1]
+                    session.currentExpectedField = name_field["name"]
+                    return {
+                        "intercepted": True,
+                        "response": self._format_question(session, name_field, lang, 2),
+                        "suggestions": name_field.get("suggestions", [])
+                    }
+            elif is_modify:
+                session.data["prpSource"] = "MANUAL"
+                if session.workflow == "certificate":
+                    session.data["isSelf"] = False
+                    session.step = 2
+                    first_field = self.workflow_fields["certificate"][0]
+                    session.currentExpectedField = first_field["name"]
+                    return {
+                        "intercepted": True,
+                        "response": self._format_question(session, first_field, lang, 2),
+                        "suggestions": first_field.get("suggestions", [])
+                    }
+                elif session.workflow == "event":
+                    session.data["organizerIsApplicant"] = False
+                    session.step = "ORG_NAME"
+                    session.currentExpectedField = "organizerName"
+                    return {
+                        "intercepted": True,
+                        "response": "Please enter the Organizer's Full Name:",
+                        "suggestions": []
+                    }
+            else:
+                return {
+                    "intercepted": True,
+                    "response": prompts[lang]["confirmUse"],
+                    "suggestions": prompts[lang]["confirmOptions"]
+                }
+
+        if step == 'ORG_NAME':
+            if not validate_name(message):
+                return {
+                    "intercepted": True,
+                    "response": "⚠️ Please enter a valid organizer full name (first name and last name):",
+                    "suggestions": []
+                }
+            session.data["organizerName"] = message.strip().title()
+            session.step = 'ORG_ADDRESS'
+            return {
+                "intercepted": True,
+                "response": "Please enter the Organizer's Complete Address:",
+                "suggestions": []
+            }
+
+        if step == 'ORG_ADDRESS':
+            session.data["organizerAddress"] = message.strip()
+            session.step = 'ORG_MOBILE'
+            return {
+                "intercepted": True,
+                "response": "Please enter the Organizer's Mobile Number:",
+                "suggestions": []
+            }
+
+        if step == 'ORG_MOBILE':
+            if not validate_mobile(message):
+                return {
+                    "intercepted": True,
+                    "response": "⚠️ Please provide a valid 10-digit mobile number:",
+                    "suggestions": []
+                }
+            session.data["organizerMobile"] = normalize_mobile(message)
+            session.step = 2
+            name_field = self.workflow_fields["event"][1]
+            session.currentExpectedField = name_field["name"]
+            return {
+                "intercepted": True,
+                "response": self._format_question(session, name_field, lang, 2),
+                "suggestions": name_field.get("suggestions", [])
+            }
+        return None
 
     def render_presubmission_review_screen(self, session: WorkflowSession) -> dict:
         name_valid = validate_name(session.fullName)
@@ -1405,21 +1599,29 @@ class WorkflowEngine:
                 f"- Residing Property Details: **{session.data.get('property_details')}**"
             )
         elif session.workflow == "certificate":
+            is_self = session.data.get("isSelf") == True
+            source_label = "✓ Reused From Verified Profile" if is_self else "✓ Provided Manually"
             subject_details = (
                 f"📜 **Certificate Request Details:**\n"
                 f"- Subject Name: **{session.data.get('name')}**\n"
                 f"- Subject Address: **{session.data.get('address')}**\n"
                 f"- Applying District: **{session.data.get('district')}**\n"
-                f"- Certificate Purpose: **{session.data.get('purpose')}**"
+                f"- Certificate Purpose: **{session.data.get('purpose')}**\n\n"
+                f"**Subject Information Source:**\n"
+                f"{source_label}"
             )
         elif session.workflow == "event":
+            is_self = session.data.get("organizerIsApplicant") != False
+            source_label = "✓ Reused From Verified Profile" if is_self else "✓ Provided Manually"
             subject_details = (
                 f"🎭 **Event Permission Request Details:**\n"
                 f"- Request Type: **{session.data.get('event_type')}**\n"
                 f"- Event Name: **{session.data.get('event_name')}**\n"
                 f"- Event Location/Route: **{session.data.get('location')}**\n"
                 f"- Scheduled Date: **{session.data.get('date')}**\n"
-                f"- Expected Attendance: **{session.data.get('expected_attendance')}**"
+                f"- Expected Attendance: **{session.data.get('expected_attendance')}**\n\n"
+                f"**Organizer Information Source:**\n"
+                f"{source_label}"
             )
             
         review_screen = (
@@ -2227,7 +2429,9 @@ class WorkflowEngine:
                     "district": data.get("district"),
                     "purpose": data.get("purpose"),
                     "refNum": ref_num,
-                    "citizenId": citizen_id
+                    "citizenId": citizen_id,
+                    "usedProfileReuse": data.get("isSelf") == True,
+                    "isSelf": data.get("isSelf") == True
                 }
             }
             resp_str = (
@@ -2252,7 +2456,13 @@ class WorkflowEngine:
                     "date": data.get("date"),
                     "attendance": int(data.get("expected_attendance")) if str(data.get("expected_attendance")).isdigit() else 100,
                     "refNum": ref_num,
-                    "citizenId": citizen_id
+                    "citizenId": citizen_id,
+                    "organizerName": data.get("organizerName"),
+                    "organizerAddress": data.get("organizerAddress"),
+                    "organizerMobile": data.get("organizerMobile"),
+                    "organizerIsApplicant": data.get("organizerIsApplicant") != False,
+                    "usedProfileReuse": data.get("organizerIsApplicant") != False,
+                    "isSelf": data.get("organizerIsApplicant") != False
                 }
             }
             resp_str = (

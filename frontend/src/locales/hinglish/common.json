@@ -1,0 +1,19 @@
+{
+  "welcome": "Rakku citizen portal me aapka welcome hai",
+  "police_assistant": "Uttar Pradesh ke liye Digital Police aur e-Governance Assistant",
+  "submit": "Submit karein",
+  "cancel": "Cancel",
+  "retry": "Retry karein",
+  "offline_message": "Aap abhi offline hain. Please check karein internet connection.",
+  "error_occurred": "Page load karne me error aa gaya.",
+  "prp": {
+    "title": "Verified Profile Verification",
+    "use_verified_profile": "Mere verified details use karein",
+    "apply_for_someone_else": "Kisi aur ke liye apply karein",
+    "profile_source": "Profile source",
+    "verified_profile": "Verified Profile",
+    "manual_entry": "Manual entry",
+    "applicant": "Applicant",
+    "subject": "Subject"
+  }
+}

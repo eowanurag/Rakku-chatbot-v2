@@ -366,8 +366,24 @@
     border-color: rgba(239, 68, 68, 1);
   }
 }
-.animate-rakku-emergency-glow {
-  animation: rakku-emergency-glow 1.5s infinite;
+/* --- Reduced Motion Accessibility Override --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-ping,
+  .animate-rakku-float,
+  .animate-rakku-pulse-soft,
+  .animate-rakku-scale-bounce,
+  .animate-rakku-emergency-glow {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 

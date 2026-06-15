@@ -1,0 +1,20 @@
+{
+  "categories": {
+    "LOCALIZATION": "भाषा/अनुवाद संबंधी समस्याएं",
+    "CONFUSING_FLOW": "भ्रमित करने वाली प्रक्रिया",
+    "DUPLICATE_DATA_COLLECTION": "दोहरी जानकारी संग्रह",
+    "LOCATION_ERROR": "स्थान संबंधी त्रुटि",
+    "TRACKING_ISSUE": "ट्रैकिंग संबंधी समस्या",
+    "VERIFICATION_ISSUE": "सत्यापन संबंधी समस्या",
+    "UI_PROBLEM": "यूआई संबंधी समस्या",
+    "PERFORMANCE": "धीमी गति/प्रदर्शन संबंधी समस्या",
+    "OTHER": "अन्य"
+  },
+  "rating": {
+    "title": "हमारी सेवा को रेट करें",
+    "comment_optional": "टिप्पणी (वैकल्पिक)",
+    "comment_required": "टिप्पणी (आवश्यक)",
+    "skip": "छोड़ें",
+    "submit": "जमा करें"
+  }
+}

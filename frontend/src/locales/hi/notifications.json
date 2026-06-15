@@ -1,0 +1,7 @@
+{
+  "application_approved": "आवेदन {{applicationId}} स्वीकृत कर दिया गया है।",
+  "application_rejected": "आवेदन {{applicationId}} अस्वीकृत कर दिया गया है।",
+  "additional_info_required": "आवेदन {{applicationId}} के लिए अतिरिक्त जानकारी की आवश्यकता है।",
+  "verification_completed": "सत्यापन सफलतापूर्वक पूरा हुआ।",
+  "certificate_generated": "{{name}} के लिए चरित्र प्रमाण पत्र तैयार हो गया है।"
+}

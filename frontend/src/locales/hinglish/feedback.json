@@ -1,0 +1,20 @@
+{
+  "categories": {
+    "LOCALIZATION": "Language/Translation related issues",
+    "CONFUSING_FLOW": "Confusing workflow",
+    "DUPLICATE_DATA_COLLECTION": "Duplicate data collection",
+    "LOCATION_ERROR": "Location error",
+    "TRACKING_ISSUE": "Tracking issue",
+    "VERIFICATION_ISSUE": "Verification issue",
+    "UI_PROBLEM": "UI problem",
+    "PERFORMANCE": "Performance/Speed issue",
+    "OTHER": "Other"
+  },
+  "rating": {
+    "title": "Hamari service ko rate karein",
+    "comment_optional": "Comments (Optional)",
+    "comment_required": "Comments (Required)",
+    "skip": "Skip",
+    "submit": "Submit"
+  }
+}

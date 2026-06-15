@@ -1,0 +1,19 @@
+{
+  "welcome": "Welcome to Rakku citizen portal",
+  "police_assistant": "Digital Police & e-Governance Assistant for Uttar Pradesh",
+  "submit": "Submit",
+  "cancel": "Cancel",
+  "retry": "Retry",
+  "offline_message": "You are currently offline. Please check your internet connection.",
+  "error_occurred": "An error occurred while loading this page.",
+  "prp": {
+    "title": "Verified Profile Verification",
+    "use_verified_profile": "Use My Verified Details",
+    "apply_for_someone_else": "Apply For Someone Else",
+    "profile_source": "Profile Source",
+    "verified_profile": "Verified Profile",
+    "manual_entry": "Manual Entry",
+    "applicant": "Applicant",
+    "subject": "Subject"
+  }
+}

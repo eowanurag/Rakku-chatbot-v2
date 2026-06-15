@@ -24,6 +24,7 @@ import RakkuFloatingAssistant from "../../components/chat/RakkuFloatingAssistant
 import RakkuWelcomeCard from "../../components/chat/RakkuWelcomeCard";
 import ChatMessage from "../../components/chat/ChatMessage";
 import { avatarImages } from "../../utils/avatarConfig";
+import Announcements from "../../lib/accessibility/announcements";
 
 const getBackendUrl = () => {
   if (typeof window === "undefined") {
@@ -397,6 +398,14 @@ function ChatContent() {
     }
 
     const cleanLower = userText.toLowerCase().trim();
+
+    // Gap 4 Accessibility Announcements
+    if (cleanLower.includes("use my verified details") || cleanLower.includes("मेरे सत्यापित विवरण") || cleanLower.includes("option:use my verified details")) {
+      Announcements.announce("Verified details loaded successfully.", "polite");
+    } else if (cleanLower.includes("apply for someone else") || cleanLower.includes("किसी अन्य व्यक्ति") || cleanLower.includes("kisi aur ke liye") || cleanLower.includes("option:apply for someone else")) {
+      Announcements.announce("Manual entry selected.", "polite");
+    }
+
 
     // --- Police Station trigger keywords ---
     const isPoliceStationQuery =
