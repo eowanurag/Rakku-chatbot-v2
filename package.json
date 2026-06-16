@@ -23,7 +23,7 @@
     "@nestjs/event-emitter": "^3.1.0",
     "@prisma/client": "^6.0.0"
   },
-  "name": "rakku-chatbot-v1",
+  "name": "rakku-chatbot-v2",
   "version": "1.0.0",
   "description": "Rakku is an AI-powered conversational citizen-service assistant prototype designed for **Uttar Pradesh Police Citizen Services**. The assistant helps citizens discover digital services, understand procedures, and navigate workflows (Complaints, Tenant Verification, Character Certificates, Event Permissions) using natural language (supporting English, Hindi, and Hinglish).",
   "main": "index.js",

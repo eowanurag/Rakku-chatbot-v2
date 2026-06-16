@@ -15,9 +15,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   ai-service:
-    build:
-      context: ./ai-service
-      dockerfile: Dockerfile
+    image: rakku-chatbot-v1-ai-service:latest
     container_name: rakku-ai-service
     restart: always
     ports:
@@ -32,9 +30,7 @@ services:
         max-size: "10m"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: rakku-chatbot-v1-backend:latest
     container_name: rakku-backend
     restart: always
     ports:
@@ -52,9 +48,7 @@ services:
         max-size: "10m"
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: rakku-chatbot-v1-frontend:latest
     container_name: rakku-frontend
     restart: always
     ports:

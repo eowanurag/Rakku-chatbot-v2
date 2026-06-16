@@ -22,7 +22,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'http://127.0.0.1:3000',
-      'https://rakku-chatbot-v1.vercel.app',
+      'https://rakku-chatbot-v2.vercel.app',
     ],
     credentials: true,
   });
