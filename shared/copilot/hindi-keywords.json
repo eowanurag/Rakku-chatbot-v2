@@ -1,0 +1,18 @@
+{
+  "chori": "PROPERTY_THEFT",
+  "khoya": "LOST_PROPERTY",
+  "gaya": "LOST_PROPERTY",
+  "dhokha": "CYBER_FRAUD",
+  "kiraye": "TENANT_VERIFICATION",
+  "satyapan": "TENANT_VERIFICATION",
+  "praman": "CHARACTER_CERTIFICATE",
+  "charitra": "CHARACTER_CERTIFICATE",
+  "anumati": "EVENT_PERMISSION",
+  "aayojan": "EVENT_PERMISSION",
+  "najari": "POLICE_STATION_LOOKUP",
+  "thana": "POLICE_STATION_LOOKUP",
+  "paresha": "HARASSMENT",
+  "tang": "HARASSMENT",
+  "dhamki": "THREAT",
+  "bachao": "EMERGENCY_HELP"
+}

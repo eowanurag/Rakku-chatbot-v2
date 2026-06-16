@@ -1,0 +1,6 @@
+{
+  "critical_keywords": ["kidnapping", "assault", "rape", "danger", "suicide", "emergency", "weapon", "killing"],
+  "high_keywords": ["fraud", "threat", "harass", "stalk", "blackmail", "scam", "cheat"],
+  "medium_keywords": ["stolen", "stole", "theft", "missing", "rob", "lost", "misplace"],
+  "low_keywords": ["certificate", "verify", "verification", "status", "track", "permission", "station", "help"]
+}

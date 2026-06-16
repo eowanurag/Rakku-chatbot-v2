@@ -42,6 +42,8 @@ import { IntelligenceService } from './citizen-assistance/intelligence.service';
 import { LocalizationModule } from './localization/localization.module';
 import { JurisdictionRoutingModule } from './jurisdiction-routing/jurisdiction-routing.module';
 import { NotificationModule } from './notification/notification.module';
+import { SituationAssessmentModule } from './situation-assessment/situation-assessment.module';
+import { ComplaintIntelligenceModule } from './complaint-intelligence/complaint-intelligence.module';
 
 @Module({
   imports: [
@@ -57,6 +59,8 @@ import { NotificationModule } from './notification/notification.module';
     LocalizationModule,
     JurisdictionRoutingModule,
     NotificationModule,
+    SituationAssessmentModule,
+    ComplaintIntelligenceModule,
   ],
   controllers: [
     ComplaintController,

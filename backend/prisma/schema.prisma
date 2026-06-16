@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://postgres.mlvtsaltkhnvjevlyzfy:bUwXj8qyz25qXugC@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
 }
 
 model Citizen {
@@ -29,8 +29,8 @@ model Citizen {
   certificates         CharacterCertificate[]
   complaints           Complaint[]
   permissions          EventPermission[]
-  verifications        Verification[]
   notifications        Notification[]
+  verifications        Verification[]
 }
 
 model Complaint {
@@ -140,23 +140,27 @@ model WorkflowSession {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  sessionId   String
-  eventType   String
-  eventData   Json
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  sessionId String
+  eventType String
+  eventData Json
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([createdAt])
 }
 
 model TrackingRecord {
-  id                String   @id @default(cuid())
-  referenceNumber   String   @unique
-  serviceType       String
-  entityId          String
-  citizenId         String?
-  currentStatus     String
-  statusHistory     Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String   @id @default(cuid())
+  referenceNumber String   @unique
+  serviceType     String
+  entityId        String
+  citizenId       String?
+  currentStatus   String
+  statusHistory   Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model ConversationInsight {
@@ -179,7 +183,6 @@ model ConversationSentiment {
   workflowType String?
   createdAt    DateTime @default(now())
 }
-
 
 model UnansweredQuestion {
   id        String   @id @default(uuid())
@@ -264,7 +267,199 @@ model CitizenFeedback {
   createdAt    DateTime @default(now())
 }
 
-// --- JURISDICTION & ROUTING PLATFORM ENUMS ---
+model PoliceStation {
+  id           String                   @id @default(uuid())
+  stationCode  String                   @unique
+  name         String
+  districtCode String
+  cityCode     String?
+  localityCode String?
+  latitude     Float?
+  longitude    Float?
+  phone        String?
+  isActive     Boolean                  @default(true)
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+  mappings     JurisdictionMapping[]
+  resolutions  JurisdictionResolution[]
+}
+
+model JurisdictionRegistryVersion {
+  id          String                @id @default(uuid())
+  version     String                @unique
+  description String?
+  createdAt   DateTime              @default(now())
+  mappings    JurisdictionMapping[]
+}
+
+model JurisdictionMapping {
+  id                String                      @id @default(uuid())
+  districtCode      String
+  cityCode          String?
+  localityCode      String?
+  policeStationId   String
+  priority          Int                         @default(1)
+  registryVersionId String
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  policeStation     PoliceStation               @relation(fields: [policeStationId], references: [id])
+  registryVersion   JurisdictionRegistryVersion @relation(fields: [registryVersionId], references: [id])
+}
+
+model JurisdictionResolution {
+  id                  String                          @id @default(uuid())
+  routingTargetType   RoutingTargetType
+  routingTargetId     String
+  policeStationId     String?
+  serviceType         String
+  workflowId          String?
+  routingContext      RoutingContext
+  sourceLocation      Json
+  resolutionSource    ResolutionSource
+  confidence          Float
+  matchType           MatchType
+  routingDecision     RoutingDecision
+  status              ResolutionStatus
+  jurisdictionVersion String
+  createdAt           DateTime                        @default(now())
+  updatedAt           DateTime                        @updatedAt
+  certificates        CharacterCertificate[]
+  complaints          Complaint[]
+  permissions         EventPermission[]
+  policeStation       PoliceStation?                  @relation(fields: [policeStationId], references: [id])
+  events              JurisdictionResolutionEvent[]
+  history             JurisdictionResolutionHistory[]
+  verifications       Verification[]
+}
+
+model JurisdictionResolutionHistory {
+  id                       String                 @id @default(uuid())
+  jurisdictionResolutionId String
+  previousStatus           ResolutionStatus?
+  newStatus                ResolutionStatus
+  previousStationId        String?
+  newStationId             String?
+  previousTargetType       RoutingTargetType?
+  previousTargetId         String?
+  newTargetType            RoutingTargetType?
+  newTargetId              String?
+  reason                   String?
+  actorType                ActorType?
+  actorId                  String?
+  changedAt                DateTime               @default(now())
+  jurisdictionResolution   JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
+}
+
+model JurisdictionResolutionEvent {
+  id                       String                 @id @default(uuid())
+  jurisdictionResolutionId String
+  eventType                ResolutionEventType
+  actorType                ActorType?
+  actorId                  String?
+  metadata                 Json?
+  createdAt                DateTime               @default(now())
+  jurisdictionResolution   JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
+}
+
+model Notification {
+  id           String              @id @default(uuid())
+  citizenId    String?
+  channel      NotificationChannel
+  status       NotificationStatus
+  template     String
+  workflowType String?
+  workflowId   String?
+  metadata     Json?
+  createdAt    DateTime            @default(now())
+  sentAt       DateTime?
+  citizen      Citizen?            @relation(fields: [citizenId], references: [id])
+}
+
+model SubmissionFingerprint {
+  id          String   @id @default(uuid())
+  fingerprint String   @unique
+  citizenId   String?
+  serviceType String
+  createdAt   DateTime @default(now())
+
+  @@index([citizenId])
+  @@index([serviceType])
+  @@index([createdAt])
+}
+
+model IntentClassification {
+  id                           String   @id @default(uuid())
+  sessionId                    String
+  assessmentVersion            Int      @default(1)
+  parentAssessmentId           String?
+  rawNarrative                 String
+  predictedIntent              String
+  citizenSelectedIntent        String?
+  citizenSelectedService       String?
+  incidentCategory             String?
+  recommendedServices          Json
+  recommendedActions           Json
+  confidence                   Float
+  confidenceBand               String
+  recommendationConfidence     Float
+  recommendationConfidenceBand String
+  urgency                      String
+  assessmentStatus             String
+  storyCompleteness            Float
+  detectedEntities             Json?
+  reasoning                    Json
+  createdAt                    DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([predictedIntent])
+  @@index([createdAt])
+}
+
+model SituationAssessmentSession {
+  id                    String   @id @default(uuid())
+  sessionId             String   @unique
+  latestIntent          String
+  latestConfidence      Float
+  assessmentStatus      String
+  clarificationRequired Boolean
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([sessionId])
+}
+
+model ComplaintSession {
+  id                    String   @id @default(uuid())
+  sessionId             String   @unique
+  incidentType          String?
+  readinessScore        Float    @default(0)
+  status                String
+  clarificationRequired Boolean
+  draftApproved         Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([sessionId])
+}
+
+model ComplaintAssessment {
+  id                      String   @id @default(uuid())
+  sessionId               String
+  factVersion             Int      @default(1)
+  parentAssessmentId      String?
+  incidentType            String
+  complaintReadinessScore Float
+  firReadinessScore       Float
+  structuredPayload       Json
+  extractedFacts          Json
+  narrativeSnapshots      Json?
+  draftText               String
+  createdAt               DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([incidentType])
+  @@index([createdAt])
+}
 
 enum RoutingTargetType {
   POLICE_STATION
@@ -313,104 +508,6 @@ enum ActorType {
   NESTJS
 }
 
-// --- JURISDICTION & ROUTING PLATFORM MODELS ---
-
-model PoliceStation {
-  id            String                 @id @default(uuid())
-  stationCode   String                 @unique
-  name          String
-  districtCode  String
-  cityCode      String?
-  localityCode  String?
-  latitude      Float?
-  longitude     Float?
-  phone         String?
-  isActive      Boolean                @default(true)
-  createdAt     DateTime               @default(now())
-  updatedAt     DateTime               @updatedAt
-  mappings      JurisdictionMapping[]
-  resolutions   JurisdictionResolution[]
-}
-
-model JurisdictionRegistryVersion {
-  id          String                @id @default(uuid())
-  version     String                @unique
-  description String?
-  createdAt   DateTime              @default(now())
-  mappings    JurisdictionMapping[]
-}
-
-model JurisdictionMapping {
-  id                String                      @id @default(uuid())
-  districtCode      String
-  cityCode          String?
-  localityCode      String?
-  policeStationId   String
-  priority          Int                         @default(1)
-  registryVersionId String
-  createdAt         DateTime                    @default(now())
-  updatedAt         DateTime                    @updatedAt
-  policeStation     PoliceStation               @relation(fields: [policeStationId], references: [id])
-  registryVersion   JurisdictionRegistryVersion @relation(fields: [registryVersionId], references: [id])
-}
-
-model JurisdictionResolution {
-  id                  String                          @id @default(uuid())
-  routingTargetType   RoutingTargetType
-  routingTargetId     String
-  policeStationId     String?
-  serviceType         String
-  workflowId          String?
-  routingContext      RoutingContext
-  sourceLocation      Json
-  resolutionSource    ResolutionSource
-  confidence          Float
-  matchType           MatchType
-  routingDecision     RoutingDecision
-  status              ResolutionStatus
-  jurisdictionVersion String
-  createdAt           DateTime                        @default(now())
-  updatedAt           DateTime                        @updatedAt
-  policeStation       PoliceStation?                  @relation(fields: [policeStationId], references: [id])
-  history             JurisdictionResolutionHistory[]
-  events              JurisdictionResolutionEvent[]
-  
-  // Relations to workflows
-  complaints          Complaint[]
-  verifications       Verification[]
-  certificates        CharacterCertificate[]
-  permissions         EventPermission[]
-}
-
-model JurisdictionResolutionHistory {
-  id                        String                 @id @default(uuid())
-  jurisdictionResolutionId  String
-  previousStatus            ResolutionStatus?
-  newStatus                 ResolutionStatus
-  previousStationId         String?
-  newStationId              String?
-  previousTargetType        RoutingTargetType?
-  previousTargetId          String?
-  newTargetType             RoutingTargetType?
-  newTargetId               String?
-  reason                    String?
-  actorType                 ActorType?
-  actorId                   String?
-  changedAt                 DateTime               @default(now())
-  jurisdictionResolution    JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
-}
-
-model JurisdictionResolutionEvent {
-  id                        String                 @id @default(uuid())
-  jurisdictionResolutionId  String
-  eventType                 ResolutionEventType
-  actorType                 ActorType?
-  actorId                   String?
-  metadata                  Json?
-  createdAt                 DateTime               @default(now())
-  jurisdictionResolution    JurisdictionResolution @relation(fields: [jurisdictionResolutionId], references: [id])
-}
-
 enum NotificationChannel {
   SMS
   WHATSAPP
@@ -423,20 +520,6 @@ enum NotificationStatus {
   SENT
   FAILED
   CANCELLED
-}
-
-model Notification {
-  id            String               @id @default(uuid())
-  citizenId     String?
-  citizen       Citizen?             @relation(fields: [citizenId], references: [id])
-  channel       NotificationChannel
-  status        NotificationStatus
-  template      String
-  workflowType  String?
-  workflowId    String?
-  metadata      Json?
-  createdAt     DateTime             @default(now())
-  sentAt        DateTime?
 }
 
 enum RoutingContext {
@@ -457,17 +540,3 @@ enum ResolutionEventType {
   OVERRIDDEN
   EXPIRED
 }
-
-model SubmissionFingerprint {
-  id          String   @id @default(uuid())
-  fingerprint String   @unique
-  citizenId   String?
-  serviceType String
-  createdAt   DateTime @default(now())
-
-  @@index([citizenId])
-  @@index([serviceType])
-  @@index([createdAt])
-}
-
-

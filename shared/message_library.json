@@ -586,6 +586,31 @@
       "en": "⚠️ This appears to be an emergency situation.\n\nPlease contact UP Police Emergency Services immediately by dialing 112.\n\nIf someone is in immediate danger, do not wait for an online response.",
       "hi": "⚠️ यह एक आपातकालीन स्थिति लगती है।\n\nकृपया तुरंत 112 डायल करके उत्तर प्रदेश पुलिस आपातकालीन सेवाओं से संपर्क करें।\n\nयदि कोई तत्काल खतरे में है, तो ऑनलाइन प्रतिक्रिया की प्रतीक्षा न करें।",
       "hinglish": "⚠️ Yeh emergency situation lag rahi hai.\n\nPlease immediate help ke liye UP Police ko 112 dial karke contact karein.\n\nAgar koi immediate danger mein hai, toh online response ka wait na karein."
+    },
+    "COPILOT_I_UNDERSTAND": {
+      "en": "👮 I understand.\n\nBased on what you've told me, this appears to be a {category} incident.",
+      "hi": "👮 मैं समझ गया।\n\nआपके विवरण के अनुसार, यह {category} श्रेणी से संबंधित मामला प्रतीत होता है।",
+      "hinglish": "👮 Main samajh gaya.\n\nAapke details ke hisab se, yeh {category} incident lag raha hai."
+    },
+    "COPILOT_URGENCY": {
+      "en": "Urgency",
+      "hi": "तात्कालिकता",
+      "hinglish": "Urgency"
+    },
+    "COPILOT_RECOMMENDED_ACTIONS": {
+      "en": "Recommended Actions",
+      "hi": "अनुशंसित कार्रवाई",
+      "hinglish": "Recommended Actions"
+    },
+    "COPILOT_RECOMMENDED_SERVICES": {
+      "en": "Recommended Services",
+      "hi": "अनुशंसित सेवाएं",
+      "hinglish": "Recommended Services"
+    },
+    "COPILOT_CARD_PROMPT": {
+      "en": "Would you like me to help with this?",
+      "hi": "क्या आप चाहते हैं कि मैं इसमें आपकी सहायता करूँ?",
+      "hinglish": "Kya aap chahte hain ki main isme aapki help karoon?"
     }
   }
 }
