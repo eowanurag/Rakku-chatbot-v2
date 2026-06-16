@@ -1,0 +1,5 @@
+{
+  "recommendationThreshold": 0.70,
+  "clarificationThreshold": 0.69,
+  "highConfidenceThreshold": 0.90
+}

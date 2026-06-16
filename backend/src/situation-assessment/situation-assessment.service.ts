@@ -7,6 +7,7 @@ import { PatternClassifier } from './classification/pattern-classifier';
 import { AiClassifier } from './classification/ai-classifier';
 import { SituationAssessment, UrgencyLevel, ConfidenceBand, AssessmentStatus, ClarificationType } from './interfaces/situation-assessment.interface';
 import { LocalizationService } from '../localization/localization.service';
+import { AiFallbackService } from '../common/ai-fallback/ai-fallback.service';
 
 @Injectable()
 export class SituationAssessmentService {
@@ -24,9 +25,16 @@ export class SituationAssessmentService {
     low_keywords: string[];
   };
 
+  private confidencePolicy: {
+    recommendationThreshold: number;
+    clarificationThreshold: number;
+    highConfidenceThreshold: number;
+  };
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly localizationService: LocalizationService,
+    private readonly aiFallbackService: AiFallbackService,
   ) {
     this.ruleClassifier = new RuleClassifier();
     this.patternClassifier = new PatternClassifier();
@@ -49,21 +57,31 @@ export class SituationAssessmentService {
       const intentsPath = findSharedFile('intents.json');
       const categoriesPath = findSharedFile('incident-categories.json');
       const urgencyPath = findSharedFile('urgency-rules.json');
+      const policyPath = findSharedFile('confidence-policy.json');
 
-      this.intents = JSON.parse(fs.readFileSync(intentsPath, 'utf8'));
+      this.intents = [];
+      try {
+        const intentsData = JSON.parse(fs.readFileSync(intentsPath, 'utf8'));
+        this.intents = Object.keys(intentsData.intents || {});
+      } catch (e) {
+        // Fallback
+      }
+
       this.incidentCategories = JSON.parse(fs.readFileSync(categoriesPath, 'utf8'));
       this.urgencyRules = JSON.parse(fs.readFileSync(urgencyPath, 'utf8'));
+      this.confidencePolicy = JSON.parse(fs.readFileSync(policyPath, 'utf8'));
     } catch (e) {
       this.logger.error('Failed to load shared SAE files', e);
       this.intents = [];
       this.incidentCategories = {};
       this.urgencyRules = { critical_keywords: [], high_keywords: [], medium_keywords: [], low_keywords: [] };
+      this.confidencePolicy = { recommendationThreshold: 0.70, clarificationThreshold: 0.69, highConfidenceThreshold: 0.90 };
     }
   }
 
   private mapConfidenceBand(score: number): ConfidenceBand {
-    if (score >= 0.90) return "HIGH";
-    if (score >= 0.70) return "MEDIUM";
+    if (score >= this.confidencePolicy.highConfidenceThreshold) return "HIGH";
+    if (score >= this.confidencePolicy.recommendationThreshold) return "MEDIUM";
     return "LOW";
   }
 
@@ -218,7 +236,8 @@ ${promptLabel}`;
         reasoning: ["SAE feature flag is disabled (ENABLE_SAE=false)."],
         requiresClarification: true,
         clarificationType: "SERVICE_SELECTION",
-        clarificationPrompt: "Please select a service from the menu."
+        clarificationPrompt: "Please select a service from the menu.",
+        missingInformation: []
       };
     }
 
@@ -260,11 +279,11 @@ ${promptLabel}`;
 
     let assessment: SituationAssessment;
 
-    if (confidence >= 0.80) {
+    if (confidence >= this.confidencePolicy.recommendationThreshold) {
       const { services, actions } = this.getRecommendedServicesAndActions(finalIntent);
       const urgency = this.calculateUrgency(text, finalIntent);
       
-      const requiresClarification = confidence < 0.70 || finalIntent === "UNKNOWN";
+      const requiresClarification = confidence <= this.confidencePolicy.clarificationThreshold || finalIntent === "UNKNOWN";
       
       assessment = {
         intent: finalIntent,
@@ -302,7 +321,9 @@ ${promptLabel}`;
         
         assessment = aiAssessment;
       } catch (err) {
-        // Fallback to unknown response
+        // Centralized fallback error logic
+        const failureData = this.aiFallbackService.handleAIFailure(err, activeLang);
+
         assessment = {
           intent: "UNKNOWN",
           incidentCategory: "GUIDANCE",
@@ -316,8 +337,10 @@ ${promptLabel}`;
           assessmentStatus: "CLARIFICATION_REQUIRED",
           storyCompleteness: 0.2,
           detectedEntities: {},
-          reasoning: ["Gemini fallback encountered error."],
+          reasoning: ["Gemini fallback encountered error: " + err.message],
           requiresClarification: true,
+          clarificationType: "SERVICE_SELECTION",
+          clarificationPrompt: failureData.message, // Use citizen-safe message
           missingInformation: [{ field: "summary", reason: "Ambiguous statement", priority: "HIGH" }]
         };
       }
@@ -328,7 +351,7 @@ ${promptLabel}`;
       assessment.clarificationPrompt = assessment.clarificationPrompt || "I'd like to understand your situation better. Could you tell me a little more about what happened?";
     } else {
       // Dynamic rendering of card
-      assessment.clarificationPrompt = this.generateRecommendationCard(assessment);
+      assessment.clarificationPrompt = this.generateRecommendationCard(assessment, activeLang);
     }
 
     // 4. Persistence & Versioning chain

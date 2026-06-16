@@ -24,6 +24,8 @@ import { RoutingPolicyService } from '../jurisdiction-routing/routing-policy.ser
 import { RoutingTargetRegistryService } from '../jurisdiction-routing/routing-target-registry.service';
 import { RoutingContext, ResolutionSource, ActorType } from '../jurisdiction-routing/jurisdiction-routing.types';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { SituationAssessmentService } from '../situation-assessment/situation-assessment.service';
+import { AiFallbackService } from '../common/ai-fallback/ai-fallback.service';
 
 interface CitizenState {
   id?: string;
@@ -83,6 +85,7 @@ export class ChatService {
   private readonly jurisdictionService: JurisdictionService;
   private readonly jurisdictionLifecycleService: JurisdictionLifecycleService;
   private readonly routingTargetRegistryService: RoutingTargetRegistryService;
+  private readonly situationAssessmentService: SituationAssessmentService;
 
   constructor(
     private readonly httpService: HttpService,
@@ -100,8 +103,14 @@ export class ChatService {
     jurisdictionService?: JurisdictionService,
     jurisdictionLifecycleService?: JurisdictionLifecycleService,
     routingTargetRegistryService?: RoutingTargetRegistryService,
+    situationAssessmentService?: SituationAssessmentService,
   ) {
     this.localizationService = localizationService || new LocalizationService(new MetricsService());
+    this.situationAssessmentService = situationAssessmentService || new SituationAssessmentService(
+      this.prisma,
+      this.localizationService,
+      new AiFallbackService()
+    );
     this.routingTargetRegistryService = routingTargetRegistryService || new RoutingTargetRegistryService(this.prisma);
     this.jurisdictionService = jurisdictionService || new JurisdictionService(
       new LocationResolverService(),
@@ -1244,6 +1253,60 @@ export class ChatService {
 
     // Check if workflow needs to be determined
     if (!state.workflow) {
+      if (process.env.ENABLE_SAE === 'true') {
+        const isContinue = ['continue', 'option:continue', 'yes', 'हाँ', 'confirm', 'जारी रखें', 'option:जारी रखें'].includes(cleanMsg);
+        if (isContinue && state.data.pendingWorkflow) {
+          state.workflow = state.data.pendingWorkflow;
+          const pendingIntent = state.data.pendingIntent;
+          if (pendingIntent === 'LOST_MOBILE') {
+            state.data.type = 'Lost Mobile / Theft';
+          } else if (pendingIntent === 'LOST_DOCUMENT') {
+            state.data.type = 'Lost Document';
+          } else if (pendingIntent === 'CYBER_FRAUD') {
+            state.data.type = 'Cyber Fraud';
+          } else if (pendingIntent === 'TENANT_VERIFICATION') {
+            state.data.type = 'Tenant Verification';
+          } else if (pendingIntent === 'CHARACTER_CERTIFICATE') {
+            state.data.type = 'Character Certificate';
+          } else if (pendingIntent === 'EVENT_PERMISSION') {
+            state.data.type = 'Event Permission';
+          }
+          delete state.data.pendingWorkflow;
+          delete state.data.pendingIntent;
+          state.step = 'START';
+          if (!state.citizen.isConfirmed) {
+            return this.runCitizenIdentificationFlow(state, '');
+          }
+        }
+
+        const assessment = await this.situationAssessmentService.assess(message, sessionId, state.language || 'en');
+        if (assessment && assessment.intent !== 'UNKNOWN' && !assessment.requiresClarification) {
+          let targetWf: any = null;
+          const service = assessment.recommendedServices[0];
+          if (service === 'COMPLAINT') targetWf = 'complaint';
+          else if (service === 'TENANT_VERIFICATION') targetWf = 'verification';
+          else if (service === 'CHARACTER_CERTIFICATE') targetWf = 'certificate';
+          else if (service === 'EVENT_PERMISSION') targetWf = 'event';
+
+          if (targetWf) {
+            state.data.pendingWorkflow = targetWf;
+            state.data.pendingIntent = assessment.intent;
+            const suggestions = state.language === 'hi' ? ['जारी रखें', 'रद्द करें'] : ['Continue', 'Cancel'];
+            return {
+              response: assessment.clarificationPrompt,
+              suggestions
+            };
+          }
+        } else if (assessment && assessment.intent === 'UNKNOWN' && assessment.requiresClarification && assessment.clarificationPrompt) {
+          if (assessment.clarificationPrompt.includes('assist you') || assessment.clarificationPrompt.includes('सहायता') || assessment.clarificationPrompt.includes('help') || assessment.clarificationPrompt.includes('u उन्नत')) {
+            return {
+              response: assessment.clarificationPrompt,
+              suggestions: state.language === 'hi' ? ['🚔 शिकायत दर्ज करें', '🏠 किरायेदार सत्यापन', '🔍 स्थिति ट्रैक करें'] : ['🚔 File a Complaint', '🏠 Tenant Verification', '🔍 Track Status']
+            };
+          }
+        }
+      }
+
       const detectedWf = this.detectWorkflowIntent(cleanMsg);
       if (detectedWf) {
         state.workflow = detectedWf;

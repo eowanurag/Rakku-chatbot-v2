@@ -23,5 +23,15 @@
   "thana": "POLICE_STATION_LOOKUP",
   "threat": "THREAT",
   "harass": "HARASSMENT",
-  "emergency": "EMERGENCY_HELP"
+  "emergency": "EMERGENCY_HELP",
+  "LOST_MOBILE": [
+    "phone kho gaya",
+    "mobile kho gaya",
+    "phone gum ho gaya",
+    "mobile gum ho gaya",
+    "phone stolen",
+    "mobile stolen",
+    "lost mobile",
+    "my phone is missing"
+  ]
 }

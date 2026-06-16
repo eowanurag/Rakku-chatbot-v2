@@ -1,22 +1,106 @@
-[
-  "LOST_MOBILE",
-  "LOST_DOCUMENT",
-  "CYBER_FRAUD",
-  "FINANCIAL_FRAUD",
-  "HARASSMENT",
-  "THREAT",
-  "WOMEN_SAFETY",
-  "MISSING_PERSON",
-  "PROPERTY_THEFT",
-  "VEHICLE_THEFT",
-  "TENANT_VERIFICATION",
-  "EMPLOYEE_VERIFICATION",
-  "DOMESTIC_HELP_VERIFICATION",
-  "CHARACTER_CERTIFICATE",
-  "EVENT_PERMISSION",
-  "APPLICATION_TRACKING",
-  "POLICE_STATION_LOOKUP",
-  "EMERGENCY_HELP",
-  "GENERAL_GUIDANCE",
-  "UNKNOWN"
-]
+{
+  "version": "1.0",
+  "lastUpdated": "2026-06-16",
+  "intents": {
+    "LOST_MOBILE": {
+      "category": "LOST_PROPERTY",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "LOST_DOCUMENT": {
+      "category": "LOST_PROPERTY",
+      "recommendedService": "LOST_DOCUMENT_REPORT",
+      "defaultConfidence": 0.95
+    },
+    "CYBER_FRAUD": {
+      "category": "FRAUD",
+      "recommendedService": "CYBER_COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "FINANCIAL_FRAUD": {
+      "category": "FRAUD",
+      "recommendedService": "CYBER_COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "HARASSMENT": {
+      "category": "HARASSMENT",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "THREAT": {
+      "category": "HARASSMENT",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "WOMEN_SAFETY": {
+      "category": "HARASSMENT",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "MISSING_PERSON": {
+      "category": "THEFT",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "PROPERTY_THEFT": {
+      "category": "THEFT",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "VEHICLE_THEFT": {
+      "category": "THEFT",
+      "recommendedService": "COMPLAINT",
+      "defaultConfidence": 0.95
+    },
+    "TENANT_VERIFICATION": {
+      "category": "VERIFICATION",
+      "recommendedService": "TENANT_VERIFICATION",
+      "defaultConfidence": 0.95
+    },
+    "EMPLOYEE_VERIFICATION": {
+      "category": "VERIFICATION",
+      "recommendedService": "EMPLOYEE_VERIFICATION",
+      "defaultConfidence": 0.95
+    },
+    "DOMESTIC_HELP_VERIFICATION": {
+      "category": "VERIFICATION",
+      "recommendedService": "DOMESTIC_HELP_VERIFICATION",
+      "defaultConfidence": 0.95
+    },
+    "CHARACTER_CERTIFICATE": {
+      "category": "CERTIFICATE",
+      "recommendedService": "CHARACTER_CERTIFICATE",
+      "defaultConfidence": 0.95
+    },
+    "EVENT_PERMISSION": {
+      "category": "PERMISSION",
+      "recommendedService": "EVENT_PERMISSION",
+      "defaultConfidence": 0.95
+    },
+    "APPLICATION_TRACKING": {
+      "category": "TRACKING",
+      "recommendedService": "APPLICATION_TRACKING",
+      "defaultConfidence": 0.95
+    },
+    "POLICE_STATION_LOOKUP": {
+      "category": "GUIDANCE",
+      "recommendedService": "POLICE_STATION_LOOKUP",
+      "defaultConfidence": 0.95
+    },
+    "EMERGENCY_HELP": {
+      "category": "GUIDANCE",
+      "recommendedService": "EMERGENCY_HELPLINES",
+      "defaultConfidence": 0.95
+    },
+    "GENERAL_GUIDANCE": {
+      "category": "GUIDANCE",
+      "recommendedService": "GENERAL_GUIDANCE",
+      "defaultConfidence": 0.95
+    },
+    "UNKNOWN": {
+      "category": "GUIDANCE",
+      "recommendedService": "GENERAL_GUIDANCE",
+      "defaultConfidence": 0.50
+    }
+  }
+}

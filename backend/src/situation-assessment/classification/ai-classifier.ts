@@ -110,6 +110,7 @@ Citizen Report: "${text}"
       }
     } catch (e: any) {
       console.error('Error invoking Gemini in AiClassifier:', e?.message || e);
+      throw e;
     }
 
     return this.getUnknownResponse();
