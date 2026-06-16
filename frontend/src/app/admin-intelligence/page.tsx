@@ -42,12 +42,12 @@ interface UnansweredQuestion {
 
 const getBackendUrl = () => {
   if (typeof window === "undefined") {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || "https://rakku-chatbot-v1.onrender.com/api";
+    return process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001/api";
   }
   const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   return isLocalhost 
     ? "http://localhost:3001/api" 
-    : "https://rakku-chatbot-v1.onrender.com/api";
+    : "http://localhost:3001/api";
 };
 
 const BACKEND_URL = getBackendUrl();
