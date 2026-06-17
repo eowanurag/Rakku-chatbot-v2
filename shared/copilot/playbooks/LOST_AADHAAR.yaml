@@ -1,0 +1,11 @@
+goal: "Help citizen manage lost Aadhaar card situation"
+clarificationQuestions:
+  - id: "misuse_suspected"
+    text: "Do you suspect your Aadhaar card is being misused?"
+    baseInformationGain: 80
+  - id: "have_number"
+    text: "Do you have your Aadhaar number written down anywhere?"
+    baseInformationGain: 50
+actions:
+  - "Provide UIDAI contact info"
+  - "Route to general police report if required"

@@ -1,10 +1,11 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/client"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres.mlvtsaltkhnvjevlyzfy:bUwXj8qyz25qXugC@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
+  url      = env("DATABASE_URL")
 }
 
 model Citizen {
@@ -408,6 +409,8 @@ model IntentClassification {
   storyCompleteness            Float
   detectedEntities             Json?
   reasoning                    Json
+  cueMetadata                  Json?
+  cueVersion                   String?
   createdAt                    DateTime @default(now())
 
   @@index([sessionId])
@@ -540,3 +543,111 @@ enum ResolutionEventType {
   OVERRIDDEN
   EXPIRED
 }
+
+model ScenarioSession {
+  id                    String   @id @default(uuid())
+  sessionId             String   @unique
+
+  currentScenario       String?
+  currentState          String?
+
+  clarificationCount    Int      @default(0)
+  askedQuestions        Json?    // History of questions to prevent loops
+
+  outcomeSelected       Boolean  @default(false)
+  currentNode           String?
+  scenarioRevision      Int      @default(1)
+  activeScenarioPath    Json?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model ScenarioAssessment {
+  id                      String   @id @default(uuid())
+  sessionId               String
+
+  assessmentVersion       Int      @default(1)
+  parentAssessmentId      String?
+
+  scenario                String
+  scenarioPath            Json?    // Stores reasoning path, e.g. ["LOSS", "DOCUMENT", "AADHAAR"]
+  scenarioHints           Json?
+  scenarioCompleteness    Float?
+
+  outcome                 String
+  goal                    String
+  riskLevel               String
+
+  confidence              Float
+  scenarioConfidence      Float?
+  confidenceHistory       Json?
+  reasoningSummary        Json?
+
+  actionPlan              Json
+  resolutionSource        String?  // Analytics (e.g. GRAPH_ONLY, OFFICER_REVIEW)
+  graphVersion            String?
+  graphHash               String?
+  resolutionQuality       String?
+  hintConfidenceBreakdown Json?
+
+  createdAt               DateTime @default(now())
+
+  @@index([sessionId])
+}
+
+model UnderstandingCandidate {
+  id                 String    @id @default(uuid())
+  term               String
+  occurrences        Int       @default(1)
+  sampleNarrative    String
+  suggestedMeaning   String?
+  status             String    // PENDING, APPROVED, REJECTED, EXPORTED
+  priority           String    @default("LOW")
+  relatedIntent      String?
+  aiReviewQueued     Boolean   @default(false)
+  promotedToTerm     Boolean   @default(false)
+  approvedBy         String?
+  approvedAt         DateTime?
+  createdAt          DateTime  @default(now())
+}
+
+model UnderstandingTerm {
+  id              String    @id @default(uuid())
+  term            String    @unique
+  meaning         String
+  source          String    // SYNONYM, DIALECT, ABBREVIATION
+  version         String
+  evidenceCount   Int       @default(1)
+  exportedVersion String?
+  exportedAt      DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+model UnderstandingReviewQueue {
+  id            String   @id @default(uuid())
+  candidateId   String
+  reviewType    String
+  status        String
+  createdAt     DateTime @default(now())
+}
+
+model CueReplayResult {
+  id               String   @id @default(uuid())
+  replayVersion    String
+  oldVersion       String
+  newVersion       String
+  improvementScore Float
+  createdAt        DateTime @default(now())
+}
+
+model ScenarioGraphCandidate {
+  id           String   @id @default(uuid())
+  parentNode   String
+  proposedNode String
+  occurrences  Int      @default(1)
+  status       String   // PENDING, APPROVED, REJECTED
+  createdAt    DateTime @default(now())
+}
+
+

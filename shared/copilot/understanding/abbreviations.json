@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-06-17",
+  "exportBatchId": "INITIAL_RELEASE",
+  "entries": {
+    "dl": "driving licence",
+    "aadhaar": "aadhaar card",
+    "upi": "upi payment"
+  }
+}

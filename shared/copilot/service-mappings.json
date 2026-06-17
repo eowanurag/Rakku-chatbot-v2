@@ -1,0 +1,66 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-06-16",
+  "mappings": {
+    "COMPLAINT": {
+      "workflowId": "complaint",
+      "displayName": "Complaint Registration",
+      "requiresPrerequisites": false
+    },
+    "LOST_DOCUMENT_REPORT": {
+      "workflowId": "complaint",
+      "displayName": "Lost Document Report",
+      "requiresPrerequisites": false
+    },
+    "CYBER_COMPLAINT": {
+      "workflowId": "complaint",
+      "displayName": "Cyber Complaint Registration",
+      "requiresPrerequisites": false
+    },
+    "TENANT_VERIFICATION": {
+      "workflowId": "verification",
+      "displayName": "Tenant Verification",
+      "requiresPrerequisites": false
+    },
+    "EMPLOYEE_VERIFICATION": {
+      "workflowId": "verification",
+      "displayName": "Employee Verification",
+      "requiresPrerequisites": false
+    },
+    "DOMESTIC_HELP_VERIFICATION": {
+      "workflowId": "verification",
+      "displayName": "Domestic Help Verification",
+      "requiresPrerequisites": false
+    },
+    "CHARACTER_CERTIFICATE": {
+      "workflowId": "certificate",
+      "displayName": "Character Certificate",
+      "requiresPrerequisites": false
+    },
+    "EVENT_PERMISSION": {
+      "workflowId": "event",
+      "displayName": "Event Permission Request",
+      "requiresPrerequisites": false
+    },
+    "APPLICATION_TRACKING": {
+      "workflowId": "tracking",
+      "displayName": "Application Tracking",
+      "requiresPrerequisites": false
+    },
+    "POLICE_STATION_LOOKUP": {
+      "workflowId": "guidance",
+      "displayName": "Police Station Lookup",
+      "requiresPrerequisites": false
+    },
+    "EMERGENCY_HELPLINES": {
+      "workflowId": "guidance",
+      "displayName": "Emergency Helplines",
+      "requiresPrerequisites": false
+    },
+    "GENERAL_GUIDANCE": {
+      "workflowId": "guidance",
+      "displayName": "General Guidance",
+      "requiresPrerequisites": false
+    }
+  }
+}

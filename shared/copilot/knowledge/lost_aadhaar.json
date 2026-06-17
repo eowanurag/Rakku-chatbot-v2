@@ -1,0 +1,20 @@
+{
+  "scenario": "LOST_AADHAAR",
+  "authority": "UIDAI",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT",
+    "IDENTITY_PROTECTION"
+  ],
+  "defaultRisk": "LOW",
+  "recommendedActions": [
+    "Download e-Aadhaar",
+    "Request replacement"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "citizenGuidance": [
+    "Keep Aadhaar number available",
+    "Monitor for misuse"
+  ]
+}

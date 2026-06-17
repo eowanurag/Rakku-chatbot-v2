@@ -1,0 +1,47 @@
+{
+  "version": "1.0",
+  "roots": ["LOSS", "THEFT", "FRAUD", "SERVICES", "EMERGENCY"],
+  "nodes": {
+    "LOSS": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["DOCUMENT", "VEHICLE", "MOBILE"]
+    },
+    "DOCUMENT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["AADHAAR", "PAN", "PASSPORT"]
+    },
+    "AADHAAR": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "THEFT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["VEHICLE", "MOBILE", "PROPERTY"]
+    },
+    "FRAUD": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["UPI", "CREDIT_CARD", "EMPLOYMENT"]
+    },
+    "SERVICES": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["CHARACTER_CERTIFICATE", "TENANT_VERIFICATION"]
+    },
+    "EMERGENCY": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["KIDNAPPING", "ASSAULT"]
+    },
+    "KIDNAPPING": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": [],
+      "requiresImmediateEscalation": true
+    }
+  }
+}

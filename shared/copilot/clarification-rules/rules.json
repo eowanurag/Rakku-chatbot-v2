@@ -1,0 +1,7 @@
+{
+  "maxBudget": 3,
+  "dynamicGainModifiers": {
+    "HIGH_RISK": 1.5,
+    "ALREADY_ASKED": 0.0
+  }
+}

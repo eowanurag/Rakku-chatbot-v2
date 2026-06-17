@@ -1,0 +1,17 @@
+{
+  "scenarios": {
+    "LOST_AADHAAR": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "KIDNAPPING": {
+      "baseRisk": "CRITICAL",
+      "modifiers": []
+    }
+  }
+}

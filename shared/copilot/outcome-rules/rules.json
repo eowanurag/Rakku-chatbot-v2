@@ -1,0 +1,14 @@
+{
+  "mappings": {
+    "LOST_AADHAAR": {
+      "outcomes": ["DOCUMENT_REPLACEMENT", "IDENTITY_PROTECTION"]
+    },
+    "KIDNAPPING": {
+      "outcomes": ["EMERGENCY_ESCALATION"]
+    }
+  },
+  "fallbacks": {
+    "budgetExhausted_lowConfidence": "FALLBACK_GUIDANCE",
+    "contradictions": "OFFICER_REVIEW"
+  }
+}

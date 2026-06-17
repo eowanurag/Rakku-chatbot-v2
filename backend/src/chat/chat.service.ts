@@ -26,6 +26,9 @@ import { RoutingContext, ResolutionSource, ActorType } from '../jurisdiction-rou
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SituationAssessmentService } from '../situation-assessment/situation-assessment.service';
 import { AiFallbackService } from '../common/ai-fallback/ai-fallback.service';
+import { RecommendationRouterService } from '../orchestration/recommendation-router.service';
+import { WorkflowLauncherService } from '../orchestration/workflow-launcher.service';
+import { WorkflowRegistryService } from '../orchestration/workflow-registry.service';
 
 interface CitizenState {
   id?: string;
@@ -86,6 +89,8 @@ export class ChatService {
   private readonly jurisdictionLifecycleService: JurisdictionLifecycleService;
   private readonly routingTargetRegistryService: RoutingTargetRegistryService;
   private readonly situationAssessmentService: SituationAssessmentService;
+  private readonly recommendationRouterService: RecommendationRouterService;
+  private readonly workflowLauncherService: WorkflowLauncherService;
 
   constructor(
     private readonly httpService: HttpService,
@@ -104,6 +109,8 @@ export class ChatService {
     jurisdictionLifecycleService?: JurisdictionLifecycleService,
     routingTargetRegistryService?: RoutingTargetRegistryService,
     situationAssessmentService?: SituationAssessmentService,
+    recommendationRouterService?: RecommendationRouterService,
+    workflowLauncherService?: WorkflowLauncherService,
   ) {
     this.localizationService = localizationService || new LocalizationService(new MetricsService());
     this.situationAssessmentService = situationAssessmentService || new SituationAssessmentService(
@@ -124,6 +131,12 @@ export class ChatService {
       new JurisdictionRepository(this.prisma),
       new EventEmitter2()
     );
+
+    const registry = new WorkflowRegistryService();
+    registry.onModuleInit();
+    this.recommendationRouterService = recommendationRouterService || new RecommendationRouterService(registry);
+    this.workflowLauncherService = workflowLauncherService || new WorkflowLauncherService(new EventEmitter2());
+
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
     this.loadMessageLibrary();
   }
@@ -1256,20 +1269,35 @@ export class ChatService {
       if (process.env.ENABLE_SAE === 'true') {
         const isContinue = ['continue', 'option:continue', 'yes', 'हाँ', 'confirm', 'जारी रखें', 'option:जारी रखें'].includes(cleanMsg);
         if (isContinue && state.data.pendingWorkflow) {
-          state.workflow = state.data.pendingWorkflow;
+          const pendingWf = state.data.pendingWorkflow;
           const pendingIntent = state.data.pendingIntent;
+          let subtype: string | undefined = undefined;
+
           if (pendingIntent === 'LOST_MOBILE') {
-            state.data.type = 'Lost Mobile / Theft';
+            subtype = 'Lost Mobile / Theft';
           } else if (pendingIntent === 'LOST_DOCUMENT') {
-            state.data.type = 'Lost Document';
+            subtype = 'Lost Document';
           } else if (pendingIntent === 'CYBER_FRAUD') {
-            state.data.type = 'Cyber Fraud';
+            subtype = 'Cyber Fraud';
           } else if (pendingIntent === 'TENANT_VERIFICATION') {
-            state.data.type = 'Tenant Verification';
+            subtype = 'Tenant Verification';
           } else if (pendingIntent === 'CHARACTER_CERTIFICATE') {
-            state.data.type = 'Character Certificate';
+            subtype = 'Character Certificate';
           } else if (pendingIntent === 'EVENT_PERMISSION') {
-            state.data.type = 'Event Permission';
+            subtype = 'Event Permission';
+          }
+
+          await this.workflowLauncherService.launch({
+            sessionId,
+            workflowId: pendingWf,
+            intent: pendingIntent,
+            language: state.language || 'en',
+            data: subtype ? { type: subtype } : undefined
+          });
+
+          state.workflow = pendingWf;
+          if (subtype) {
+            state.data.type = subtype;
           }
           delete state.data.pendingWorkflow;
           delete state.data.pendingIntent;
@@ -1281,15 +1309,10 @@ export class ChatService {
 
         const assessment = await this.situationAssessmentService.assess(message, sessionId, state.language || 'en');
         if (assessment && assessment.intent !== 'UNKNOWN' && !assessment.requiresClarification) {
-          let targetWf: any = null;
-          const service = assessment.recommendedServices[0];
-          if (service === 'COMPLAINT') targetWf = 'complaint';
-          else if (service === 'TENANT_VERIFICATION') targetWf = 'verification';
-          else if (service === 'CHARACTER_CERTIFICATE') targetWf = 'certificate';
-          else if (service === 'EVENT_PERMISSION') targetWf = 'event';
+          const resolved = this.recommendationRouterService.resolveWorkflow(assessment.recommendedServices);
 
-          if (targetWf) {
-            state.data.pendingWorkflow = targetWf;
+          if (resolved) {
+            state.data.pendingWorkflow = resolved.workflowId;
             state.data.pendingIntent = assessment.intent;
             const suggestions = state.language === 'hi' ? ['जारी रखें', 'रद्द करें'] : ['Continue', 'Cancel'];
             return {

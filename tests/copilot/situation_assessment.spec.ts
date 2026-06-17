@@ -8,8 +8,33 @@ describe('Situation Assessment Engine (SAE) Validation', () => {
   beforeAll(() => {
     jest.setTimeout(30000);
     prisma = new PrismaService();
-    saeService = new SituationAssessmentService(prisma);
+    
+    const mockLocalizationService = {
+      translate: jest.fn((key, lang, args) => {
+        if (key === "COPILOT_I_UNDERSTAND") {
+          return `I understand. You are experiencing a ${args?.category || 'situation'}.`;
+        }
+        if (key === "COPILOT_URGENCY") return "Urgency";
+        if (key === "COPILOT_RECOMMENDED_ACTIONS") return "Recommended Actions";
+        if (key === "COPILOT_RECOMMENDED_SERVICES") return "Recommended Services";
+        if (key === "COPILOT_CARD_PROMPT") return "Would you like to proceed with any of these?";
+        return key;
+      })
+    } as any;
+
+    const mockAiFallbackService = {
+      executeWithFallback: jest.fn((fn) => fn()),
+      handleAIFailure: jest.fn(() => ({
+        intent: 'UNKNOWN',
+        recommendedServices: ['GENERAL_GUIDANCE'],
+        clarificationPrompt: "I'd like to understand your situation better."
+      }))
+    } as any;
+
+
+    saeService = new SituationAssessmentService(prisma, mockLocalizationService, mockAiFallbackService);
   });
+
 
   afterAll(async () => {
     await prisma.$disconnect();

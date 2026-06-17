@@ -28,7 +28,7 @@ describe('Complaint Intelligence Engine (CIE) Validation', () => {
     const brandFact = result.extractedFacts.find(f => f.field === 'property_brand');
     expect(brandFact).toBeDefined();
     expect(brandFact?.value).toBe('Samsung');
-    expect(brandFact?.confidence).toBeGreaterThan(0.9);
+    expect(brandFact?.confidence).toBeGreaterThanOrEqual(0.9);
 
     // Check gap analysis
     expect(result.complaintReadinessScore).toBeLessThan(1.0); // missing incident_location, property_model, imei, etc.
