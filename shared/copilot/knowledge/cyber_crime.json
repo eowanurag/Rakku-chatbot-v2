@@ -1,0 +1,17 @@
+{
+  "scenario": "CYBER_CRIME",
+  "description": "Guidance and steps for handling CYBER_CRIME scenario.",
+  "authority": "UP_CITIZEN_SERVICES",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT"
+  ],
+  "defaultRisk": "LOW",
+  "citizenRisks": "Minor inconvenience or administrative delay.",
+  "recommendedActions": [
+    "Request official details for CYBER_CRIME"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Escalate to officer review if applicant is unsatisfied."
+}

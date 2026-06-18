@@ -1,0 +1,902 @@
+[
+  {
+    "query": "Mera Aadhaar card kho gaya hai",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Aadhaar card misplaced, how to get replacement?",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "आधार कार्ड खो गया है कैसे दोबारा मिलेगा",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost my adhar, need help",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "मेरा पैन कार्ड गुम हो गया है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Lost my PAN card yesterday while traveling",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "pan card kho gya h new apply krna h",
+    "language": "HINGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost pan doc",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mera Driving license DL gum ho gaya",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost my driving license anywhere on highway",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "ड्राइविंग लाइसेंस खो गया है नया कैसे बनवाएं",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost my dl card",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mera Passport gum ho gaya hai videsh jana tha",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Lost my passport at the airport",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "मेरा पासपोर्ट खो गया है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost passprt",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mera phone chori ho gaya market me",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "MOBILE"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "My mobile phone is lost at metro station",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "MOBILE"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "मेरा मोबाइल फोन खो गया है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "MOBILE"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost mobile near bypass",
+    "language": "HINGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "MOBILE"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Gaadi ke kaagaz gum ho gaye hain registration RC",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Lost my vehicle registration certificate RC book",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "वाहन के दस्तावेज खो गए हैं",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost gaadi kaagaz",
+    "language": "HINGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "VEHICLE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mera UPI account se paise cut gaye fraud hua hai",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "UPI"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "I fell victim to a UPI phishing scam and lost money",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "UPI"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "यूपीआई धोखाधड़ी के माध्यम से बैंक से पैसे निकाले गए",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "UPI"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "gpay fraud money transfer",
+    "language": "HINGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["FRAUD", "UPI"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Credit card banking fraud call se OTP share ho gaya",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "BANKING"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Unauthorized credit card transactions occurred on my account",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "BANKING"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "बैंक खाते से धोखाधड़ी से पैसे निकाल लिए गए हैं",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "BANKING"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "credit card hack",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["FRAUD", "BANKING"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Cyber bullying or online harassment report karni hai",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "CYBER_CRIME"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Someone is blackmailing me on social media platforms",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "CYBER_CRIME"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "सोशल मीडिया पर साइबर अपराध की शिकायत करनी है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "CYBER_CRIME"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "cyber attack email blackmail",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["FRAUD", "CYBER_CRIME"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Janam praman patra birth certificate kaise banta hai?",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "BIRTH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Need process to apply for child birth certificate",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "BIRTH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "जन्म प्रमाण पत्र के लिए आवेदन कैसे करें",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "BIRTH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "birth certificate apply process",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES", "BIRTH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mrityu praman patra death certificate apply",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "DEATH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Process to register death and get certificate",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "DEATH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "मृत्यु प्रमाण पत्र बनवाना है कैसे करें",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "DEATH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "death certificate online registration",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES", "DEATH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Aay praman patra income certificate apply online",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "INCOME_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "How to get an official income certificate for scholarship?",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "INCOME_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "आय प्रमाण पत्र ऑनलाइन आवेदन प्रक्रिया क्या है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "INCOME_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "income certificate application",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES", "INCOME_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Jati praman patra caste certificate documents needed",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "CASTE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Apply for caste certificate online in Uttar Pradesh",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "CASTE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "जाति प्रमाण पत्र बनवाने का नियम",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "CASTE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "caste certificate online registration form",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES", "CASTE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Nivas praman patra residence certificate domain proof",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "RESIDENCE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Apply online for domicile or residence certificate",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "RESIDENCE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "मूल निवास प्रमाण पत्र कैसे डाउनलोड करें",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "RESIDENCE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "domicile certificate application status",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES", "RESIDENCE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Pension aane me delay ho rha h complaint krni h",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "PENSION_DELAY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Old age pension scheme amount is delayed by months",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "PENSION_DELAY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "पेंशन मिलने में देरी की शिकायत दर्ज करें",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "PENSION_DELAY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "pension delayed complaint status tracker",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["GRIEVANCE", "PENSION_DELAY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Registry name mutation land registry issue registry registry",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "LAND_REGISTRY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Property land registration name transfer pending issue",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "LAND_REGISTRY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "भूमि रजिस्ट्री या नामांतरण संबंधी विवाद की शिकायत",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "LAND_REGISTRY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "land registry delay resolution",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["GRIEVANCE", "LAND_REGISTRY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Paani ki paipeline leakage water supply water issue",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "WATER_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "No drinking water supply in our area for three days",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "WATER_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "पेयजल की समस्या और गंदे पानी की शिकायत",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "WATER_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "water pipeline leakage report complaint",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["GRIEVANCE", "WATER_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Bijli bill electricity meter fast running power complaint",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "ELECTRICITY_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Frequent power cuts and high electricity voltage complaints",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "ELECTRICITY_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "बार-बार बिजली कटौती की शिकायत दर्ज करानी है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE", "ELECTRICITY_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "electricity bill high error reporting",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["GRIEVANCE", "ELECTRICITY_COMPLAINT"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mera bhai missing person ho gaya hai kal se ghar nahi aaya",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "MISSING_PERSON"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Help register missing person report for my young child",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "MISSING_PERSON"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "लापता व्यक्ति की शिकायत दर्ज कराने की प्रक्रिया क्या है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "MISSING_PERSON"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "missing relative search help",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SAFETY", "MISSING_PERSON"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Domestic violence gharelu hinsa physical abuse safety help",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "DOMESTIC_VIOLENCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Emergency safety assistance for domestic abuse victim in danger",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "DOMESTIC_VIOLENCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "घरेलू हिंसा के खिलाफ पुलिस शिकायत कैसे करें",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "DOMESTIC_VIOLENCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "domestic abuse report safety shelter helpline",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SAFETY", "DOMESTIC_VIOLENCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Emergency police help needed road accident emergency call",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "EMERGENCY_ASSISTANCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Send immediate emergency dispatch police at my location",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "EMERGENCY_ASSISTANCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "आपातकालीन पुलिस सहायता की तुरंत आवश्यकता है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "EMERGENCY_ASSISTANCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "emergency calling police now",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SAFETY", "EMERGENCY_ASSISTANCE"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Mera aadhar card missing ho gaya",
+    "language": "HINGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Aadhaar number written somewhere, lost physical card",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Pan card misplaced while shifted house",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PAN"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "DL lost on way back home yesterday night",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Passport misplaced inside office bag somewhere",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost passport and driving licence together",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedPath": ["LOSS", "DOCUMENT", "PASSPORT"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "some uphi phishing happened on cell phone",
+    "language": "HINGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["FRAUD", "UPI"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "cyber online hacking threat complain",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["FRAUD", "CYBER_CRIME"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "Need newborn child birth certificate registration detail",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES", "BIRTH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "relative pass away register death cert",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["SERVICES", "DEATH_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "domicile proof doc required status",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["SERVICES", "RESIDENCE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "pension department delayed payments list details",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["GRIEVANCE", "PENSION_DELAY"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "mising child search help",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SAFETY", "MISSING_PERSON"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "caste cert requirement online",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["SERVICES", "CASTE_CERTIFICATE"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "cyber fraud upi complaint",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD", "UPI"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  },
+  {
+    "query": "lost driving licence anywhere on road",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedPath": ["LOSS", "DOCUMENT", "DRIVING_LICENCE"],
+    "expectedOutcome": "DOCUMENT_REPLACEMENT",
+    "expectedWorkflow": "DOCUMENT_REPLACEMENT"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "scenario": "DEATH_CERTIFICATE",
+  "description": "Guidance and steps for handling DEATH_CERTIFICATE scenario.",
+  "authority": "UP_CITIZEN_SERVICES",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT"
+  ],
+  "defaultRisk": "LOW",
+  "citizenRisks": "Minor inconvenience or administrative delay.",
+  "recommendedActions": [
+    "Request official details for DEATH_CERTIFICATE"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Escalate to officer review if applicant is unsatisfied."
+}

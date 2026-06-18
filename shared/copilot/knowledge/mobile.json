@@ -1,0 +1,17 @@
+{
+  "scenario": "MOBILE",
+  "description": "Guidance and steps for handling MOBILE scenario.",
+  "authority": "UP_CITIZEN_SERVICES",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT"
+  ],
+  "defaultRisk": "LOW",
+  "citizenRisks": "Minor inconvenience or administrative delay.",
+  "recommendedActions": [
+    "Request official details for MOBILE"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Escalate to officer review if applicant is unsatisfied."
+}

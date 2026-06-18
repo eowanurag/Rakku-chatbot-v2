@@ -1,0 +1,17 @@
+{
+  "scenario": "PAN",
+  "description": "Guidance and steps for handling PAN scenario.",
+  "authority": "UP_CITIZEN_SERVICES",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT"
+  ],
+  "defaultRisk": "LOW",
+  "citizenRisks": "Minor inconvenience or administrative delay.",
+  "recommendedActions": [
+    "Request official details for PAN"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Escalate to officer review if applicant is unsatisfied."
+}

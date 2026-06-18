@@ -1,0 +1,7 @@
+goal: "Help citizen manage EMERGENCY_ASSISTANCE situation"
+clarificationQuestions:
+  - id: "misuse_suspected"
+    text: "Do you suspect any immediate threat or misuse in this emergency_assistance?"
+    baseInformationGain: 80
+actions:
+  - "Initiate emergency police escalation workflow"

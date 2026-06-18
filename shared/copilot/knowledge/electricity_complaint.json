@@ -1,0 +1,17 @@
+{
+  "scenario": "ELECTRICITY_COMPLAINT",
+  "description": "Guidance and steps for handling ELECTRICITY_COMPLAINT scenario.",
+  "authority": "UP_CITIZEN_SERVICES",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT"
+  ],
+  "defaultRisk": "LOW",
+  "citizenRisks": "Minor inconvenience or administrative delay.",
+  "recommendedActions": [
+    "Request official details for ELECTRICITY_COMPLAINT"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Escalate to officer review if applicant is unsatisfied."
+}

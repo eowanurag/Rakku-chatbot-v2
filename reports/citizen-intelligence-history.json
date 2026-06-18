@@ -1,0 +1,15 @@
+[
+  {
+    "timestamp": "2026-06-18T06:17:53.946Z",
+    "citizenIntelligenceScore": 100,
+    "pathAccuracy": 100,
+    "outcomeAccuracy": 100,
+    "workflowAccuracy": 100,
+    "understandingAccuracy": 100,
+    "clarificationAccuracy": 100,
+    "ambiguityAccuracy": 100,
+    "falsePositiveRate": 0,
+    "activeGraphCoverage": 100,
+    "knowledgeCoverage": 100
+  }
+]

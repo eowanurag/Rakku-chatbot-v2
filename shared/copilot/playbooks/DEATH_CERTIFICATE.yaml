@@ -1,0 +1,7 @@
+goal: "Help citizen manage DEATH_CERTIFICATE situation"
+clarificationQuestions:
+  - id: "misuse_suspected"
+    text: "Do you suspect any immediate threat or misuse in this death_certificate?"
+    baseInformationGain: 80
+actions:
+  - "Provide replacement procedure info"

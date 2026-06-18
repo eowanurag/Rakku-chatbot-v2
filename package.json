@@ -5,7 +5,12 @@
     "test:library-validation": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/message_library_validation_test.ts",
     "test:cx-audit": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/cx_audit_test.ts",
     "test:frustration": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/citizen_frustration_test.ts",
-    "test:stability": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/stability_test.ts"
+    "test:stability": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/stability_test.ts",
+    "test:unit": "npx jest tests/unit tests/copilot",
+    "test:integration": "npx jest tests/integration",
+    "test:e2e": "npx jest tests/e2e",
+    "test:release": "npx jest --runInBand tests/release",
+    "release:report": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/generate-release-health-report.ts"
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.15",

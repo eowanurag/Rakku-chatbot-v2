@@ -1,0 +1,7 @@
+goal: "Help citizen manage PENSION_DELAY situation"
+clarificationQuestions:
+  - id: "misuse_suspected"
+    text: "Do you suspect any immediate threat or misuse in this pension_delay?"
+    baseInformationGain: 80
+actions:
+  - "Provide replacement procedure info"

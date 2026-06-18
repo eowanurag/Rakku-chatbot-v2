@@ -1,0 +1,8 @@
+{
+  "simpleQuery": 500,
+  "mediumQuery": 1500,
+  "clarification": 2500,
+  "graphTraversal": 200,
+  "databaseWrite": 1000,
+  "startupLoadAll": 5000
+}

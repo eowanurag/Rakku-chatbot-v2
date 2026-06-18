@@ -1,0 +1,202 @@
+[
+  {
+    "query": "How to download Aadhaar card online?",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "What is the pension eligibility age?",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "Office timing of police station?",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "Government holiday list for this year",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "information about PM Kisan scheme",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "Aadhaar card download link",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "police recruitment notification details",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "caste certificate online format download",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "district list of uttar pradesh",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "emergency contact number list of government",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "driving license fee structure details",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "passport application documents check list",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "how to apply character certificate guide",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "birth registration fees in municipal corporation",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "cyber crime cell address in lucknow",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "आधार कार्ड कैसे डाउनलोड करें",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "सरकारी छुट्टियों की सूची",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "थाना प्रभारी का मोबाइल नंबर",
+    "language": "HINDI",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "UP police website link",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "who is DGP of UP",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "caste cert format",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "domicile rule change notification pdf",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "pan card correction process details",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "pension scheme details and application forms",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  },
+  {
+    "query": "electricity complaint toll free helpline numbers",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": [],
+    "expectedPath": [],
+    "expectedOutcome": "NO_SCENARIO"
+  }
+]

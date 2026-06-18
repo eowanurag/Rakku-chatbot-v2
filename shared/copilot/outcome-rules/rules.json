@@ -1,10 +1,190 @@
 {
   "mappings": {
     "LOST_AADHAAR": {
-      "outcomes": ["DOCUMENT_REPLACEMENT", "IDENTITY_PROTECTION"]
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT",
+        "IDENTITY_PROTECTION"
+      ]
     },
     "KIDNAPPING": {
-      "outcomes": ["EMERGENCY_ESCALATION"]
+      "outcomes": [
+        "EMERGENCY_ESCALATION"
+      ]
+    },
+    "LOSS": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "DOCUMENT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "AADHAAR": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "PAN": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "PASSPORT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "DRIVING_LICENCE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "VEHICLE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "MOBILE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "THEFT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "PROPERTY": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "FRAUD": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "UPI": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "CREDIT_CARD": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "EMPLOYMENT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "BANKING": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "CYBER_CRIME": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "SERVICES": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "CHARACTER_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "TENANT_VERIFICATION": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "BIRTH_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "DEATH_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "INCOME_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "CASTE_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "RESIDENCE_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "EMERGENCY": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "ASSAULT": {
+      "outcomes": [
+        "EMERGENCY_ESCALATION"
+      ]
+    },
+    "GRIEVANCE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "PENSION_DELAY": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "LAND_REGISTRY": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "WATER_COMPLAINT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "ELECTRICITY_COMPLAINT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "SAFETY": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "MISSING_PERSON": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "DOMESTIC_VIOLENCE": {
+      "outcomes": [
+        "EMERGENCY_ESCALATION"
+      ]
+    },
+    "EMERGENCY_ASSISTANCE": {
+      "outcomes": [
+        "EMERGENCY_ESCALATION"
+      ]
     }
   },
   "fallbacks": {

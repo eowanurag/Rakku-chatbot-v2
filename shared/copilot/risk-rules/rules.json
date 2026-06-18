@@ -12,6 +12,321 @@
     "KIDNAPPING": {
       "baseRisk": "CRITICAL",
       "modifiers": []
+    },
+    "LOSS": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "DOCUMENT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "AADHAAR": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "PAN": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "PASSPORT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "DRIVING_LICENCE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "VEHICLE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "MOBILE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "THEFT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "PROPERTY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "FRAUD": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "UPI": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CREDIT_CARD": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "EMPLOYMENT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "BANKING": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CYBER_CRIME": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "SERVICES": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CHARACTER_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "TENANT_VERIFICATION": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "BIRTH_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "DEATH_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "INCOME_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CASTE_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "RESIDENCE_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "EMERGENCY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "ASSAULT": {
+      "baseRisk": "CRITICAL",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "GRIEVANCE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "PENSION_DELAY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "LAND_REGISTRY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "WATER_COMPLAINT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "ELECTRICITY_COMPLAINT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "SAFETY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "MISSING_PERSON": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "DOMESTIC_VIOLENCE": {
+      "baseRisk": "CRITICAL",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "EMERGENCY_ASSISTANCE": {
+      "baseRisk": "CRITICAL",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
     }
   }
 }

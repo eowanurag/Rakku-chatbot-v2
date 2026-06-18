@@ -1,0 +1,18 @@
+{
+  "scenario": "KIDNAPPING",
+  "description": "Guidance and steps for handling KIDNAPPING scenario.",
+  "authority": "POLICE_EMERGENCY",
+  "outcomes": [
+    "EMERGENCY_ESCALATION"
+  ],
+  "defaultRisk": "CRITICAL",
+  "citizenRisks": "High threat to life or safety.",
+  "recommendedActions": [
+    "Call emergency hotline 112",
+    "Seek safe shelter"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Immediate dispatch of police responders required."
+}

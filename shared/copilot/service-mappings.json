@@ -61,6 +61,186 @@
       "workflowId": "guidance",
       "displayName": "General Guidance",
       "requiresPrerequisites": false
+    },
+    "DOCUMENT_REPLACEMENT": {
+      "workflowId": "complaint",
+      "displayName": "Document Replacement/Loss Report Workflow",
+      "requiresPrerequisites": false
+    },
+    "LOSS": {
+      "workflowId": "complaint",
+      "displayName": "LOSS Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "DOCUMENT": {
+      "workflowId": "complaint",
+      "displayName": "DOCUMENT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "AADHAAR": {
+      "workflowId": "complaint",
+      "displayName": "AADHAAR Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "PAN": {
+      "workflowId": "complaint",
+      "displayName": "PAN Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "PASSPORT": {
+      "workflowId": "complaint",
+      "displayName": "PASSPORT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "DRIVING_LICENCE": {
+      "workflowId": "complaint",
+      "displayName": "DRIVING_LICENCE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "VEHICLE": {
+      "workflowId": "complaint",
+      "displayName": "VEHICLE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "MOBILE": {
+      "workflowId": "complaint",
+      "displayName": "MOBILE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "THEFT": {
+      "workflowId": "complaint",
+      "displayName": "THEFT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "PROPERTY": {
+      "workflowId": "complaint",
+      "displayName": "PROPERTY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "FRAUD": {
+      "workflowId": "complaint",
+      "displayName": "FRAUD Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "UPI": {
+      "workflowId": "complaint",
+      "displayName": "UPI Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "CREDIT_CARD": {
+      "workflowId": "complaint",
+      "displayName": "CREDIT_CARD Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "EMPLOYMENT": {
+      "workflowId": "complaint",
+      "displayName": "EMPLOYMENT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "BANKING": {
+      "workflowId": "complaint",
+      "displayName": "BANKING Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "CYBER_CRIME": {
+      "workflowId": "complaint",
+      "displayName": "CYBER_CRIME Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "SERVICES": {
+      "workflowId": "complaint",
+      "displayName": "SERVICES Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "BIRTH_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "BIRTH_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "DEATH_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "DEATH_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "INCOME_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "INCOME_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "CASTE_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "CASTE_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "RESIDENCE_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "RESIDENCE_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "EMERGENCY": {
+      "workflowId": "complaint",
+      "displayName": "EMERGENCY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "EMERGENCY_ESCALATION": {
+      "workflowId": "guidance",
+      "displayName": "Emergency Escalation Workflow",
+      "requiresPrerequisites": false
+    },
+    "KIDNAPPING": {
+      "workflowId": "guidance",
+      "displayName": "KIDNAPPING Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "ASSAULT": {
+      "workflowId": "guidance",
+      "displayName": "ASSAULT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "GRIEVANCE": {
+      "workflowId": "complaint",
+      "displayName": "GRIEVANCE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "PENSION_DELAY": {
+      "workflowId": "complaint",
+      "displayName": "PENSION_DELAY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "LAND_REGISTRY": {
+      "workflowId": "complaint",
+      "displayName": "LAND_REGISTRY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "WATER_COMPLAINT": {
+      "workflowId": "complaint",
+      "displayName": "WATER_COMPLAINT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "ELECTRICITY_COMPLAINT": {
+      "workflowId": "complaint",
+      "displayName": "ELECTRICITY_COMPLAINT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "SAFETY": {
+      "workflowId": "complaint",
+      "displayName": "SAFETY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "MISSING_PERSON": {
+      "workflowId": "complaint",
+      "displayName": "MISSING_PERSON Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "DOMESTIC_VIOLENCE": {
+      "workflowId": "guidance",
+      "displayName": "DOMESTIC_VIOLENCE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "EMERGENCY_ASSISTANCE": {
+      "workflowId": "guidance",
+      "displayName": "EMERGENCY_ASSISTANCE Service Workflow",
+      "requiresPrerequisites": false
     }
   }
 }

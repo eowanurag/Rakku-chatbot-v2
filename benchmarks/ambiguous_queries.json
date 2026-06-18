@@ -1,0 +1,227 @@
+[
+  {
+    "query": "Mera certificate kho gaya hai",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT"],
+    "expectedPath": ["LOSS", "DOCUMENT"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "My document is missing",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT"],
+    "expectedPath": ["LOSS", "DOCUMENT"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "My account has a problem",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "My payment failed",
+    "language": "ENGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["FRAUD"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "दस्तावेज़ गुम हो गया है",
+    "language": "HINDI",
+    "difficulty": "EASY",
+    "expectedHints": ["LOSS", "DOCUMENT"],
+    "expectedPath": ["LOSS", "DOCUMENT"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "certificate lost",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS", "DOCUMENT"],
+    "expectedPath": ["LOSS", "DOCUMENT"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "how to apply certificate",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "I have an emergency situation",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SAFETY"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "complaint lodge krni hai",
+    "language": "HINGLISH",
+    "difficulty": "EASY",
+    "expectedHints": ["GRIEVANCE"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "loss issue",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["LOSS"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "fraud alert",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["FRAUD"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "safety request",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SAFETY"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "grievance portal report",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["GRIEVANCE"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "service details request",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SERVICES"],
+    "expectedPath": ["SERVICES"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "खो गया है",
+    "language": "HINDI",
+    "difficulty": "HARD",
+    "expectedHints": ["LOSS"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "missing items",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["LOSS"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "hacked online",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["FRAUD"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "certificate missing status",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["LOSS", "DOCUMENT"],
+    "expectedPath": ["LOSS", "DOCUMENT"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "complaint update status pending",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["GRIEVANCE"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "emergency help dispatch",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["SAFETY"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "missing help support",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["LOSS"],
+    "expectedPath": ["LOSS"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "lost document record",
+    "language": "ENGLISH",
+    "difficulty": "HARD",
+    "expectedHints": ["LOSS", "DOCUMENT"],
+    "expectedPath": ["LOSS", "DOCUMENT"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "fraud transactions",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["FRAUD"],
+    "expectedPath": ["FRAUD"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "public grievances query",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["GRIEVANCE"],
+    "expectedPath": ["GRIEVANCE"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  },
+  {
+    "query": "security incident report",
+    "language": "ENGLISH",
+    "difficulty": "MEDIUM",
+    "expectedHints": ["SAFETY"],
+    "expectedPath": ["SAFETY"],
+    "expectedOutcome": "CLARIFICATION_REQUIRED",
+    "expectedWorkflow": "CLARIFICATION_REQUIRED"
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "minimumReleaseScore": 90,
+  "maxGraphMissPercentage": 5,
+  "startupTimeMs": 5000,
+  "blockOnPrivacyFailure": true,
+  "blockOnMigrationFailure": true,
+  "blockOnCIGateFailure": true,
+  "blockOnGoldenJourneyFailure": true,
+  "blockOnWorkflowFailure": true,
+  "blockOnCacheCorruption": true,
+  "responseTimeRegressionWarningPercent": 10,
+  "severityLevels": {
+    "CRITICAL": {
+      "action": "BLOCK_DEPLOYMENT",
+      "items": [
+        "migration_failure",
+        "graph_validation_failure",
+        "privacy_leak",
+        "ci_gate_failure"
+      ]
+    },
+    "HIGH": {
+      "action": "BLOCK_DEPLOYMENT",
+      "items": [
+        "golden_journey_failure",
+        "workflow_failure",
+        "cache_corruption"
+      ]
+    },
+    "MEDIUM": {
+      "action": "WARNING",
+      "items": [
+        "response_time_regression",
+        "graph_misses_rising",
+        "coverage_drop"
+      ]
+    },
+    "LOW": {
+      "action": "NOTICE",
+      "items": [
+        "report_generation_issues",
+        "trend_analysis_unavailable"
+      ]
+    }
+  }
+}

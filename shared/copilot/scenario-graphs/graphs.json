@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "roots": ["LOSS", "THEFT", "FRAUD", "SERVICES", "EMERGENCY"],
+  "roots": ["LOSS", "THEFT", "FRAUD", "SERVICES", "EMERGENCY", "GRIEVANCE", "SAFETY"],
   "nodes": {
     "LOSS": {
       "version": 1,
@@ -10,9 +10,34 @@
     "DOCUMENT": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["AADHAAR", "PAN", "PASSPORT"]
+      "children": ["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENCE"]
     },
     "AADHAAR": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "PAN": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "PASSPORT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "DRIVING_LICENCE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "VEHICLE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "MOBILE": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
@@ -22,15 +47,80 @@
       "status": "ACTIVE",
       "children": ["VEHICLE", "MOBILE", "PROPERTY"]
     },
+    "PROPERTY": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
     "FRAUD": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["UPI", "CREDIT_CARD", "EMPLOYMENT"]
+      "children": ["UPI", "CREDIT_CARD", "EMPLOYMENT", "BANKING", "CYBER_CRIME"]
+    },
+    "UPI": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "CREDIT_CARD": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "EMPLOYMENT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "BANKING": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "CYBER_CRIME": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
     },
     "SERVICES": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["CHARACTER_CERTIFICATE", "TENANT_VERIFICATION"]
+      "children": ["CHARACTER_CERTIFICATE", "TENANT_VERIFICATION", "BIRTH_CERTIFICATE", "DEATH_CERTIFICATE", "INCOME_CERTIFICATE", "CASTE_CERTIFICATE", "RESIDENCE_CERTIFICATE"]
+    },
+    "CHARACTER_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "TENANT_VERIFICATION": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "BIRTH_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "DEATH_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "INCOME_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "CASTE_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "RESIDENCE_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
     },
     "EMERGENCY": {
       "version": 1,
@@ -38,6 +128,59 @@
       "children": ["KIDNAPPING", "ASSAULT"]
     },
     "KIDNAPPING": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": [],
+      "requiresImmediateEscalation": true
+    },
+    "ASSAULT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": [],
+      "requiresImmediateEscalation": true
+    },
+    "GRIEVANCE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["PENSION_DELAY", "LAND_REGISTRY", "WATER_COMPLAINT", "ELECTRICITY_COMPLAINT"]
+    },
+    "PENSION_DELAY": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "LAND_REGISTRY": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "WATER_COMPLAINT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "ELECTRICITY_COMPLAINT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "SAFETY": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": ["MISSING_PERSON", "DOMESTIC_VIOLENCE", "EMERGENCY_ASSISTANCE"]
+    },
+    "MISSING_PERSON": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "DOMESTIC_VIOLENCE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": [],
+      "requiresImmediateEscalation": true
+    },
+    "EMERGENCY_ASSISTANCE": {
       "version": 1,
       "status": "ACTIVE",
       "children": [],

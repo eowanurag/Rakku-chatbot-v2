@@ -1,0 +1,7 @@
+goal: "Help citizen manage CYBER_CRIME situation"
+clarificationQuestions:
+  - id: "misuse_suspected"
+    text: "Do you suspect any immediate threat or misuse in this cyber_crime?"
+    baseInformationGain: 80
+actions:
+  - "Provide replacement procedure info"

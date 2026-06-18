@@ -1,0 +1,7 @@
+goal: "Help citizen manage LAND_REGISTRY situation"
+clarificationQuestions:
+  - id: "misuse_suspected"
+    text: "Do you suspect any immediate threat or misuse in this land_registry?"
+    baseInformationGain: 80
+actions:
+  - "Provide replacement procedure info"
