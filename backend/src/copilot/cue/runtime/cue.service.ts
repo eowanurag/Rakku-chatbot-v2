@@ -2,7 +2,7 @@ import { Injectable, Inject, Optional } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../prisma.service';
 import { UnderstandingProvider } from './providers/understanding-provider.interface';
-import { CueResult } from '../../interfaces/cue-result.interface';
+import { CueResult } from '../interfaces/cue-result.interface';
 import { CueEventsEmitter } from '../telemetry/cue-events';
 
 @Injectable()

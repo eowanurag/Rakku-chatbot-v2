@@ -1,4 +1,4 @@
-import { ConfidenceBand, UnderstandingStatus } from '../../interfaces/cue-result.interface';
+import { ConfidenceBand, UnderstandingStatus } from '../interfaces/cue-result.interface';
 import { TransformationLogEntry } from './dictionary-normalizer';
 
 // Set of commonly known words, stop words, and punctuation helpers

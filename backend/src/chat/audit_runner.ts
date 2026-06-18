@@ -1,11 +1,11 @@
 import { ChatService } from './chat.service';
 import { PrismaService } from '../prisma.service';
 import { ValidationService } from './validation.service';
-import { ComplaintService } from '../complaint/complaint.service';
-import { VerificationService } from '../verification/verification.service';
-import { CertificateService } from '../certificate/certificate.service';
-import { EventService } from '../event/event.service';
-import { TrackingService } from '../tracking/tracking.service';
+import { ComplaintService } from '../workflows/complaint/complaint.service';
+import { VerificationService } from '../workflows/verification/verification.service';
+import { CertificateService } from '../workflows/certificate/certificate.service';
+import { EventService } from '../workflows/event/event.service';
+import { TrackingService } from '../workflows/tracking/tracking.service';
 import { AnalyticsService } from '../citizen-assistance/analytics.service';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';

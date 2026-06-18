@@ -34,8 +34,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: rakku-chatbot-v2-backend:latest
     container_name: rakku-backend
     restart: always

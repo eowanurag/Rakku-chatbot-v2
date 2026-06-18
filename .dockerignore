@@ -1,0 +1,13 @@
+node_modules
+backend/node_modules
+backend/dist
+frontend/node_modules
+frontend/.next
+ai-service/__pycache__
+.git
+coverage
+reports
+snapshots
+tests
+benchmarks
+*.log

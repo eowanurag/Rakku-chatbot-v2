@@ -45,7 +45,7 @@ export class RuleClassifier {
     }
   }
 
-  public classify(text: string): { intent: string; category: string; confidence: number } | null {
+  public classify(text: string): { intent: string; category: string; confidence: number; scenarioHints?: any; hintSource?: string[]; legacyIntent?: string } | null {
     const cleanText = text.toLowerCase().trim();
 
     // 1. Dictionary Phrase Match Scoring
