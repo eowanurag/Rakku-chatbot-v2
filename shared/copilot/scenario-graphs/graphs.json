@@ -1,16 +1,39 @@
 {
   "version": "1.0",
-  "roots": ["LOSS", "THEFT", "FRAUD", "SERVICES", "EMERGENCY", "GRIEVANCE", "SAFETY"],
+  "roots": [
+    "LOSS",
+    "THEFT",
+    "FRAUD",
+    "SERVICES",
+    "EMERGENCY",
+    "GRIEVANCE",
+    "SAFETY"
+  ],
   "nodes": {
     "LOSS": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["DOCUMENT", "VEHICLE", "MOBILE"]
+      "children": [
+        "DOCUMENT",
+        "VEHICLE_DOCUMENTS",
+        "MOBILE"
+      ]
     },
     "DOCUMENT": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["AADHAAR", "PAN", "PASSPORT", "DRIVING_LICENCE"]
+      "children": [
+        "AADHAAR",
+        "PAN",
+        "PASSPORT",
+        "DRIVING_LICENSE",
+        "VOTER_ID",
+        "RATION_CARD",
+        "PROPERTY_DOCUMENT",
+        "EDUCATION_CERTIFICATE",
+        "OTHER_DOCUMENT",
+        "TEST_SCENARIO_RUN"
+      ]
     },
     "AADHAAR": {
       "version": 1,
@@ -27,12 +50,62 @@
       "status": "ACTIVE",
       "children": []
     },
-    "DRIVING_LICENCE": {
+    "DRIVING_LICENSE": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
     },
-    "VEHICLE": {
+    "VOTER_ID": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "RATION_CARD": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "PROPERTY_DOCUMENT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "EDUCATION_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "OTHER_DOCUMENT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "VEHICLE_DOCUMENTS": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": [
+        "RC",
+        "INSURANCE",
+        "POLLUTION_CERTIFICATE",
+        "PERMIT"
+      ]
+    },
+    "RC": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "INSURANCE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "POLLUTION_CERTIFICATE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "PERMIT": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
@@ -45,9 +118,43 @@
     "THEFT": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["VEHICLE", "MOBILE", "PROPERTY"]
+      "children": [
+        "VEHICLE",
+        "MOBILE",
+        "PROPERTY",
+        "OTHER_PROPERTY"
+      ]
+    },
+    "VEHICLE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": [
+        "BIKE",
+        "CAR",
+        "COMMERCIAL_VEHICLE"
+      ]
+    },
+    "BIKE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "CAR": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "COMMERCIAL_VEHICLE": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
     },
     "PROPERTY": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "OTHER_PROPERTY": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
@@ -55,7 +162,17 @@
     "FRAUD": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["UPI", "CREDIT_CARD", "EMPLOYMENT", "BANKING", "CYBER_CRIME"]
+      "children": [
+        "UPI",
+        "BANKING",
+        "CREDIT_CARD",
+        "DEBIT_CARD",
+        "ATM",
+        "OTP",
+        "SOCIAL_MEDIA",
+        "CYBER_EXTORTION",
+        "IDENTITY_THEFT"
+      ]
     },
     "UPI": {
       "version": 1,
@@ -67,17 +184,37 @@
       "status": "ACTIVE",
       "children": []
     },
-    "EMPLOYMENT": {
-      "version": 1,
-      "status": "ACTIVE",
-      "children": []
-    },
     "BANKING": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
     },
-    "CYBER_CRIME": {
+    "DEBIT_CARD": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "ATM": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "OTP": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "SOCIAL_MEDIA": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "CYBER_EXTORTION": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "IDENTITY_THEFT": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
@@ -85,7 +222,15 @@
     "SERVICES": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["CHARACTER_CERTIFICATE", "TENANT_VERIFICATION", "BIRTH_CERTIFICATE", "DEATH_CERTIFICATE", "INCOME_CERTIFICATE", "CASTE_CERTIFICATE", "RESIDENCE_CERTIFICATE"]
+      "children": [
+        "CHARACTER_CERTIFICATE",
+        "TENANT_VERIFICATION",
+        "BIRTH_CERTIFICATE",
+        "DEATH_CERTIFICATE",
+        "INCOME_CERTIFICATE",
+        "CASTE_CERTIFICATE",
+        "RESIDENCE_CERTIFICATE"
+      ]
     },
     "CHARACTER_CERTIFICATE": {
       "version": 1,
@@ -125,7 +270,8 @@
     "EMERGENCY": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["KIDNAPPING", "ASSAULT"]
+      "children": [],
+      "requiresImmediateEscalation": true
     },
     "KIDNAPPING": {
       "version": 1,
@@ -142,34 +288,57 @@
     "GRIEVANCE": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["PENSION_DELAY", "LAND_REGISTRY", "WATER_COMPLAINT", "ELECTRICITY_COMPLAINT"]
+      "children": [
+        "PENSION_DELAY",
+        "LAND_REGISTRY",
+        "WATER_COMPLAINT",
+        "ELECTRICITY_COMPLAINT"
+      ]
     },
     "PENSION_DELAY": {
       "version": 1,
-      "status": "ACTIVE",
+      "status": "DEPRECATED",
       "children": []
     },
     "LAND_REGISTRY": {
       "version": 1,
-      "status": "ACTIVE",
+      "status": "DEPRECATED",
       "children": []
     },
     "WATER_COMPLAINT": {
       "version": 1,
-      "status": "ACTIVE",
+      "status": "DEPRECATED",
       "children": []
     },
     "ELECTRICITY_COMPLAINT": {
       "version": 1,
-      "status": "ACTIVE",
+      "status": "DEPRECATED",
       "children": []
     },
     "SAFETY": {
       "version": 1,
       "status": "ACTIVE",
-      "children": ["MISSING_PERSON", "DOMESTIC_VIOLENCE", "EMERGENCY_ASSISTANCE"]
+      "children": [
+        "MISSING_PERSON",
+        "CHILD_MISSING",
+        "WOMEN_SAFETY",
+        "DOMESTIC_VIOLENCE",
+        "SENIOR_CITIZEN",
+        "ACCIDENT",
+        "EMERGENCY"
+      ]
     },
     "MISSING_PERSON": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "CHILD_MISSING": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "WOMEN_SAFETY": {
       "version": 1,
       "status": "ACTIVE",
       "children": []
@@ -180,11 +349,20 @@
       "children": [],
       "requiresImmediateEscalation": true
     },
-    "EMERGENCY_ASSISTANCE": {
+    "SENIOR_CITIZEN": {
       "version": 1,
       "status": "ACTIVE",
-      "children": [],
-      "requiresImmediateEscalation": true
+      "children": []
+    },
+    "ACCIDENT": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
+    },
+    "TEST_SCENARIO_RUN": {
+      "version": 1,
+      "status": "ACTIVE",
+      "children": []
     }
   }
 }

@@ -36,12 +36,57 @@
         "DOCUMENT_REPLACEMENT"
       ]
     },
-    "DRIVING_LICENCE": {
+    "DRIVING_LICENSE": {
       "outcomes": [
         "DOCUMENT_REPLACEMENT"
       ]
     },
-    "VEHICLE": {
+    "VOTER_ID": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "RATION_CARD": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "PROPERTY_DOCUMENT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "EDUCATION_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "OTHER_DOCUMENT": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "VEHICLE_DOCUMENTS": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "RC": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "INSURANCE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "POLLUTION_CERTIFICATE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "PERMIT": {
       "outcomes": [
         "DOCUMENT_REPLACEMENT"
       ]
@@ -56,7 +101,32 @@
         "DOCUMENT_REPLACEMENT"
       ]
     },
+    "VEHICLE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "BIKE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "CAR": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "COMMERCIAL_VEHICLE": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
     "PROPERTY": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "OTHER_PROPERTY": {
       "outcomes": [
         "DOCUMENT_REPLACEMENT"
       ]
@@ -72,6 +142,36 @@
       ]
     },
     "CREDIT_CARD": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "DEBIT_CARD": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "ATM": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "OTP": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "SOCIAL_MEDIA": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "CYBER_EXTORTION": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "IDENTITY_THEFT": {
       "outcomes": [
         "DOCUMENT_REPLACEMENT"
       ]
@@ -176,14 +276,34 @@
         "DOCUMENT_REPLACEMENT"
       ]
     },
+    "CHILD_MISSING": {
+      "outcomes": [
+        "EMERGENCY_ESCALATION"
+      ]
+    },
+    "WOMEN_SAFETY": {
+      "outcomes": [
+        "EMERGENCY_ESCALATION"
+      ]
+    },
     "DOMESTIC_VIOLENCE": {
       "outcomes": [
         "EMERGENCY_ESCALATION"
       ]
     },
-    "EMERGENCY_ASSISTANCE": {
+    "SENIOR_CITIZEN": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
+      ]
+    },
+    "ACCIDENT": {
       "outcomes": [
         "EMERGENCY_ESCALATION"
+      ]
+    },
+    "TEST_SCENARIO_RUN": {
+      "outcomes": [
+        "DOCUMENT_REPLACEMENT"
       ]
     }
   },

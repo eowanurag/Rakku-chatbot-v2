@@ -1,0 +1,15 @@
+goal: Help citizen resolve EDUCATION_CERTIFICATE
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+clarificationQuestions:
+  - id: incident_details
+    text: >-
+      Can you tell me where and when the education_certificate incident took
+      place?
+    baseInformationGain: 85
+actions:
+  - Initiate CITIZEN_SERVICES
+resolutionCriteria: All required fields for EDUCATION_CERTIFICATE are filled
+escalationCriteria: No response from citizen for 48 hours

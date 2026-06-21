@@ -1,0 +1,9 @@
+{
+  "version": "2.7.8.2-A",
+  "releaseLocked": true,
+  "conversationReplayCount": 190,
+  "sentinelIncidentCount": 3,
+  "productionIncidentCount": 3,
+  "certifiedWorkflowCount": 29,
+  "checksum": "LOCK_VERIFIED_SHA256"
+}

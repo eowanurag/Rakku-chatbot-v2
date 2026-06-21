@@ -11,5 +11,34 @@
     "falsePositiveRate": 0,
     "activeGraphCoverage": 100,
     "knowledgeCoverage": 100
+  },
+  {
+    "timestamp": "2026-06-19T09:16:58.088Z",
+    "citizenIntelligenceScore": 98.6,
+    "pathAccuracy": 100,
+    "outcomeAccuracy": 100,
+    "workflowAccuracy": 100,
+    "understandingAccuracy": 100,
+    "clarificationAccuracy": 100,
+    "ambiguityAccuracy": 100,
+    "falsePositiveRate": 0,
+    "activeGraphCoverage": 92.98,
+    "knowledgeCoverage": 100,
+    "playbookCoverage": 100,
+    "registryCoverage": 100,
+    "workflowReadinessScore": 98.6
+  },
+  {
+    "timestamp": "2026-06-19T11:06:10.142Z",
+    "citizenIntelligenceScore": 98.17,
+    "pathAccuracy": 100,
+    "outcomeAccuracy": 100,
+    "workflowAccuracy": 100,
+    "activeScenarioCoverage": 92.98,
+    "knowledgeCoverage": 100,
+    "playbookCoverage": 100,
+    "registryCoverage": 100,
+    "workflowReadinessScore": 98.17,
+    "conversationScore": 97.85
   }
 ]

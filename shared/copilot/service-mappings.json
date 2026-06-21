@@ -241,6 +241,131 @@
       "workflowId": "guidance",
       "displayName": "EMERGENCY_ASSISTANCE Service Workflow",
       "requiresPrerequisites": false
+    },
+    "DRIVING_LICENSE": {
+      "workflowId": "complaint",
+      "displayName": "DRIVING_LICENSE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "VOTER_ID": {
+      "workflowId": "complaint",
+      "displayName": "VOTER_ID Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "RATION_CARD": {
+      "workflowId": "complaint",
+      "displayName": "RATION_CARD Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "PROPERTY_DOCUMENT": {
+      "workflowId": "complaint",
+      "displayName": "PROPERTY_DOCUMENT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "EDUCATION_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "EDUCATION_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "OTHER_DOCUMENT": {
+      "workflowId": "complaint",
+      "displayName": "OTHER_DOCUMENT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "VEHICLE_DOCUMENTS": {
+      "workflowId": "complaint",
+      "displayName": "VEHICLE_DOCUMENTS Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "RC": {
+      "workflowId": "complaint",
+      "displayName": "RC Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "INSURANCE": {
+      "workflowId": "complaint",
+      "displayName": "INSURANCE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "POLLUTION_CERTIFICATE": {
+      "workflowId": "complaint",
+      "displayName": "POLLUTION_CERTIFICATE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "PERMIT": {
+      "workflowId": "complaint",
+      "displayName": "PERMIT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "BIKE": {
+      "workflowId": "complaint",
+      "displayName": "BIKE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "CAR": {
+      "workflowId": "complaint",
+      "displayName": "CAR Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "COMMERCIAL_VEHICLE": {
+      "workflowId": "complaint",
+      "displayName": "COMMERCIAL_VEHICLE Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "OTHER_PROPERTY": {
+      "workflowId": "complaint",
+      "displayName": "OTHER_PROPERTY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "DEBIT_CARD": {
+      "workflowId": "complaint",
+      "displayName": "DEBIT_CARD Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "ATM": {
+      "workflowId": "complaint",
+      "displayName": "ATM Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "OTP": {
+      "workflowId": "complaint",
+      "displayName": "OTP Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "SOCIAL_MEDIA": {
+      "workflowId": "complaint",
+      "displayName": "SOCIAL_MEDIA Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "CYBER_EXTORTION": {
+      "workflowId": "complaint",
+      "displayName": "CYBER_EXTORTION Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "IDENTITY_THEFT": {
+      "workflowId": "complaint",
+      "displayName": "IDENTITY_THEFT Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "CHILD_MISSING": {
+      "workflowId": "complaint",
+      "displayName": "CHILD_MISSING Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "WOMEN_SAFETY": {
+      "workflowId": "complaint",
+      "displayName": "WOMEN_SAFETY Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "SENIOR_CITIZEN": {
+      "workflowId": "complaint",
+      "displayName": "SENIOR_CITIZEN Service Workflow",
+      "requiresPrerequisites": false
+    },
+    "ACCIDENT": {
+      "workflowId": "complaint",
+      "displayName": "ACCIDENT Service Workflow",
+      "requiresPrerequisites": false
     }
   }
 }

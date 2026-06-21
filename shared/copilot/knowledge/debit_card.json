@@ -1,0 +1,23 @@
+{
+  "scenario": "DEBIT_CARD",
+  "description": "Official guidelines and details for handling DEBIT_CARD scenarios.",
+  "eligibility": "All citizens residing in Uttar Pradesh.",
+  "requiredInformation": [
+    "incidentDate",
+    "incidentLocation"
+  ],
+  "requiredDocuments": [
+    "Identity Proof (Aadhaar/PAN)"
+  ],
+  "risks": "Potential delays if documentation is incomplete.",
+  "escalationRules": "Escalate to Superintendent if unresolved in 15 days.",
+  "recommendedActions": [
+    "Lodge report online via portal",
+    "Obtain unique reference key"
+  ],
+  "officerGuidance": "Verify the applicant credentials and assign to the target station.",
+  "citizenGuidance": "Ensure all details provided are complete and true.",
+  "references": [
+    "Uttar Pradesh Police Citizen Services Manual"
+  ]
+}

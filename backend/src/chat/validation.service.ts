@@ -73,6 +73,18 @@ export class ValidationService {
     };
   }
 
+  validateAddress(address: string): boolean {
+    if (!address) return false;
+    const trimmed = address.trim();
+    if (trimmed.length < 5) return false;
+    const lower = trimmed.toLowerCase();
+    const rejected = ['', '-', 'n/a', 'test', 'asdf', '123'];
+    if (rejected.includes(lower)) {
+      return false;
+    }
+    return true;
+  }
+
   /**
    * Validates date format DD/MM/YYYY and rejects future dates for reports/complaints.
    */

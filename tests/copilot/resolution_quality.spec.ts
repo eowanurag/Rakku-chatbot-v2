@@ -18,7 +18,7 @@ describe('SRE Resolution Quality Mapping', () => {
 
   it('should map high confidence correctly when confidence is >= 0.95', async () => {
     const sessionId = "quality-test-session-1-" + Math.random().toString(36).substring(7);
-    const assessment = await sreService.processIntent(sessionId, ["LOSS"], {}, {
+    const assessment = await sreService.processIntent(sessionId, ["LOSS"], { misuseSuspected: true }, {
       cueConfidence: 0.99,
       saeConfidence: 0.98,
       scenarioHints: ["LOSS"]
@@ -42,7 +42,7 @@ describe('SRE Resolution Quality Mapping', () => {
       }
     });
 
-    const assessment = await sreService.processIntent(sessionId, ["LOSS", "DOCUMENT"], {}, {
+    const assessment = await sreService.processIntent(sessionId, ["LOSS", "DOCUMENT"], { misuseSuspected: true }, {
       cueConfidence: 0.80,
       saeConfidence: 0.80,
       scenarioHints: ["LOSS", "DOCUMENT"]
@@ -52,7 +52,7 @@ describe('SRE Resolution Quality Mapping', () => {
 
   it('should map officer review quality when confidence is low or workflow escalates', async () => {
     const sessionId = "quality-test-session-3-" + Math.random().toString(36).substring(7);
-    const assessment = await sreService.processIntent(sessionId, ["LOSS", "DOCUMENT", "PASSPORT"], {}, {
+    const assessment = await sreService.processIntent(sessionId, ["LOSS", "DOCUMENT", "PASSPORT"], { misuseSuspected: true }, {
       cueConfidence: 0.10,
       saeConfidence: 0.10,
       scenarioHints: ["LOSS", "DOCUMENT", "PASSPORT"]

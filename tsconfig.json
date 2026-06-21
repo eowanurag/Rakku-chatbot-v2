@@ -21,6 +21,11 @@
     "forceConsistentCasingInFileNames": false,
     "typeRoots": ["./node_modules/@types", "./backend/node_modules/@types"],
     "paths": {
+      "@backend/complaint/*": ["backend/src/workflows/complaint/*"],
+      "@backend/verification/*": ["backend/src/workflows/verification/*"],
+      "@backend/certificate/*": ["backend/src/workflows/certificate/*"],
+      "@backend/event/*": ["backend/src/workflows/event/*"],
+      "@backend/tracking/*": ["backend/src/workflows/tracking/*"],
       "@backend/*": ["backend/src/*"],
       "@shared/*": ["shared/*"],
       "@nestjs/*": ["backend/node_modules/@nestjs/*"],

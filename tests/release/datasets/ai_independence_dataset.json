@@ -1,0 +1,135 @@
+[
+  {
+    "scenario": "LOST_AADHAAR",
+    "query": "I lost my Aadhaar card card number 5432 1234 9876 in metro yesterday",
+    "language": "ENGLISH",
+    "workflow": "COMPLAINT",
+    "expectedOutcome": "LOST_DOCUMENT_REPORT"
+  },
+  {
+    "scenario": "LOST_PAN",
+    "query": "Mera PAN Card ABCDE1234F market me kho gaya hai",
+    "language": "HINGLISH",
+    "workflow": "COMPLAINT",
+    "expectedOutcome": "LOST_DOCUMENT_REPORT"
+  },
+  {
+    "scenario": "BIKE_THEFT",
+    "query": "Someone stole my motorcycle plate UP32AB1234 from outside my house",
+    "language": "ENGLISH",
+    "workflow": "COMPLAINT",
+    "expectedOutcome": "VEHICLE_THEFT_REPORT"
+  },
+  {
+    "scenario": "LOST_MOBILE",
+    "query": "Mera phone number 9876543210 redmi phone lost near station on 12/03/2026",
+    "language": "HINGLISH",
+    "workflow": "COMPLAINT",
+    "expectedOutcome": "VEHICLE_THEFT_REPORT"
+  },
+  {
+    "scenario": "CYBER_FRAUD",
+    "query": "I received a phishing link and lost 50000 rupees from my bank account",
+    "language": "ENGLISH",
+    "workflow": "COMPLAINT",
+    "expectedOutcome": "CYBER_COMPLAINT"
+  },
+  {
+    "scenario": "TENANT_VERIFICATION",
+    "query": "I want to apply for tenant verification",
+    "language": "ENGLISH",
+    "workflow": "VERIFICATION",
+    "expectedOutcome": "TENANT_VERIFICATION"
+  },
+  {
+    "scenario": "CHARACTER_CERTIFICATE",
+    "query": "I need to apply for character certificate validation for my new job",
+    "language": "ENGLISH",
+    "workflow": "VERIFICATION",
+    "expectedOutcome": "CHARACTER_CERTIFICATE"
+  },
+  {
+    "scenario": "EVENT_PERMISSION",
+    "query": "We want to organise a public event permission request",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "EVENT_PERMISSION"
+  },
+  {
+    "scenario": "APPLICATION_TRACKING",
+    "query": "Track my application status number UP-123456",
+    "language": "ENGLISH",
+    "workflow": "TRACKING",
+    "expectedOutcome": "APPLICATION_TRACKING"
+  },
+  {
+    "scenario": "BIRTH_CERTIFICATE",
+    "query": "How to register a new birth certificate online?",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "BIRTH_CERTIFICATE"
+  },
+  {
+    "scenario": "DEATH_CERTIFICATE",
+    "query": "I need to obtain a death certificate report",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "DEATH_CERTIFICATE"
+  },
+  {
+    "scenario": "INCOME_CERTIFICATE",
+    "query": "income certificate application details and form",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "INCOME_CERTIFICATE"
+  },
+  {
+    "scenario": "CASTE_CERTIFICATE",
+    "query": "apply caste certificate up-governance",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "CASTE_CERTIFICATE"
+  },
+  {
+    "scenario": "RESIDENCE_CERTIFICATE",
+    "query": "residence certificate requirements details",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "DOMICILE_CERTIFICATE"
+  },
+  {
+    "scenario": "WATER_COMPLAINT",
+    "query": "report water supply leakage in our street",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "WATER_COMPLAINT"
+  },
+  {
+    "scenario": "ELECTRICITY_COMPLAINT",
+    "query": "electricity bill issue and meter complaint",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "ELECTRICITY_COMPLAINT"
+  },
+  {
+    "scenario": "MISSING_PERSON",
+    "query": "my brother has been missing since yesterday morning",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "MISSING_PERSON"
+  },
+  {
+    "scenario": "DOMESTIC_VIOLENCE",
+    "query": "help me my husband is beating me at home help",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "DOMESTIC_VIOLENCE"
+  },
+  {
+    "scenario": "EMERGENCY_ASSISTANCE",
+    "query": "accident occurred on national highway immediate police required",
+    "language": "ENGLISH",
+    "workflow": "SERVICES",
+    "expectedOutcome": "EMERGENCY_HELPLINES"
+  }
+]

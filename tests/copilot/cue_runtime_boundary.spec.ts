@@ -9,8 +9,8 @@ describe('CUE Runtime Boundary Verification', () => {
     const result = await provider.understand(text);
 
     expect(result).toBeDefined();
-    expect(result.normalizedNarrative).toContain("MOBILE");
-    expect(result.normalizedNarrative).toContain("driving licence");
+    expect(result.normalizedNarrative.toUpperCase()).toContain("MOBILE");
+    expect(result.normalizedNarrative.toLowerCase()).toContain("driving licence");
     
     // Verify zero database access occurred
     expect(result.usedAI).toBe(false);

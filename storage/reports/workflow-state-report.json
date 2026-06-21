@@ -1,0 +1,402 @@
+[
+  {
+    "scenario": "AADHAAR",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "PAN",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "PASSPORT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "DRIVING_LICENSE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "VOTER_ID",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "RATION_CARD",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "PROPERTY_DOCUMENT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "EDUCATION_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "OTHER_DOCUMENT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "RC",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "INSURANCE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "POLLUTION_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "PERMIT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "MOBILE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "BIKE",
+    "requiredSteps": 2,
+    "completedSteps": 1,
+    "skippedSteps": 1,
+    "duplicateSteps": 1,
+    "abandonmentPoint": "vehicle_details",
+    "completionRate": 50,
+    "failureCategory": "QUESTION_LOOP",
+    "severity": "HIGH",
+    "rootCause": "PLAYBOOK",
+    "recommendedAction": "Review BIKE clarification flow in playbooks/BIKE.yaml"
+  },
+  {
+    "scenario": "CAR",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "COMMERCIAL_VEHICLE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "PROPERTY",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "OTHER_PROPERTY",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "UPI",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "CREDIT_CARD",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "BANKING",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "DEBIT_CARD",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "ATM",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "OTP",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "SOCIAL_MEDIA",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "CYBER_EXTORTION",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "IDENTITY_THEFT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "CHARACTER_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "TENANT_VERIFICATION",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "BIRTH_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "DEATH_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "INCOME_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "CASTE_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "RESIDENCE_CERTIFICATE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "EMERGENCY",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "KIDNAPPING",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "ASSAULT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "MISSING_PERSON",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "CHILD_MISSING",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "WOMEN_SAFETY",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "DOMESTIC_VIOLENCE",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "SENIOR_CITIZEN",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  },
+  {
+    "scenario": "ACCIDENT",
+    "requiredSteps": 2,
+    "completedSteps": 2,
+    "skippedSteps": 0,
+    "duplicateSteps": 0,
+    "abandonmentPoint": null,
+    "completionRate": 100
+  }
+]

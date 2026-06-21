@@ -1,0 +1,13 @@
+goal: Help citizen resolve WOMEN_SAFETY
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+clarificationQuestions:
+  - id: incident_details
+    text: Can you tell me where and when the women_safety incident took place?
+    baseInformationGain: 85
+actions:
+  - Initiate SAFETY_ESCALATION
+resolutionCriteria: All required fields for WOMEN_SAFETY are filled
+escalationCriteria: Immediate physical danger reported

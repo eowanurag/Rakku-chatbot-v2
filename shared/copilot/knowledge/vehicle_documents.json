@@ -1,0 +1,17 @@
+{
+  "scenario": "VEHICLE_DOCUMENTS",
+  "description": "Guidance and steps for handling VEHICLE_DOCUMENTS scenario.",
+  "authority": "UP_CITIZEN_SERVICES",
+  "outcomes": [
+    "DOCUMENT_REPLACEMENT"
+  ],
+  "defaultRisk": "LOW",
+  "citizenRisks": "Minor inconvenience or administrative delay.",
+  "recommendedActions": [
+    "Request official details for VEHICLE_DOCUMENTS"
+  ],
+  "requiredInformation": [
+    "misuseSuspected"
+  ],
+  "escalationGuidance": "Escalate to officer review if applicant is unsatisfied."
+}

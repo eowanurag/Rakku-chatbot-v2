@@ -1,0 +1,10 @@
+{
+  "version": "2.7.8.2-A",
+  "certificationDate": "2026-06-19T11:14:29.557Z",
+  "graphChecksum": "9a9d815de05f744150eedd150737a5a076b300883faff6f2c9dad7870625457c",
+  "registryChecksum": "9a9d815de05f744150eedd150737a5a076b300883faff6f2c9dad7870625457c",
+  "workflowMatrixChecksum": "d6154753482c24c1b75666099df3c23da630f0e07615b4e9d98f582a1aad56ee",
+  "knowledgeChecksum": "4c60d7110ed019999f5ac660692745eb2fe2755d56b16a58dba8e0265efead6f",
+  "playbookChecksum": "3287bbaa72f97c7b17be13b64ba4cab4c54e6c5df11c2b55988ee8a5343e8565",
+  "replayChecksum": "57fab4a3bc30dfc166e741ce1805407f0b1d962abcbe45cf8c820461b27daf2b"
+}

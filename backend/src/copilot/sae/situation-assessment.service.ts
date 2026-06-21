@@ -320,7 +320,8 @@ ${promptLabel}`;
     } else {
       // 3. Fallback to Gemini AI
       try {
-        const aiAssessment = await this.aiClassifier.classify(classificationText);
+        const aiAssessmentResult = await this.aiClassifier.classify(classificationText);
+        const aiAssessment = aiAssessmentResult.data;
         
         // Ensure bands and status are mapped properly
         aiAssessment.confidenceBand = this.mapConfidenceBand(aiAssessment.confidence);

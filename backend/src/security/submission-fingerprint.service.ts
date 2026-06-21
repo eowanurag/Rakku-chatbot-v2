@@ -14,43 +14,57 @@ export class SubmissionFingerprintService implements OnModuleInit {
   }
 
   /**
-   * Normalize payload by stripping dynamic properties.
+   * Normalize payload by stripping dynamic properties, sorting keys, and ignoring case/whitespace/empty values.
    */
   normalizePayload(payload: any): any {
-    if (!payload || typeof payload !== 'object') {
-      return payload;
+    if (payload === null || payload === undefined) {
+      return undefined;
     }
 
-    // Recursively copy and filter keys
-    const clean: any = Array.isArray(payload) ? [] : {};
-
-    for (const [key, value] of Object.entries(payload)) {
-      const lowerKey = key.toLowerCase();
-      
-      // Exclude dynamic keys
-      if (
-        lowerKey.includes('sessionid') ||
-        lowerKey.includes('timestamp') ||
-        lowerKey.includes('date') || // Note: Keep specific date fields if they are business data (e.g. eventDate), but usually date of submission is excluded
-        lowerKey.includes('trackingid') ||
-        lowerKey.includes('debug') ||
-        lowerKey.includes('metadata') ||
-        lowerKey === 'id' ||
-        lowerKey === 'createdat' ||
-        lowerKey === 'updatedat' ||
-        lowerKey === 'referencenumber'
-      ) {
-        continue;
-      }
-
-      if (value !== null && typeof value === 'object') {
-        clean[key] = this.normalizePayload(value);
-      } else {
-        clean[key] = value;
-      }
+    if (typeof payload === 'string') {
+      const cleaned = payload.trim().toLowerCase().replace(/\s+/g, '');
+      return cleaned === '' ? undefined : cleaned;
     }
 
-    return clean;
+    if (Array.isArray(payload)) {
+      const cleanedArr = payload
+        .map(item => this.normalizePayload(item))
+        .filter(item => item !== undefined && item !== null && !(Array.isArray(item) && item.length === 0));
+      return cleanedArr.length === 0 ? undefined : cleanedArr;
+    }
+
+    if (typeof payload === 'object') {
+      const cleanObj: any = {};
+      const sortedKeys = Object.keys(payload).sort();
+      for (const key of sortedKeys) {
+        const lowerKey = key.toLowerCase();
+        
+        // Exclude dynamic keys
+        if (
+          lowerKey.includes('sessionid') ||
+          lowerKey.includes('timestamp') ||
+          lowerKey.includes('date') || 
+          lowerKey.includes('trackingid') ||
+          lowerKey.includes('debug') ||
+          lowerKey.includes('metadata') ||
+          lowerKey === 'id' ||
+          lowerKey === 'createdat' ||
+          lowerKey === 'updatedat' ||
+          lowerKey === 'referencenumber'
+        ) {
+          continue;
+        }
+
+        const value = payload[key];
+        const normVal = this.normalizePayload(value);
+        if (normVal !== undefined && normVal !== null && !(Array.isArray(normVal) && normVal.length === 0)) {
+          cleanObj[lowerKey] = normVal;
+        }
+      }
+      return Object.keys(cleanObj).length === 0 ? undefined : cleanObj;
+    }
+
+    return payload;
   }
 
   /**
@@ -58,7 +72,7 @@ export class SubmissionFingerprintService implements OnModuleInit {
    */
   generateFingerprint(citizenId: string | null, serviceType: string, payload: any): string {
     const norm = this.normalizePayload(payload);
-    const serializedPayload = JSON.stringify(norm);
+    const serializedPayload = JSON.stringify(norm || {});
     
     const inputStr = `${citizenId || ''}:${serviceType}:${serializedPayload}`;
     return crypto.createHash('sha256').update(inputStr).digest('hex');

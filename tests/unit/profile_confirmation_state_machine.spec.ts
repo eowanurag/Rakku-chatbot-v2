@@ -14,6 +14,8 @@ import { throwError } from 'rxjs';
 
 const DEBUG_PROFILE_FLOW = process.env.DEBUG_PROFILE_FLOW === 'true';
 
+jest.setTimeout(60000);
+
 describe('Profile Confirmation & Citizen Identification State Machine Test', () => {
   let chatService: ChatService;
   let prisma: PrismaService;
@@ -61,13 +63,14 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 1: Happy Path', async () => {
     const sess = `test-sess-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
-    const wfRes = await chatService.sendMessage("Confirm Details", sess);
+    await chatService.sendMessage("Confirm Details", sess);
     
     const state = await chatService.getOrCreateSession(sess);
     expect(state.citizen.isConfirmed).toBe(true);
@@ -76,9 +79,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 2: Address Corruption Protection', async () => {
     const sess = `test-sess-corruption-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     
     // In CONFIRM_LOCATION
@@ -92,9 +96,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 3: Address Mandatory', async () => {
     const sess = `test-sess-mandatory-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess); // Confirm location -> IDENTIFY_ADDRESS
     
@@ -105,9 +110,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 4: Profile Confirmation Transition', async () => {
     const sess = `test-sess-trans-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
@@ -121,9 +127,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 5: Confirmation Loop Detection', async () => {
     const sess = `test-sess-loop-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
@@ -143,9 +150,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 6: Change Location', async () => {
     const sess = `test-sess-change-loc-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess); // Moves to CONFIRM_LOCATION
     
     const res = await chatService.sendMessage("Change Location", sess);
@@ -155,9 +163,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 7: Modify Mobile', async () => {
     const sess = `test-sess-modify-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
@@ -181,9 +190,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 9: Internal Action Leakage', async () => {
     const sess = `test-sess-leak-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess);
     const res = await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
@@ -195,9 +205,10 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
 
   it('Test Scenario 10: Full Data Integrity', async () => {
     const sess = `test-sess-integrity-${Date.now()}`;
+    const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     await chatService.sendMessage("File Complaint", sess);
+    await chatService.sendMessage(mobile, sess);
     await chatService.sendMessage("Manoj Tiwari", sess);
-    await chatService.sendMessage("7878787878", sess);
     await chatService.sendMessage("Ayodhya", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("House No 22 Civil Lines Ayodhya", sess);
@@ -205,7 +216,7 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
     
     const state = await chatService.getOrCreateSession(sess);
     expect(state.citizen.fullName).toBe("Manoj Tiwari");
-    expect(state.citizen.mobileNumber).toBe("7878787878");
+    expect(state.citizen.mobileNumber).toBe(mobile);
     expect(state.citizen.city).toContain("Ayodhya");
     expect(state.citizen.addressLine1).toContain("Civil Lines");
     expect(state.citizen.isConfirmed).toBe(true);

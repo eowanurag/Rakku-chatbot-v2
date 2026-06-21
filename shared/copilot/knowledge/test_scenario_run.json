@@ -1,0 +1,22 @@
+{
+  "scenario": "TEST_SCENARIO_RUN",
+  "description": "Test scenario knowledge documentation",
+  "eligibility": "All UP residents",
+  "requiredInformation": [
+    "date_of_birth"
+  ],
+  "requiredDocuments": [
+    "Aadhaar Card"
+  ],
+  "risks": "Low validation delay risk",
+  "escalationRules": "Contact district administrator",
+  "recommendedActions": [
+    "Lodge e-FIR",
+    "Apply duplicate certificate"
+  ],
+  "officerGuidance": "Cross check register records",
+  "citizenGuidance": "Submit correct personal details",
+  "references": [
+    "Citizen Portal Website"
+  ]
+}

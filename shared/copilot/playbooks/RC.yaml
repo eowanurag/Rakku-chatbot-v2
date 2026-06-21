@@ -1,0 +1,13 @@
+goal: Help citizen resolve RC
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+clarificationQuestions:
+  - id: incident_details
+    text: Can you tell me where and when the rc incident took place?
+    baseInformationGain: 85
+actions:
+  - Initiate COMPLAINT_FILING
+resolutionCriteria: All required fields for RC are filled
+escalationCriteria: No response from citizen for 48 hours

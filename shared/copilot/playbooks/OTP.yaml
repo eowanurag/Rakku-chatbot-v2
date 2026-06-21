@@ -1,0 +1,13 @@
+goal: Help citizen resolve OTP
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+clarificationQuestions:
+  - id: incident_details
+    text: Can you tell me where and when the otp incident took place?
+    baseInformationGain: 85
+actions:
+  - Initiate COMPLAINT_FILING
+resolutionCriteria: All required fields for OTP are filled
+escalationCriteria: No response from citizen for 48 hours

@@ -84,9 +84,10 @@ describe('Lost Mobile Copilot-to-Workflow E2E Integration Spec', () => {
     expect(res3.response.toLowerCase()).toContain("name"); // Prompts for profile name
 
     // 4. Complete profile and complaint details inputs
+    const dynamicMobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     const remainInputs = [
+      dynamicMobile,
       "Manoj Tiwari",
-      "7878787878",
       "Ayodhya",
       "Confirm",
       "House No 22 Civil Lines",

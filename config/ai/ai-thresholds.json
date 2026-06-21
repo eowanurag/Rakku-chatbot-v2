@@ -1,0 +1,6 @@
+{
+  "timeoutMs": 5000,
+  "maxRetries": 1,
+  "failureThreshold": 5,
+  "cooldownMinutes": 5
+}

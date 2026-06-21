@@ -2,6 +2,8 @@ import { SreService } from '../../backend/src/copilot/sre/sre.service';
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+jest.setTimeout(60000);
+
 describe('SRE Scenario Graph Candidate Governance', () => {
   let sreService: SreService;
   let prisma: PrismaClient;

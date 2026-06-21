@@ -56,8 +56,19 @@ function ChatContent() {
   const searchParams = useSearchParams();
   const triggerQuery = searchParams.get("trigger");
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sessionId, setSessionId] = useState("");
+
+  // Responsive Sidebar Effect
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768;
+      setSidebarOpen(!isMobile);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -157,15 +168,31 @@ function ChatContent() {
   };
 
   const formatStationMessage = (data: any, source: string): string => {
+    if (!data || !data.station) return '';
     const demoTag = data.demoMode ? '\n⚠️ *(Demo Mode — data may not be real)*' : '';
-    return (
-      `🚔 **Nearest Police Station Found** *(${source})*:\n\n` +
-      `- **Name:** **${data.station.name}**\n` +
-      `- **Address:** ${data.station.address}\n` +
-      `- **Phone Number:** [${data.station.phone}](tel:${data.station.phone})\n` +
-      `- **Distance:** **${data.distanceKm} km** away\n\n` +
-      `👉 [Open in Google Maps](${data.mapsUrl})${demoTag}`
-    );
+    let messageStr = `🚔 **Nearest Police Station Found** *(${source})*:\n\n`;
+    
+    if (data.station.name && data.station.name !== 'null' && data.station.name !== 'undefined' && !data.station.isPlaceholder) {
+      messageStr += `- **Name:** **${data.station.name}**\n`;
+    }
+    
+    if (data.station.address && data.station.address !== 'null' && data.station.address !== 'undefined') {
+      messageStr += `- **Address:** ${data.station.address}\n`;
+    }
+    
+    if (data.station.phone && data.station.phone !== 'null' && data.station.phone !== 'undefined' && data.station.phone !== 'null phone' && !data.station.phone.includes('XXXXXXX') && !data.station.phone.includes('YYYYYYY')) {
+      messageStr += `- **Phone Number:** [${data.station.phone}](tel:${data.station.phone})\n`;
+    }
+    
+    if (data.distanceKm !== undefined && data.distanceKm !== null && data.distanceKm !== 0 && data.distanceKm !== '0.00' && !isNaN(Number(data.distanceKm))) {
+      messageStr += `- **Distance:** **${data.distanceKm} km** away\n`;
+    }
+    
+    if (data.mapsUrl && data.mapsUrl !== 'null' && data.mapsUrl !== 'undefined' && data.mapsUrl.trim() !== '') {
+      messageStr += `\n👉 [Open in Google Maps](${data.mapsUrl})${demoTag}`;
+    }
+    
+    return messageStr;
   };
 
   const searchByCity = async (cityText: string): Promise<void> => {

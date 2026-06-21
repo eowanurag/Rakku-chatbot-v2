@@ -1,0 +1,8 @@
+{
+  "conversationScore": 95,
+  "workflowCompletion": 95,
+  "questionRelevance": 95,
+  "contextRecall": 99,
+  "clarificationEffectiveness": 90,
+  "scenarioLeakage": 1
+}

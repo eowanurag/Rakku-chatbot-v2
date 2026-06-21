@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { PrismaService } from './prisma.service';
@@ -26,6 +26,9 @@ import { NotificationModule } from './notification/notification.module';
 import { CopilotModule } from './copilot/copilot.module';
 import { WorkflowsModule } from './workflows/workflows.module';
 import { OrchestrationModule } from './orchestration/orchestration.module';
+
+// Middleware
+import { PayloadProtectionMiddleware } from './common/payload-protection.middleware';
 
 @Module({
   imports: [
@@ -61,6 +64,12 @@ import { OrchestrationModule } from './orchestration/orchestration.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(PayloadProtectionMiddleware)
+      .forRoutes('*');
+  }
+}
 
 

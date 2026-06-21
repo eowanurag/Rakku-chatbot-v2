@@ -45,13 +45,15 @@ describe('SRE Knowledge Layer Readiness', () => {
         const content = JSON.parse(fs.readFileSync(kPath, 'utf8'));
 
         const hasDescription = !!(content.description || content.scenario);
-        const hasRisks = !!(content.citizenRisks || content.defaultRisk);
+        const hasRisks = !!(content.citizenRisks || content.defaultRisk || content.risks);
         const hasRequiredInfo = Array.isArray(content.requiredInformation);
         const hasActions = Array.isArray(content.recommendedActions);
         const hasEscalation = !!(content.escalationGuidance || content.citizenGuidance);
 
         if (hasDescription && hasRisks && hasRequiredInfo && hasActions && hasEscalation) {
           completeKnowledgeCount++;
+        } else {
+          console.log(`Knowledge file incomplete: ${node.toLowerCase()}.json - hasDescription=${hasDescription}, hasRisks=${hasRisks}, hasRequiredInfo=${hasRequiredInfo}, hasActions=${hasActions}, hasEscalation=${hasEscalation}`);
         }
       }
     }

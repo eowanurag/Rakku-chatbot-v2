@@ -1,0 +1,42 @@
+[
+  {
+    "query": "someone stole my cycle plate UP32AB1234",
+    "failureType": "MISCLASSIFICATION",
+    "expectedPath": ["THEFT", "VEHICLE", "BIKE"]
+  },
+  {
+    "query": "lost my aadhaar card in local train yesterday",
+    "failureType": "AMBIGUITY_LOOP",
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"]
+  },
+  {
+    "query": "online upi scam lost money on phonepe link",
+    "failureType": "MISCLASSIFICATION",
+    "expectedPath": ["FRAUD", "UPI"]
+  },
+  {
+    "query": "my hero splendor motorcycle is missing from metro parking since morning",
+    "failureType": "MISCLASSIFICATION",
+    "expectedPath": ["THEFT", "VEHICLE", "BIKE"]
+  },
+  {
+    "query": "where to apply if card is lost should i get duplicate copy of aadhaar",
+    "failureType": "AMBIGUITY_LOOP",
+    "expectedPath": ["LOSS", "DOCUMENT", "AADHAAR"]
+  },
+  {
+    "query": "my 10 year old kid went to shop and has not returned for 6 hours",
+    "failureType": "MISSING_PERSON_ROUTING",
+    "expectedPath": ["SAFETY", "EMERGENCY_OR_CRITICAL", "CHILD_MISSING"]
+  },
+  {
+    "query": "got a blackmail call threat on instagram saying they will post edited photos",
+    "failureType": "CYBER_FRAUD_CLASSIFICATION",
+    "expectedPath": ["FRAUD", "CYBER", "CYBER_EXTORTION"]
+  },
+  {
+    "query": "money cut from bank but no otp received and card transaction is showing online shopping",
+    "failureType": "CYBER_FRAUD_CLASSIFICATION",
+    "expectedPath": ["FRAUD", "CYBER", "OTP"]
+  }
+]

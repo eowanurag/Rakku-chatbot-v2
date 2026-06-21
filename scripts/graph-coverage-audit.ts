@@ -34,7 +34,7 @@ export function runGraphCoverageAudit(): AuditReport {
 
   const graphsData = JSON.parse(fs.readFileSync(graphsPath, 'utf8'));
   const activeNodes = Object.entries<any>(graphsData.nodes || {}).filter(
-    ([, node]) => node.status === 'ACTIVE'
+    ([, node]) => node.status === 'ACTIVE' && (!node.children || node.children.length === 0)
   ).map(([name]) => name);
 
   const riskRules = fs.existsSync(riskRulesPath) ? JSON.parse(fs.readFileSync(riskRulesPath, 'utf8')) : { scenarios: {} };
@@ -101,6 +101,8 @@ export function runGraphCoverageAudit(): AuditReport {
     // A node is considered "covered" if it has all resources successfully mapped
     if (hasKnowledge && hasPlaybook && hasRiskRule && hasOutcomeRule && mapsToWorkflow) {
       report.coveredNodes++;
+    } else {
+      console.log(`Node ${nodeUpper} is not fully covered: hasKnowledge=${hasKnowledge}, hasPlaybook=${hasPlaybook}, hasRiskRule=${hasRiskRule}, hasOutcomeRule=${hasOutcomeRule}, mapsToWorkflow=${mapsToWorkflow}`);
     }
   }
 

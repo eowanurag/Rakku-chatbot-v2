@@ -1,0 +1,45 @@
+[
+  {
+    "incidentId": "INC-2026-001",
+    "title": "Bike Theft Drifted To Lost Mobile",
+    "severity": "CRITICAL",
+    "conversation": [
+      "मेरी बाइक चोरी हो गयी",
+      "कानपुर",
+      "काकादेव",
+      "शिकायत के लिए स्थान",
+      "मोहन तिवारी",
+      "7766776677",
+      "कानपुर",
+      "काकादेव कानपुर"
+    ],
+    "expectedScenario": "BIKE_THEFT",
+    "expectedOutcome": "THEFT_COMPLAINT"
+  },
+  {
+    "incidentId": "INC-2026-002",
+    "title": "UPI Fraud Drifted to Credit Card",
+    "severity": "CRITICAL",
+    "conversation": [
+      "मेरे खाते से पैसे कट गए",
+      "UPI",
+      "Manoj Tiwari",
+      "9988776655"
+    ],
+    "expectedScenario": "UPI_FRAUD",
+    "expectedOutcome": "CYBER_COMPLAINT"
+  },
+  {
+    "incidentId": "INC-2026-003",
+    "title": "Missing Person Category Leakage",
+    "severity": "CRITICAL",
+    "conversation": [
+      "मेरा बच्चा गायब है",
+      "Lucknow",
+      "Mohan Singh",
+      "9900990099"
+    ],
+    "expectedScenario": "MISSING_PERSON",
+    "expectedOutcome": "MISSING_PERSON_CASE"
+  }
+]

@@ -1,4 +1,4 @@
-# RAKKU - V2.7.5 RC-1 (Scenario-Hint Driven Reasoning)
+# RAKKU - V2.7.8.2-A (Conversation Operational Reliability Release)
 
 *Responsive Assistant for Knowledge, Kiosk & Citizen Utilities*  
 **AI-Powered Citizen Assistance Platform with CUE, SAE, SRE & CIE Transition Foundations**
@@ -17,7 +17,7 @@
 
 RAKKU is an AI-powered Digital Citizen Assistance Platform simplifying access to police and e-governance services through natural language conversations. 
 
-With **V2.7.5 RC-1**, the reasoning architecture is officially frozen. This release shifts the primary decision-making authority to the Scenario Reasoning Engine (SRE), redefines the Situation Assessment Engine (SAE) as a scenario hint engine, and establishes a robust Citizen Understanding Engine (CUE) for language normalization.
+With **V2.7.8.2-A**, the SRE reasoning architecture is frozen and certified. This release hardens conversation reliability using Sentinel incident blocks, certified workflow outcome matrices, checksum baseline drift protections, and detailed path validations to prevent scenario drift, workflow loops, and municipal boundary leaks.
 
 ---
 
@@ -185,14 +185,17 @@ backend/src/copilot/
 
 ## 9. Development & Run Commands
 
-### Docker Execution (Recommended)
+### Docker Compose Execution (Recommended)
+You can build and start all containers (db, ai-service, backend, frontend) with a single command:
 ```bash
-docker compose up -d db     # Starts local PostgreSQL instance
-npx prisma db push          # Pushes schema updates to local DB
+docker compose up --build -d
 ```
+This launches:
+- **Frontend client** on [http://localhost:3000](http://localhost:3000)
+- **Backend gateway** on [http://localhost:3001](http://localhost:3001)
+- **AI mock engine** on [http://localhost:8000](http://localhost:8000)
 
-### Manual Execution
-
+### Manual Run
 1. **Database Schema Sync**:
    ```bash
    cd backend
@@ -212,22 +215,23 @@ npx prisma db push          # Pushes schema updates to local DB
 
 ---
 
-## 10. Test Verification Suites
+## 10. Operational Reliability & Test Gates
 
-Run the full validation suite sequentially in band to prevent database transaction collisions:
+Run the operational reliability verification suites sequentially in band to prevent database transaction collisions:
 
 ```bash
-npx jest --runInBand tests/copilot
+npx jest --runInBand tests/release tests/governance tests/evaluation tests/e2e
 ```
 
-### Key V2.7.5 Copilot Test Suites:
-- **Consensus Determinism**: `npx jest tests/copilot/hint_consensus.spec.ts`
-- **Session Recovery**: `npx jest tests/copilot/scenario_session_recovery.spec.ts`
-- **Graph Hash governance**: `npx jest tests/copilot/graph_hash.spec.ts`
-- **Fast Path Resolution**: `npx jest tests/copilot/fast_path_resolution.spec.ts`
-- **Confidence Fusion**: `npx jest tests/copilot/confidence_fusion.spec.ts`
-- **Path Resolution Cache**: `npx jest tests/copilot/scenario_path_resolution.spec.ts`
-- **Resolution Quality**: `npx jest tests/copilot/resolution_quality.spec.ts`
+### Key V2.7.8.2-A Certified Test Suites:
+- **Operational Reliability Gate**: `npx jest tests/release/conversation_reliability_gate.spec.ts`
+- **Release Lock Integrity**: `npx jest tests/release/release_lock_integrity.spec.ts`
+- **Baseline Drift Protection**: `npx jest tests/release/certification_drift.spec.ts`
+- **Incident Regressions**: `npx jest tests/e2e/regressions`
+- **Workflow Completion**: `npx jest tests/e2e/workflow_completion_certification.spec.ts`
+- **State Integrity**: `npx jest tests/e2e/conversation_state_integrity.spec.ts`
+- **Certified Matrix Compliance**: `npx jest tests/governance/certified_workflow_matrix.spec.ts`
+- **Police Domain Boundary**: `npx jest tests/governance/police_domain_boundary.spec.ts`
 
 ---
 
@@ -239,4 +243,5 @@ npx jest --runInBand tests/copilot
 | **v2.1** | Situation Assessment Engine (SAE) with Versioning | Completed |
 | **v2.2** | Complaint Intelligence Engine (CIE) with PII Scrubbing | Completed |
 | **v2.6** | Scenario Reasoning Engine (SRE) v1.0, Governance Layer, Risk Engines | Completed |
-| **v2.7.5** | SRE Decision Authority, CUE normalisation, SAE Hint consensus (RC-1 Architecture Freeze) | **Frozen & Verified** |
+| **v2.7.5** | SRE Decision Authority, CUE normalisation, SAE Hint consensus (RC-1 Architecture Freeze) | Frozen & Verified |
+| **v2.7.8.2-A** | Conversation Quality Certification, Sentinel Incident Blocker Gates, Drift Protection, Docker Run | **Certified & Locked** |

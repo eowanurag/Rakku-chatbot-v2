@@ -55,9 +55,23 @@ export class LocationResolverService {
     matchType: MatchType;
   } {
     const rawNormalized = this.normalize(input);
+    const lowerInput = rawNormalized.toLowerCase();
+
+    // Noida override
+    const noidaAliases = ['noida', 'new okhla', 'gautam buddha nagar', 'greater noida'];
+    if (noidaAliases.some(alias => lowerInput.includes(alias))) {
+      return {
+        districtCode: 'GAUTAM_BUDDHA_NAGAR',
+        cityCode: lowerInput.includes('greater noida') ? 'GREATER_NOIDA' : 'NOIDA',
+        localityCode: lowerInput.includes('greater noida') ? 'GREATER_NOIDA' : 'NOIDA',
+        confidence: 1.0,
+        matchType: MatchType.EXACT,
+      };
+    }
+
     if (!rawNormalized) {
       return {
-        districtCode: 'LUCKNOW', // Default fallback
+        districtCode: '',
         confidence: 0.0,
         matchType: MatchType.NONE,
       };
@@ -150,9 +164,9 @@ export class LocationResolverService {
     }
 
     // Default matching fallback if district cannot be resolved
-    const finalDistrictCode = matchedDistrict ? matchedDistrict.code : 'LUCKNOW';
+    const finalDistrictCode = matchedDistrict ? matchedDistrict.code : '';
     const finalMatchType = matchedDistrict ? districtMatchType : MatchType.NONE;
-    const finalConfidence = matchedDistrict ? districtConfidence : 0.5;
+    const finalConfidence = matchedDistrict ? districtConfidence : 0.0;
 
     // Extract locality and city based on tokens or aliases
     let resolvedCity: string | undefined = undefined;

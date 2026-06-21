@@ -1,0 +1,13 @@
+goal: Help citizen resolve COMMERCIAL_VEHICLE
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+clarificationQuestions:
+  - id: incident_details
+    text: Can you tell me where and when the commercial_vehicle incident took place?
+    baseInformationGain: 85
+actions:
+  - Initiate COMPLAINT_FILING
+resolutionCriteria: All required fields for COMMERCIAL_VEHICLE are filled
+escalationCriteria: No response from citizen for 48 hours

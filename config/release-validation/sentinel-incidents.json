@@ -1,0 +1,20 @@
+[
+  {
+    "id": "SENTINEL-001",
+    "name": "Bike Theft Drift",
+    "scenario": "BIKE_THEFT",
+    "severity": "CRITICAL"
+  },
+  {
+    "id": "SENTINEL-002",
+    "name": "UPI Fraud Misclassification",
+    "scenario": "UPI_FRAUD",
+    "severity": "CRITICAL"
+  },
+  {
+    "id": "SENTINEL-003",
+    "name": "Missing Person Scenario Leakage",
+    "scenario": "MISSING_PERSON",
+    "severity": "CRITICAL"
+  }
+]

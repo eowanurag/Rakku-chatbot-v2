@@ -1,0 +1,118 @@
+{
+  "BIKE": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "CAR": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "COMMERCIAL_VEHICLE": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "MOBILE": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "AADHAAR": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "PAN": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "PASSPORT": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "DRIVING_LICENSE": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "VOTER_ID": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "RATION_CARD": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "UPI": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "CREDIT_CARD": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "DEBIT_CARD": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "ATM": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "OTP": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "SOCIAL_MEDIA": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "CYBER_EXTORTION": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "IDENTITY_THEFT": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "KIDNAPPING": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "ASSAULT": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "DOMESTIC_VIOLENCE": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "EMERGENCY_ASSISTANCE": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "MISSING_PERSON": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "CHILD_MISSING": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "WOMEN_SAFETY": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "SENIOR_CITIZEN": {
+    "workflow": "complaint",
+    "outcome": "DOCUMENT_REPLACEMENT"
+  },
+  "ACCIDENT": {
+    "workflow": "guidance",
+    "outcome": "EMERGENCY_ESCALATION"
+  },
+  "TENANT_VERIFICATION": {
+    "workflow": "verification",
+    "outcome": "SERVICE_FULFILLMENT"
+  },
+  "CHARACTER_CERTIFICATE": {
+    "workflow": "certificate",
+    "outcome": "SERVICE_FULFILLMENT"
+  }
+}

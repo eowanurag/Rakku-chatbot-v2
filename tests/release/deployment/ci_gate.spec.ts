@@ -134,4 +134,20 @@ describe('CI Gate Validation', () => {
       }
     });
   });
+
+  describe('AI Independence & Resilience Gates', () => {
+    it('should verify all core modules have no REQUIRED dependencies', () => {
+      const { AiDependencyRegistry } = require('../../../backend/src/copilot/ai-governance/ai-dependency.registry');
+      const dependencies = AiDependencyRegistry.getDependencies();
+      const hasRequired = dependencies.some((d: any) => d.type === 'REQUIRED');
+      expect(hasRequired).toBe(false);
+    });
+
+    it('should verify offline certification dataset contains 19 elements', () => {
+      const datasetPath = path.join(rootDir, 'tests/release/datasets/ai_independence_dataset.json');
+      expect(fs.existsSync(datasetPath)).toBe(true);
+      const dataset = JSON.parse(fs.readFileSync(datasetPath, 'utf8'));
+      expect(dataset.length).toBe(19);
+    });
+  });
 });

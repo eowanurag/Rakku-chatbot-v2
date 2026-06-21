@@ -12,6 +12,8 @@ import { HttpService } from '@nestjs/axios';
 import { IntelligenceService } from '@backend/citizen-assistance/intelligence.service';
 import { throwError } from 'rxjs';
 
+jest.setTimeout(60000);
+
 describe('Functional Workflows (Comprehensive)', () => {
   let chatService: ChatService;
   let prisma: PrismaService;

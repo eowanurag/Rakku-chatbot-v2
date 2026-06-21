@@ -1,7 +1,15 @@
 import axios from 'axios';
 import { LegacyIntentAdapter } from '../adapters/legacy-intent-adapter';
+import { AiDependency } from '../../ai-governance/ai-dependency.decorator';
+import { AiDependencyType } from '../../ai-governance/ai-dependency.types';
+import { AiProvider, AiProviderResult } from '../../ai-governance/ai-provider.interface';
+import { AiHealthStatus } from '../../ai-monitoring/ai-health.types';
 
-export class AiClassifier {
+@AiDependency({
+  type: AiDependencyType.ENHANCEMENT,
+  description: 'AI Classifies narrative context to retrieve intent and recommendations'
+})
+export class AiClassifier implements AiProvider {
   private apiKey: string;
   private adapter: LegacyIntentAdapter;
 
@@ -10,10 +18,15 @@ export class AiClassifier {
     this.adapter = new LegacyIntentAdapter();
   }
 
-  public async classify(text: string): Promise<any> {
-    if (!this.apiKey) {
-      console.warn('Gemini API key is not configured. AI classification fallback will return UNKNOWN.');
-      return this.getUnknownResponse();
+  public async classify(text: string): Promise<AiProviderResult<any>> {
+    const isAiDisabled = process.env.AI_DISABLED === 'true';
+    if (!this.apiKey || isAiDisabled) {
+      console.warn('Gemini API key is not configured or AI is disabled. AI classification returning fallback result.');
+      return {
+        success: false,
+        fallbackUsed: true,
+        data: this.getUnknownResponse()
+      };
     }
 
     const prompt = `
@@ -104,6 +117,7 @@ Citizen Report: "${text}"
           headers: {
             'Content-Type': 'application/json',
           },
+          timeout: 5000
         }
       );
 
@@ -113,14 +127,45 @@ Citizen Report: "${text}"
         parsed.scenarioHints = parsed.scenarioHints || (parsed.intent ? this.adapter.adapt(parsed.intent) : []);
         parsed.hintSource = parsed.hintSource || ["AI_CLASSIFIER"];
         parsed.legacyIntent = parsed.legacyIntent || parsed.intent || "UNKNOWN";
-        return parsed;
+        return {
+          success: true,
+          fallbackUsed: false,
+          confidence: parsed.confidence,
+          data: parsed
+        };
       }
     } catch (e: any) {
       console.error('Error invoking Gemini in AiClassifier:', e?.message || e);
-      throw e;
+      return {
+        success: false,
+        fallbackUsed: true,
+        errorType: e?.code || 'API_ERROR',
+        data: this.getUnknownResponse()
+      };
     }
 
-    return this.getUnknownResponse();
+    return {
+      success: false,
+      fallbackUsed: true,
+      data: this.getUnknownResponse()
+    };
+  }
+
+  // Abstract interface compatibility for future fact extraction calls routing
+  public async extractFacts(text: string, incidentType: string): Promise<AiProviderResult<any>> {
+    return {
+      success: false,
+      fallbackUsed: true,
+      errorType: 'UNIMPLEMENTED_IN_CLASSIFIER'
+    };
+  }
+
+  public async healthCheck(): Promise<AiHealthStatus> {
+    const isAiDisabled = process.env.AI_DISABLED === 'true';
+    if (!this.apiKey || isAiDisabled) {
+      return AiHealthStatus.UNAVAILABLE;
+    }
+    return AiHealthStatus.HEALTHY;
   }
 
   private getUnknownResponse() {

@@ -1,0 +1,45 @@
+{
+  "submissionType": "NEW_SCENARIO",
+  "scenarioKey": "TEST_SCENARIO_RUN",
+  "parentPath": [
+    "LOSS",
+    "DOCUMENT"
+  ],
+  "status": "ACTIVE",
+  "owner": "UP_POLICE",
+  "workflow": "DOCUMENT_REPLACEMENT",
+  "outcome": "DOCUMENT_REPLACEMENT",
+  "knowledge": {
+    "description": "Test scenario knowledge documentation",
+    "eligibility": "All UP residents",
+    "requiredInformation": [
+      "date_of_birth"
+    ],
+    "requiredDocuments": [
+      "Aadhaar Card"
+    ],
+    "risks": "Low validation delay risk",
+    "escalationRules": "Contact district administrator",
+    "recommendedActions": [
+      "Lodge e-FIR",
+      "Apply duplicate certificate"
+    ],
+    "officerGuidance": "Cross check register records",
+    "citizenGuidance": "Submit correct personal details",
+    "references": [
+      "Citizen Portal Website"
+    ]
+  },
+  "playbook": {
+    "goal": "Resolve test scenario",
+    "clarification": {
+      "objective": "identify_issue",
+      "maxAttempts": 2,
+      "informationGain": "HIGH"
+    },
+    "clarificationQuestions": [],
+    "actions": [
+      "Action point 1"
+    ]
+  }
+}

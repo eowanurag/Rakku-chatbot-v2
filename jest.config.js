@@ -18,6 +18,11 @@ const config = {
     '/dist/'
   ],
   moduleNameMapper: {
+    '^@backend/complaint/(.*)$': '<rootDir>/backend/src/workflows/complaint/$1',
+    '^@backend/verification/(.*)$': '<rootDir>/backend/src/workflows/verification/$1',
+    '^@backend/certificate/(.*)$': '<rootDir>/backend/src/workflows/certificate/$1',
+    '^@backend/event/(.*)$': '<rootDir>/backend/src/workflows/event/$1',
+    '^@backend/tracking/(.*)$': '<rootDir>/backend/src/workflows/tracking/$1',
     '^@backend/(.*)$': '<rootDir>/backend/src/$1',
     '^@shared/(.*)$': '<rootDir>/shared/$1'
   }

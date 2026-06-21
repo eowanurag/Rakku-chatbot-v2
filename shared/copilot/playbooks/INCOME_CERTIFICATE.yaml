@@ -1,7 +1,13 @@
-goal: "Help citizen manage INCOME_CERTIFICATE situation"
+goal: Help citizen manage INCOME_CERTIFICATE situation
 clarificationQuestions:
-  - id: "misuse_suspected"
-    text: "Do you suspect any immediate threat or misuse in this income_certificate?"
+  - id: misuse_suspected
+    text: Do you suspect any immediate threat or misuse in this income_certificate?
     baseInformationGain: 80
 actions:
-  - "Provide replacement procedure info"
+  - Provide replacement procedure info
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+resolutionCriteria: All required fields for INCOME_CERTIFICATE are filled
+escalationCriteria: No response from citizen for 48 hours

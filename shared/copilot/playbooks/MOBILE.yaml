@@ -1,7 +1,13 @@
-goal: "Help citizen manage MOBILE situation"
+goal: Help citizen manage MOBILE situation
 clarificationQuestions:
-  - id: "misuse_suspected"
-    text: "Do you suspect any immediate threat or misuse in this mobile?"
+  - id: misuse_suspected
+    text: Do you suspect any immediate threat or misuse in this mobile?
     baseInformationGain: 80
 actions:
-  - "Provide replacement procedure info"
+  - Provide replacement procedure info
+clarification:
+  objective: gather_incident_details
+  maxAttempts: 2
+  informationGain: HIGH
+resolutionCriteria: All required fields for MOBILE are filled
+escalationCriteria: No response from citizen for 48 hours

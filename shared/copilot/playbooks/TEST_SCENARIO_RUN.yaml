@@ -1,0 +1,8 @@
+goal: Resolve test scenario
+clarification:
+  objective: identify_issue
+  maxAttempts: 2
+  informationGain: HIGH
+clarificationQuestions: []
+actions:
+  - Action point 1

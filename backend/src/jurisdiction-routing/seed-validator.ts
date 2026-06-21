@@ -68,7 +68,13 @@ export class JurisdictionSeedValidator implements OnModuleInit {
 
     // 1. Coverage check: all 75 UP districts from LocationRegistry represented
     const upDistricts = LocationRegistry.filter(entry => entry.type === 'DISTRICT' && entry.stateCode === 'UP');
+    if (upDistricts.length !== 75) {
+      throw new Error(`Seed dataset validation failed: Expected exactly 75 UP districts, found ${upDistricts.length}`);
+    }
     const upDistrictCodes = new Set(upDistricts.map(d => d.code));
+    if (upDistrictCodes.size !== upDistricts.length) {
+      throw new Error('Seed dataset validation failed: Duplicate districts found in LocationRegistry');
+    }
     
     // Check coverage in stations
     const stationDistricts = new Set(stations.map(s => s.districtCode));
@@ -86,13 +92,20 @@ export class JurisdictionSeedValidator implements OnModuleInit {
       }
     }
 
-    // 2. Duplicate StationCode detection
+    // 2. Duplicate StationCode detection and Placeholder Structure validation
     const stationCodes = new Set<string>();
     for (const station of stations) {
       if (stationCodes.has(station.stationCode)) {
         throw new Error(`Seed dataset validation failed: Duplicate stationCode found: "${station.stationCode}"`);
       }
       stationCodes.add(station.stationCode);
+
+      // Validate placeholder schema structure
+      if (station.isPlaceholder) {
+        if (station.latitude !== null || station.longitude !== null || station.phone !== null || station.verificationStatus !== 'UNVERIFIED') {
+          throw new Error(`Seed dataset validation failed: Placeholder station "${station.stationCode}" has invalid fields. Lat/long/phone must be null, and verificationStatus must be 'UNVERIFIED'.`);
+        }
+      }
     }
 
     // 3. Mapping Integrity: every mapping references an existing stationCode

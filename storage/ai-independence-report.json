@@ -1,0 +1,9 @@
+{
+  "aiIndependent": true,
+  "fallbackCoverage": 100,
+  "workflowsPassingWithoutAi": 100,
+  "aiCallsAvoided": 0,
+  "fallbackActivations": 0,
+  "circuitBreakerActivations": 0,
+  "providerStatus": "HEALTHY"
+}

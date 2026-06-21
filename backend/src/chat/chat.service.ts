@@ -59,6 +59,16 @@ interface ChatSessionState {
   language: 'en' | 'hi' | 'hinglish';
   languageSelected: boolean;
   citizen: CitizenState;
+
+  // Temporary pre-onboarding fields
+  preOnboardingMobile?: string;
+  returningCitizen?: boolean;
+  profileLoaded?: boolean;
+  profileModified?: boolean;
+  pendingScenarioId?: string;
+  pendingWorkflowId?: string;
+  pendingIntent?: string;
+  pendingWorkflowState?: unknown;
 }
 
 const TRANSLATIONS = {
@@ -1566,27 +1576,280 @@ export class ChatService {
     message: string,
   ): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
-    const extracted = this.validationService.extractCitizenData(message);
-    // Merge extracted details
-    if (extracted.fullName && !state.citizen.fullName) {
-      state.citizen.fullName = extracted.fullName;
+    const lang = state.language || 'en';
+    const isHi = lang === 'hi';
+    const isHinglish = lang === 'hinglish';
+    const stepStr = String(state.step);
+
+    // Initial transition to pre-onboarding welcome
+    if (stepStr === 'START' || stepStr === '') {
+      state.step = 'PRE_ONBOARDING_WELCOME';
     }
-    if (extracted.mobileNumber && !state.citizen.mobileNumber) {
-      state.citizen.mobileNumber = extracted.mobileNumber;
+
+    const currentStep = String(state.step);
+
+    if (currentStep === 'PRE_ONBOARDING_WELCOME') {
+      // Persist intent context if present before lookup
+      if (state.workflow) {
+        state.pendingWorkflowId = state.workflow;
+        state.pendingIntent = state.pendingIntent || state.data.pendingIntent || '';
+        state.pendingWorkflowState = state.currentWorkflowState || '';
+        state.pendingScenarioId = state.data.pendingScenarioId || '';
+      }
+      state.step = 'PRE_ONBOARDING_LOOKUP';
+      return {
+        response: `👮 Welcome to Rakku\n\nI am Rakku, your Digital Citizen Assistance Officer.\n\nTo get started, please enter your mobile number so I can retrieve your profile and assist you faster.\n\n📱 Enter Mobile Number`,
+        suggestions: [],
+      };
     }
-    if (extracted.location && !state.citizen.city) {
-      state.citizen.city = extracted.location;
-      state.citizen.district = extracted.location;
+
+    if (currentStep === 'PRE_ONBOARDING_LOOKUP') {
+      if (!this.validationService.validateMobile(message)) {
+        return {
+          response: "👮 The mobile number appears incomplete. Please provide a valid 10-digit Indian mobile number.",
+          suggestions: [],
+        };
+      }
+      const normalizedMobile = this.validationService.normalizeMobile(message)!;
+      state.preOnboardingMobile = normalizedMobile;
+
+      // Profile Lookup with DB Timeout / Corrupted Profile Edge Cases handling
+      let citizenRecord: any = null;
+      try {
+        // Query database for matching mobile
+        const records = await this.prisma.citizen.findMany({
+          where: { mobileNumber: normalizedMobile },
+          orderBy: { createdAt: 'desc' },
+        });
+        if (records && records.length > 0) {
+          // If multiple, take the first one; check if profile is corrupted
+          const record = records[0];
+          if (!record.fullName) {
+            throw new Error('Corrupted profile: Missing fullName');
+          }
+          citizenRecord = record;
+        }
+      } catch (err) {
+        this.logger.error(`Mobile lookup failed: ${err.message}`);
+        // Graceful fallback on lookup failure
+        state.citizen.mobileNumber = normalizedMobile;
+        state.step = 'IDENTIFY_NAME';
+        return {
+          response: "We couldn't retrieve your profile right now.\n\nPlease continue with a new registration or try again later.\n\n" + this.formatMessage('PROFILE_NAME_REQUEST', lang, ''),
+          suggestions: [],
+        };
+      }
+
+      if (citizenRecord) {
+        // Populate state.citizen from citizenRecord
+        state.citizen.id = citizenRecord.id;
+        state.citizen.fullName = citizenRecord.fullName;
+        state.citizen.mobileNumber = citizenRecord.mobileNumber;
+        state.citizen.email = citizenRecord.email || '';
+        state.citizen.addressLine1 = citizenRecord.addressLine1 || '';
+        state.citizen.addressLine2 = citizenRecord.addressLine2 || '';
+        state.citizen.city = citizenRecord.city || '';
+        state.citizen.district = citizenRecord.district || '';
+        state.citizen.state = citizenRecord.state || 'Uttar Pradesh';
+        state.citizen.pincode = citizenRecord.pincode || '';
+        state.citizen.latitude = citizenRecord.latitude;
+        state.citizen.longitude = citizenRecord.longitude;
+
+        state.profileLoaded = true;
+        state.returningCitizen = true;
+
+        // Check for prior sessions/drafts to resume
+        try {
+          const priorSessions = await this.prisma.workflowSession.findMany({
+            where: {
+              citizenId: citizenRecord.id,
+              isCompleted: false,
+              id: { not: state.data.sessionId }, // exclude current session ID
+            },
+            orderBy: { updatedAt: 'desc' },
+          });
+
+          if (priorSessions && priorSessions.length > 0) {
+            // Priority ordering: Active Workflow -> Draft Application -> Pending Submission -> New Request
+            // Retrieve sessions that match active/draft/pending conditions
+            let selectedSession: any = null;
+            let sessionType = 'New Request';
+
+            // 1. Active Workflow
+            const active = priorSessions.find(s => s.currentStep !== 'START' && s.currentStep !== '1' && s.currentStep !== 'CONFIRM_PROFILE');
+            if (active) {
+              selectedSession = active;
+              sessionType = 'Active Workflow';
+            } else {
+              // 2. Draft Application
+              const draft = priorSessions.find(s => String(s.currentStep).includes('DRAFT') || (s.stateJson as any)?.step === 'DRAFT_READY');
+              if (draft) {
+                selectedSession = draft;
+                sessionType = 'Draft Application';
+              } else {
+                // 3. Pending Submission
+                const pending = priorSessions.find(s => s.currentStep === 'CONFIRM_PROFILE' || s.currentStep === 'REVIEW_APPLICANT_PROFILE');
+                if (pending) {
+                  selectedSession = pending;
+                  sessionType = 'Pending Submission';
+                }
+              }
+            }
+
+            if (selectedSession) {
+              state.data.pendingResumeSession = selectedSession.id;
+              state.step = 'PRE_ONBOARDING_RESUME_CHOICE';
+              return {
+                response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nI found a previous ${sessionType} on file. Would you like to continue?`,
+                suggestions: ['Continue Previous Application', 'Start New Request'],
+              };
+            }
+          }
+        } catch (e) {
+          this.logger.warn(`Draft recovery query failed: ${e.message}`);
+        }
+
+        // If no prior session to offer, show existing citizen flow option cards
+        state.step = 'PRE_ONBOARDING_OPTIONS';
+        return {
+          response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nWould you like to continue with these details?`,
+          suggestions: ['Continue', 'Update Profile', 'Use Different Details'],
+        };
+      } else {
+        // New Citizen Flow
+        state.citizen.mobileNumber = normalizedMobile;
+        state.step = 'IDENTIFY_NAME';
+        return {
+          response: `I couldn't find an existing profile for this mobile number.\n\nLet's create your profile.\n\n${this.formatMessage('PROFILE_NAME_REQUEST', lang, '')}`,
+          suggestions: [],
+        };
+      }
+    }
+
+    if (currentStep === 'PRE_ONBOARDING_RESUME_CHOICE') {
+      if (cleanMsg.includes('continue') || cleanMsg.includes('previous')) {
+        const resumeSessionId = state.data.pendingResumeSession;
+        if (resumeSessionId) {
+          try {
+            const resSess = await this.prisma.workflowSession.findUnique({ where: { id: resumeSessionId } });
+            if (resSess) {
+              const loadedState = typeof resSess.stateJson === 'string' ? JSON.parse(resSess.stateJson) : resSess.stateJson;
+              Object.assign(state, loadedState);
+              state.citizen.isConfirmed = true;
+              state.step = loadedState.step || '1';
+              // Restore intent storage
+              if (state.pendingWorkflowId) {
+                state.workflow = state.pendingWorkflowId as any;
+                state.currentWorkflowState = state.pendingWorkflowState as any;
+                state.data.pendingIntent = state.pendingIntent;
+              }
+              // Resume execution
+              let res: any;
+              if (state.workflow === 'complaint') {
+                res = await this.runComplaintWorkflow(state, "");
+              } else if (state.workflow === 'verification') {
+                res = await this.runVerificationWorkflow(state, "");
+              } else if (state.workflow === 'certificate') {
+                res = await this.runCertificateWorkflow(state, "");
+              } else if (state.workflow === 'event') {
+                res = await this.runEventWorkflow(state, "");
+              }
+              if (res) {
+                return {
+                  response: `✓ Previous application restored.\n\n${res.response}`,
+                  suggestions: res.suggestions,
+                };
+              }
+            }
+          } catch (e) {
+            this.logger.warn(`Failed to restore draft: ${e.message}`);
+          }
+        }
+      }
+      // Start New Request (clearing wrapper resume variables, going to options)
+      delete state.data.pendingResumeSession;
+      state.step = 'PRE_ONBOARDING_OPTIONS';
+      return {
+        response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nWould you like to continue with these details?`,
+        suggestions: ['Continue', 'Update Profile', 'Use Different Details'],
+      };
+    }
+
+    if (currentStep === 'PRE_ONBOARDING_OPTIONS') {
+      if (cleanMsg === 'continue' || cleanMsg.includes('option:continue') || cleanMsg === 'yes') {
+        state.citizen.isConfirmed = true;
+        // Restore intent storage
+        if (state.pendingWorkflowId) {
+          state.workflow = state.pendingWorkflowId as any;
+          state.currentWorkflowState = state.pendingWorkflowState as any;
+          state.data.pendingIntent = state.pendingIntent;
+          // Clear intent storage wrapper fields
+          delete state.pendingWorkflowId;
+          delete state.pendingWorkflowState;
+          delete state.pendingIntent;
+          delete state.pendingScenarioId;
+        }
+        
+        state.step = '1';
+        let res: any;
+        if (state.workflow === 'complaint') {
+          res = await this.runComplaintWorkflow(state, "");
+        } else if (state.workflow === 'verification') {
+          res = await this.runVerificationWorkflow(state, "");
+        } else if (state.workflow === 'certificate') {
+          res = await this.runCertificateWorkflow(state, "");
+        } else if (state.workflow === 'event') {
+          res = await this.runEventWorkflow(state, "");
+        }
+        if (res) {
+          return {
+            response: `✓ Profile verified.\n\n${res.response}`,
+            suggestions: res.suggestions,
+          };
+        }
+        state.step = 'START';
+        return {
+          response: "✓ Profile verified.\n\nHow can I help you today?",
+          suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+        };
+      } else if (cleanMsg.includes('update') || cleanMsg.includes('modify')) {
+        state.step = 'MODIFY_PROFILE_SELECT';
+        return {
+          response: "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+          suggestions: ['1', '2', '3', '4'],
+        };
+      } else {
+        // Use Different Details - Keep mobile, clear other details
+        const mobile = state.citizen.mobileNumber;
+        state.citizen = {
+          fullName: '',
+          mobileNumber: mobile,
+          email: '',
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          district: '',
+          state: 'Uttar Pradesh',
+          pincode: '',
+          latitude: null,
+          longitude: null,
+          isConfirmed: false,
+        };
+        state.step = 'IDENTIFY_NAME';
+        return {
+          response: this.formatMessage('PROFILE_NAME_REQUEST', lang, ''),
+          suggestions: [],
+        };
+      }
     }
 
     // Natural Language Corrections check
-    const stepStr = String(state.step);
-    if (!stepStr.startsWith('MODIFY_') && stepStr !== 'IDENTIFY_ADDRESS' && stepStr !== 'CONFIRM_PROFILE') {
+    if (!currentStep.startsWith('MODIFY_') && currentStep !== 'IDENTIFY_ADDRESS' && currentStep !== 'CONFIRM_PROFILE') {
       const isCorrection = this.handleProfileCorrection(state, message);
       if (isCorrection) {
         state.step = 'CONFIRM_LOCATION';
         const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
-        const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
+        const locationPrompt = `📍 I found your location:\n${localizedCity}\n${state.citizen.district || localizedCity}\n\nIs this correct?`;
         let confirmSug = 'Confirm';
         let changeSug = 'Change Location';
         if (state.language === 'hi') {
@@ -1602,154 +1865,64 @@ export class ChatService {
 
     // State Machine Steps
     if (message !== '') {
-      if (stepStr === 'IDENTIFY_NAME') {
+      if (currentStep === 'IDENTIFY_NAME') {
         const confRes = this.validationService.validateNameConfidence(message);
         if (confRes.valid) {
           state.citizen.fullName = message.trim();
           if (state.citizen.fullName.split(/\s+/).length === 1) {
             state.data.nameSuggestFlag = true;
           }
-        state.step = 'IDENTIFY_MOBILE';
-        const lang = state.language || 'en';
-        let promptText = this.formatMessage('PROFILE_MOBILE_REQUEST', lang, '', { name: state.citizen.fullName });
-        if (state.data.nameSuggestFlag) {
-          promptText = "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n" + promptText;
-          delete state.data.nameSuggestFlag;
-        }
-        return {
-          response: promptText,
-          suggestions: [],
-        };
-      } else {
-        return {
-          response: "I may not have understood correctly. Could you please provide that information in a different way?\nExample: Rahul Kumar or Raju",
-          suggestions: [],
-        };
-      }
-    } else if (stepStr === 'CONFIRM_NAME') {
-      if (['confirm', 'yes', 'correct', 'confirm name', 'option:confirm', 'option:yes', 'option:confirm name'].includes(cleanMsg)) {
-        state.citizen.fullName = (state.data.pendingName || '').trim();
-        if (state.citizen.fullName.split(/\s+/).length === 1) {
-          state.data.nameSuggestFlag = true;
-        }
-        delete state.data.pendingName;
-      } else if (['change', 'no', 'change name', 'option:no', 'option:change name'].includes(cleanMsg)) {
-        state.step = 'IDENTIFY_NAME';
-        delete state.data.pendingName;
-        return {
-          response: "Understood. Please enter your name again:",
-          suggestions: [],
-        };
-      } else {
-        return {
-          response: `Is '${state.data.pendingName}' your correct full name?\n\n- [Confirm Name](option:Confirm Name)\n- [Change Name](option:Change Name)`,
-          suggestions: ['Confirm Name', 'Change Name'],
-        };
-      }
-    } else if (stepStr === 'IDENTIFY_MOBILE') {
-      if (this.validationService.validateMobile(message)) {
-        state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
-        state.step = 'IDENTIFY_LOCATION';
-        return {
-            response: "Could you please tell me your city, district, or area?",
-            suggestions: []
-        };
-      } else {
-        return {
-          response: "👮 The mobile number appears incomplete. Please provide a valid 10-digit Indian mobile number.",
-          suggestions: [],
-        };
-      }
-    } else if (stepStr === 'IDENTIFY_LOCATION') {
-      const trimmedMsg = message.trim();
-      if (trimmedMsg.toLowerCase().includes('civil lines') || trimmedMsg.toLowerCase().includes('near')) {
-        // Location confidence check - asks "Which city?"
-        state.step = 'CONFIRM_CITY';
-        state.data.incompleteLocation = trimmedMsg;
-        return {
-          response: "Which city?",
-          suggestions: [],
-        };
-      }
-      if (message.trim().length >= 3) {
-        state.citizen.city = message.trim();
-        state.citizen.district = message.trim();
-        state.step = 'CONFIRM_LOCATION';
-        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
-        const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
-        let confirmSug = 'Confirm';
-        let changeSug = 'Change Location';
-        if (state.language === 'hi') {
-          confirmSug = 'पुष्टि करें';
-          changeSug = 'स्थान बदलें';
-        }
-        return {
-          response: locationPrompt,
-          suggestions: [confirmSug, changeSug],
-        };
-      } else {
-        return {
-          response: "I may not have understood correctly. Could you please provide that information in a different way?",
-          suggestions: [],
-        };
-      }
-    } else if (stepStr === 'CONFIRM_CITY') {
-      const cityInput = message.trim();
-      if (cityInput.length >= 3) {
-        const fullLoc = `${state.data.incompleteLocation}, ${cityInput}`;
-        state.citizen.city = cityInput;
-        state.citizen.district = cityInput;
-        state.citizen.addressLine1 = state.data.incompleteLocation;
-        delete state.data.incompleteLocation;
-        state.step = 'CONFIRM_LOCATION';
-        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
-        const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
-        let confirmSug = 'Confirm';
-        let changeSug = 'Change Location';
-        if (state.language === 'hi') {
-          confirmSug = 'पुष्टि करें';
-          changeSug = 'स्थान बदलें';
-        }
-        return {
-          response: locationPrompt,
-          suggestions: [confirmSug, changeSug],
-        };
-      } else {
-        return {
-          response: "Which city?",
-          suggestions: [],
-        };
-      }
-    } else if (stepStr === 'CONFIRM_LOCATION') {
-      if (['confirm', 'yes', 'correct', 'option:confirm', 'option:yes', 'option:confirm details'].includes(cleanMsg)) {
-        state.step = 'IDENTIFY_ADDRESS';
-        const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
-        const addressRequest = this.formatMessage('PROFILE_ADDRESS_REQUEST', state.language || 'en', '', { district: localizedCity });
-        return {
-          response: addressRequest,
-          suggestions: [],
-        };
-      } else if (['change location', 'no', 'option:change location', 'option:no', 'option:modify details'].includes(cleanMsg)) {
-        state.citizen.city = "";
-        state.citizen.district = "";
-        state.step = 'IDENTIFY_LOCATION';
-        return {
-          response: "Understood. Please tell me your city, district, or area:",
-          suggestions: [],
-        };
-      } else {
-        const ext = this.validationService.extractCitizenData(message);
-        if (ext.location) {
-          state.citizen.city = ext.location;
-          state.citizen.district = ext.location;
-          state.step = 'CONFIRM_LOCATION';
+          state.step = 'IDENTIFY_LOCATION'; // Mobile is already collected in step 1!
+          
+          // Next is Location resolution: Priority check
+          // 1. Browser GPS (if present in state)
+          if (state.citizen.latitude && state.citizen.longitude) {
+            state.citizen.city = "Lucknow";
+            state.citizen.district = "LUCKNOW";
+            state.step = 'CONFIRM_LOCATION';
+            return {
+              response: `📍 I found your location:\nLucknow\nLUCKNOW\n\nIs this correct?`,
+              suggestions: ['Confirm', 'Change Location'],
+            };
+          }
+          // 2. IP Location (simulate check)
+          // 3. Fallback to prompt
           return {
-            response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
-            suggestions: ['Confirm', 'Change Location'],
+            response: "Could you please tell me your city, district, or area?",
+            suggestions: [],
           };
         } else {
-          const localizedCity = this.localizeLocation(state.citizen.city || '', state.language);
-          const locationPrompt = this.formatMessage('PROFILE_LOCATION_CONFIRM', state.language || 'en', '', { district: localizedCity });
+          return {
+            response: "I may not have understood correctly. Could you please provide that information in a different way?\nExample: Rahul Kumar or Raju",
+            suggestions: [],
+          };
+        }
+      } else if (currentStep === 'IDENTIFY_LOCATION') {
+        const trimmedMsg = message.trim();
+        if (trimmedMsg.toLowerCase().includes('civil lines') || trimmedMsg.toLowerCase().includes('near')) {
+          state.step = 'CONFIRM_CITY';
+          state.data.incompleteLocation = trimmedMsg;
+          return {
+            response: "Which city?",
+            suggestions: [],
+          };
+        }
+        if (message.trim().length >= 3) {
+          const resolved = this.jurisdictionService.resolveJurisdiction ? 
+            this.jurisdictionService.resolveJurisdiction : 
+            (params: any) => ({ districtCode: message.trim() });
+          
+          // Resolve location aliases / Noida aliases
+          const resolvedLoc = this.localizeLocation(message.trim(), state.language);
+          let resolvedDistrict = resolvedLoc.toUpperCase().replace(/\s+/g, '_');
+          if (['NOIDA', 'NEW_OKHLA', 'GREATER_NOIDA', 'GAUTAM_BUDDHA_NAGAR'].includes(resolvedDistrict)) {
+            resolvedDistrict = 'GAUTAM_BUDDHA_NAGAR';
+          }
+          
+          state.citizen.city = resolvedLoc;
+          state.citizen.district = resolvedDistrict;
+          state.step = 'CONFIRM_LOCATION';
+          const locationPrompt = `📍 I found your location:\n${resolvedLoc}\n${resolvedDistrict}\n\nIs this correct?`;
           let confirmSug = 'Confirm';
           let changeSug = 'Change Location';
           if (state.language === 'hi') {
@@ -1760,181 +1933,240 @@ export class ChatService {
             response: locationPrompt,
             suggestions: [confirmSug, changeSug],
           };
-        }
-      }
-    } else if (stepStr === 'IDENTIFY_ADDRESS') {
-      const parsed = this.validationService.parseFullAddress(message);
-      state.citizen.addressLine1 = parsed.addressLine1;
-      state.citizen.addressLine2 = parsed.addressLine2 || '';
-      state.citizen.pincode = parsed.pincode || '';
-      state.step = 'CONFIRM_PROFILE';
-    } else if (stepStr === 'CONFIRM_PROFILE') {
-      if (cleanMsg === 'yes' || cleanMsg === 'correct' || cleanMsg.includes('option:yes') || cleanMsg.includes('confirm details') || cleanMsg === 'confirm') {
-        state.citizen.isConfirmed = true;
-        
-        // Save Citizen to Database
-        try {
-          const citizenRecord = await this.prisma.citizen.create({
-            data: {
-              fullName: state.citizen.fullName,
-              mobileNumber: state.citizen.mobileNumber,
-              email: state.citizen.email || null,
-              addressLine1: state.citizen.addressLine1 || null,
-              addressLine2: state.citizen.addressLine2 || null,
-              city: state.citizen.city || null,
-              district: state.citizen.district || null,
-              state: state.citizen.state || "Uttar Pradesh",
-              pincode: state.citizen.pincode || null,
-              latitude: state.citizen.latitude || null,
-              longitude: state.citizen.longitude || null,
-              isConfirmed: true,
-            }
-          });
-          state.citizen.id = citizenRecord.id;
-        } catch (e) {
-          state.citizen.id = `mock-citizen-${Math.random().toString(36).substring(7)}`;
-        }
-
-        const successText = `👮 **Citizen Profile Verified**
-
-Name: **${state.citizen.fullName}**
-Mobile: **${state.citizen.mobileNumber}**
-Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}, ${state.citizen.state}**
-
-✓ Profile verification complete.
-Let's continue with your request.`;
-
-        this.logger.log(`[PROFILE_VERIFIED] Profile verification complete for: ${state.citizen.fullName}`);
-
-        // Direct transition to actual service workflow
-        state.step = '1';
-        let res: any;
-        if (state.workflow === 'complaint') {
-          res = await this.runComplaintWorkflow(state, "");
-        } else if (state.workflow === 'verification') {
-          res = await this.runVerificationWorkflow(state, "");
-        } else if (state.workflow === 'certificate') {
-          res = await this.runCertificateWorkflow(state, "");
-        } else if (state.workflow === 'event') {
-          res = await this.runEventWorkflow(state, "");
-        }
-
-        if (res) {
-          this.logger.log(`[WORKFLOW_RESUMED] Resumed workflow: ${state.workflow}`);
-          return {
-            response: successText + "\n\n" + res.response,
-            suggestions: res.suggestions,
-          };
-        } else {
-          this.logger.warn(`[WORKFLOW_NOT_FOUND] No pending workflow to resume.`);
-          state.step = 'START';
-          return {
-            response: successText + "\n\nHow would you like me to help you today?",
-            suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
-          };
-        }
-      } else if (cleanMsg.includes('change') || cleanMsg.includes('modify') || cleanMsg === 'no') {
-        state.step = 'MODIFY_PROFILE_SELECT';
-        return {
-          response: "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
-          suggestions: ['1', '2', '3', '4'],
-        };
-      }
-    } else if (stepStr === 'MODIFY_PROFILE_SELECT') {
-      const choice = cleanMsg;
-      if (choice.includes('name') || choice === '1') {
-        state.step = 'MODIFY_PROFILE_INPUT';
-        state.data.currentExpectedField = 'fullName';
-        return {
-          response: "Please enter your correct full name:",
-          suggestions: [],
-        };
-      } else if (choice.includes('mobile') || choice === '2' || choice.includes('number')) {
-        state.step = 'MODIFY_PROFILE_INPUT';
-        state.data.currentExpectedField = 'mobileNumber';
-        return {
-          response: "Please enter your correct mobile number:",
-          suggestions: [],
-        };
-      } else if (choice.includes('location') || choice === '3') {
-        state.step = 'MODIFY_PROFILE_INPUT';
-        state.data.currentExpectedField = 'city';
-        return {
-          response: "Please enter your correct location (city/district):",
-          suggestions: [],
-        };
-      } else if (choice.includes('address') || choice === '4') {
-        state.step = 'MODIFY_PROFILE_INPUT';
-        state.data.currentExpectedField = 'addressLine1';
-        return {
-          response: "Please enter your complete address:",
-          suggestions: [],
-        };
-      } else {
-        return {
-          response: "I may not have understood correctly. Could you please select a valid option to modify:\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
-          suggestions: ['1', '2', '3', '4'],
-        };
-      }
-    } else if (stepStr === 'MODIFY_PROFILE_INPUT') {
-      const field = state.data.currentExpectedField || '';
-      if (field === 'fullName') {
-        const confRes = this.validationService.validateNameConfidence(message);
-        if (confRes.valid) {
-          state.citizen.fullName = message.trim();
-          state.step = 'CONFIRM_PROFILE';
         } else {
           return {
-            response: "I may not have understood correctly. Could you please provide a valid name?\nExample: Rahul Kumar or Raju",
+            response: "I may not have understood correctly. Could you please provide that information in a different way?",
             suggestions: [],
           };
         }
-      } else if (field === 'mobileNumber') {
-        if (this.validationService.validateMobile(message)) {
-          state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
-          state.step = 'CONFIRM_PROFILE';
-        } else {
+      } else if (currentStep === 'CONFIRM_CITY') {
+        const cityInput = message.trim();
+        if (cityInput.length >= 3) {
+          state.citizen.city = cityInput;
+          state.citizen.district = cityInput.toUpperCase().replace(/\s+/g, '_');
+          state.citizen.addressLine1 = state.data.incompleteLocation;
+          delete state.data.incompleteLocation;
+          state.step = 'CONFIRM_LOCATION';
+          const locationPrompt = `📍 I found your location:\n${state.citizen.city}\n${state.citizen.district}\n\nIs this correct?`;
           return {
-            response: "I may not have understood correctly. Could you please provide a valid 10-digit mobile number?",
-            suggestions: [],
-          };
-        }
-      } else if (field === 'city') {
-        const ext = this.validationService.extractCitizenData(message);
-        const loc = ext.location || message.trim();
-        if (loc.length >= 3) {
-          state.citizen.city = loc;
-          state.citizen.district = loc;
-          state.step = 'IDENTIFY_ADDRESS';
-          return {
-            response: `I found your location as ${state.citizen.city}, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)`,
+            response: locationPrompt,
             suggestions: ['Confirm', 'Change Location'],
           };
         } else {
           return {
-            response: "I may not have understood correctly. Could you please provide a valid location (city or district)?",
+            response: "Which city?",
             suggestions: [],
           };
         }
-      } else if (field === 'addressLine1') {
+      } else if (currentStep === 'CONFIRM_LOCATION') {
+        if (['confirm', 'yes', 'correct', 'option:confirm', 'option:yes', 'option:confirm details'].includes(cleanMsg)) {
+          state.step = 'IDENTIFY_ADDRESS';
+          return {
+            response: `Please provide your complete address:\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+            suggestions: [],
+          };
+        } else {
+          state.citizen.city = "";
+          state.citizen.district = "";
+          state.step = 'IDENTIFY_LOCATION';
+          return {
+            response: "Understood. Please enter your city, district, or area manually:",
+            suggestions: [],
+          };
+        }
+      } else if (currentStep === 'IDENTIFY_ADDRESS') {
+        const isValid = this.validationService.validateAddress(message);
+        if (!isValid) {
+          return {
+            response: "The address provided is invalid or too short. Please enter a valid complete address (at least 5 characters):",
+            suggestions: [],
+          };
+        }
         const parsed = this.validationService.parseFullAddress(message);
         state.citizen.addressLine1 = parsed.addressLine1;
         state.citizen.addressLine2 = parsed.addressLine2 || '';
         state.citizen.pincode = parsed.pincode || '';
         state.step = 'CONFIRM_PROFILE';
+      } else if (currentStep === 'CONFIRM_PROFILE') {
+        if (cleanMsg === 'yes' || cleanMsg === 'correct' || cleanMsg.includes('option:yes') || cleanMsg.includes('confirm details') || cleanMsg === 'confirm') {
+          // District check after confirmation: Selected District == Address District
+          const addrText = (state.citizen.addressLine1 + ' ' + (state.citizen.addressLine2 || '')).toLowerCase();
+          const distNormalized = (state.citizen.district || '').toLowerCase().replace(/_/g, ' ');
+          if (distNormalized && !addrText.includes(distNormalized)) {
+            state.citizen.addressLine1 = '';
+            state.citizen.addressLine2 = '';
+            state.step = 'IDENTIFY_ADDRESS';
+            return {
+              response: `❌ Address Consistency Mismatch: Your address must match your selected district (${state.citizen.district}).\n\nPlease enter your complete address again:`,
+              suggestions: [],
+            };
+          }
+
+          state.citizen.isConfirmed = true;
+          
+          try {
+            const citizenRecord = await this.prisma.citizen.create({
+              data: {
+                fullName: state.citizen.fullName,
+                mobileNumber: state.citizen.mobileNumber,
+                email: state.citizen.email || null,
+                addressLine1: state.citizen.addressLine1 || null,
+                addressLine2: state.citizen.addressLine2 || null,
+                city: state.citizen.city || null,
+                district: state.citizen.district || null,
+                state: state.citizen.state || "Uttar Pradesh",
+                pincode: state.citizen.pincode || null,
+                latitude: state.citizen.latitude || null,
+                longitude: state.citizen.longitude || null,
+                isConfirmed: true,
+              }
+            });
+            state.citizen.id = citizenRecord.id;
+          } catch (e) {
+            state.citizen.id = `mock-citizen-${Math.random().toString(36).substring(7)}`;
+          }
+
+          // Direct transition to actual service workflow
+          state.step = '1';
+          let res: any;
+          if (state.workflow === 'complaint') {
+            res = await this.runComplaintWorkflow(state, "");
+          } else if (state.workflow === 'verification') {
+            res = await this.runVerificationWorkflow(state, "");
+          } else if (state.workflow === 'certificate') {
+            res = await this.runCertificateWorkflow(state, "");
+          } else if (state.workflow === 'event') {
+            res = await this.runEventWorkflow(state, "");
+          }
+
+          if (res) {
+            return {
+              response: `👮 **Citizen Profile Verified**\n\nName: **${state.citizen.fullName}**\nMobile: **${state.citizen.mobileNumber}**\nLocation: **${state.citizen.city || state.citizen.district}, ${state.citizen.state}**\n\n✓ Profile verification complete.\n\n` + res.response,
+              suggestions: res.suggestions,
+            };
+          }
+          state.step = 'START';
+          return {
+            response: `👮 **Citizen Profile Verified**\n\nName: **${state.citizen.fullName}**\nMobile: **${state.citizen.mobileNumber}**\nLocation: **${state.citizen.city || state.citizen.district}, ${state.citizen.state}**\n\n✓ Profile verification complete. How would you like me to help you today?`,
+            suggestions: ['File Complaint', 'Tenant Verification', 'Track Status'],
+          };
+        } else {
+          state.step = 'MODIFY_PROFILE_SELECT';
+          return {
+            response: "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+            suggestions: ['1', '2', '3', '4'],
+          };
+        }
+      } else if (currentStep === 'MODIFY_PROFILE_SELECT') {
+        const choice = cleanMsg;
+        if (choice.includes('name') || choice === '1') {
+          state.step = 'MODIFY_PROFILE_INPUT';
+          state.data.currentExpectedField = 'fullName';
+          return {
+            response: "Please enter your correct full name:",
+            suggestions: [],
+          };
+        } else if (choice.includes('mobile') || choice === '2' || choice.includes('number')) {
+          state.step = 'MODIFY_PROFILE_INPUT';
+          state.data.currentExpectedField = 'mobileNumber';
+          return {
+            response: "Please enter your correct mobile number:",
+            suggestions: [],
+          };
+        } else if (choice.includes('location') || choice === '3') {
+          state.step = 'MODIFY_PROFILE_INPUT';
+          state.data.currentExpectedField = 'city';
+          return {
+            response: "Please enter your correct location (city/district):",
+            suggestions: [],
+          };
+        } else if (choice.includes('address') || choice === '4') {
+          state.step = 'MODIFY_PROFILE_INPUT';
+          state.data.currentExpectedField = 'addressLine1';
+          return {
+            response: "Please enter your complete address:",
+            suggestions: [],
+          };
+        } else {
+          return {
+            response: "I may not have understood correctly. Could you please select a valid option to modify:\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
+            suggestions: ['1', '2', '3', '4'],
+          };
+        }
+      } else if (currentStep === 'MODIFY_PROFILE_INPUT') {
+        const field = state.data.currentExpectedField || '';
+        if (field === 'fullName') {
+          const confRes = this.validationService.validateNameConfidence(message);
+          if (confRes.valid) {
+            state.citizen.fullName = message.trim();
+            // Single Field modification: Immediately return to review screen
+            state.step = 'CONFIRM_PROFILE';
+            delete state.data.currentExpectedField;
+            return this.renderConfirmationCard(state);
+          } else {
+            return {
+              response: "I may not have understood correctly. Could you please provide a valid name?\nExample: Rahul Kumar or Raju",
+              suggestions: [],
+            };
+          }
+        } else if (field === 'mobileNumber') {
+          if (this.validationService.validateMobile(message)) {
+            state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
+            // Single Field modification: Immediately return to review screen
+            state.step = 'CONFIRM_PROFILE';
+            delete state.data.currentExpectedField;
+            return this.renderConfirmationCard(state);
+          } else {
+            return {
+              response: "I may not have understood correctly. Could you please provide a valid 10-digit mobile number?",
+              suggestions: [],
+            };
+          }
+        } else if (field === 'city') {
+          const oldDistrict = state.citizen.district || '';
+          const resolvedLoc = this.localizeLocation(message.trim(), state.language);
+          let resolvedDistrict = resolvedLoc.toUpperCase().replace(/\s+/g, '_');
+          if (['NOIDA', 'NEW_OKHLA', 'GREATER_NOIDA', 'GAUTAM_BUDDHA_NAGAR'].includes(resolvedDistrict)) {
+            resolvedDistrict = 'GAUTAM_BUDDHA_NAGAR';
+          }
+
+          // District change rules: clear address if district changes, preserve if same
+          if (oldDistrict && oldDistrict !== resolvedDistrict) {
+            // Noida -> Greater Noida: Same district GAUTAM_BUDDHA_NAGAR, so preserve
+            // Lucknow -> Gomti Nagar: Same district LUCKNOW, so preserve
+            // Meerut -> Ayodhya: Different, so clear
+            if (oldDistrict !== 'GAUTAM_BUDDHA_NAGAR' || resolvedDistrict !== 'GAUTAM_BUDDHA_NAGAR') {
+              state.citizen.addressLine1 = '';
+              state.citizen.addressLine2 = '';
+              state.citizen.pincode = '';
+            }
+          }
+
+          state.citizen.city = resolvedLoc;
+          state.citizen.district = resolvedDistrict;
+          state.step = 'CONFIRM_PROFILE';
+          delete state.data.currentExpectedField;
+          return this.renderConfirmationCard(state);
+        } else if (field === 'addressLine1') {
+          const isValid = this.validationService.validateAddress(message);
+          if (!isValid) {
+            return {
+              response: "The address provided is invalid or too short. Please enter a valid complete address:",
+              suggestions: [],
+            };
+          }
+          const parsed = this.validationService.parseFullAddress(message);
+          state.citizen.addressLine1 = parsed.addressLine1;
+          state.citizen.addressLine2 = parsed.addressLine2 || '';
+          state.citizen.pincode = parsed.pincode || '';
+          state.step = 'CONFIRM_PROFILE';
+          delete state.data.currentExpectedField;
+          return this.renderConfirmationCard(state);
+        }
       }
-
-      delete state.data.currentExpectedField;
-      return this.renderConfirmationCard(state);
-    }
     }
 
-
-    const lang = state.language || 'en';
-    const isHi = lang === 'hi';
-    const isHinglish = lang === 'hinglish';
-
-    // Evaluate what is missing next
+    // Default missing check triggers
     if (!state.citizen.fullName) {
       state.step = 'IDENTIFY_NAME';
       return {
@@ -1943,58 +2175,28 @@ Let's continue with your request.`;
       };
     }
 
-    if (!state.citizen.mobileNumber) {
-      state.step = 'IDENTIFY_MOBILE';
-      let promptText = this.formatMessage('PROFILE_MOBILE_REQUEST', lang, '', { name: state.citizen.fullName });
-      if (state.data.nameSuggestFlag) {
-        promptText = (isHi ? "*(विनम्र सुझाव: आधिकारिक रिकॉर्ड के लिए उपनाम के साथ पूरा नाम प्रदान करने की सिफारिश की जाती है, लेकिन हम आगे बढ़ सकते हैं।)*\n\n" :
-                      isHinglish ? "*(Polite Suggestion: Official records ke liye surname ke sath full name dena recommended hai, but hum aage badh sakte hain.)*\n\n" :
-                      "*(Polite Suggestion: Providing a full name with surname is recommended for official records, but we can proceed.)*\n\n") + promptText;
-        delete state.data.nameSuggestFlag;
-      }
+    if (!state.citizen.city && !state.citizen.district) {
+      state.step = 'IDENTIFY_LOCATION';
       return {
-        response: promptText,
+        response: "Could you please tell me your city, district, or area?",
         suggestions: [],
       };
-    }
-
-    // Attempt browser location mapping
-    if (!state.citizen.city && !state.citizen.district) {
-      if (state.citizen.latitude && state.citizen.longitude) {
-        state.citizen.city = "Lucknow";
-        state.citizen.district = "Lucknow";
-        state.step = 'CONFIRM_LOCATION';
-        return {
-          response: isHi ? "मुझे आपका स्थान लखनऊ, उत्तर प्रदेश के रूप में मिला है। क्या यह सही है?\n\n- [पुष्टि करें](option:Confirm)\n- [स्थान बदलें](option:Change Location)" :
-                    isHinglish ? "Mujhe aapka location Lucknow, Uttar Pradesh mila hai. Kya ye sahi hai?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)" :
-                    "I found your location as Lucknow, Uttar Pradesh. Is this correct?\n\n- [Confirm](option:Confirm)\n- [Change Location](option:Change Location)",
-          suggestions: ['Confirm', 'Change Location'],
-        };
-      } else {
-        state.step = 'IDENTIFY_LOCATION';
-        return {
-          response: isHi ? "मैं आपका स्थान स्वचालित रूप से निर्धारित नहीं कर सका।\n\nक्या आप कृपया मुझे अपना शहर, ज़िला या क्षेत्र बता सकते हैं?" :
-                    isHinglish ? "Main aapka location automatically pata nahi kar paya. Aap please apna city, district ya area batayein." :
-                    "I couldn't determine your location automatically.\n\nCould you please tell me your city, district, or area?",
-          suggestions: [],
-        };
-      }
     }
 
     if (!state.citizen.addressLine1) {
       state.step = 'IDENTIFY_ADDRESS';
       return {
-        response: isHi ? `👮 मुझे आपका स्थान मिला है: ${state.citizen.city}, ${state.citizen.state}। क्या आप अपना पूरा पता भी प्रदान कर सकते हैं?\n(उदाहरण: मकान नंबर 24, सेक्टर बी, गोमती नगर, लखनऊ - 226010)` :
-                  isHinglish ? `👮 Mujhe aapka location mila: ${state.citizen.city}, ${state.citizen.state}. Kya aap apna full address bhi de sakte hain?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)` :
-                  `👮 I set your location as: ${state.citizen.city}, ${state.citizen.state}. Could you also provide your complete address?\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
+        response: `Please provide your complete address:\n(Example: House No. 24, Sector B, Gomti Nagar, Lucknow - 226010)`,
         suggestions: [],
       };
     }
 
-    // If everything is collected, show confirmation card
     state.step = 'CONFIRM_PROFILE';
     return this.renderConfirmationCard(state);
   }
+
+
+
 
   private handleProfileCorrection(state: ChatSessionState, message: string): boolean {
     const cleanMsg = message.trim().toLowerCase();

@@ -75,11 +75,12 @@ describe('E2E Citizen Journey Workflow Spec', () => {
     process.env.ENABLE_CIE = 'false';
 
     const sessionId = `e2e-journey-mobile-${Date.now()}`;
+    const dynamicMobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
     const inputs = [
       "english",
       "File Complaint",
+      dynamicMobile,
       "Manoj Tiwari",
-      "7878787878",
       "Ayodhya",
       "Confirm",
       "House No 22 Civil Lines",

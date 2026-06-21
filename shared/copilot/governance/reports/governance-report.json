@@ -1,0 +1,24 @@
+{
+  "registryVersion": "2.7.7",
+  "activeScenarios": 54,
+  "draftScenarios": 0,
+  "deprecatedScenarios": 4,
+  "reviewQueue": 0,
+  "averagePathAccuracy": 96,
+  "averageWorkflowAccuracy": 99,
+  "topFailureScenarios": [
+    "LAND_RECORD",
+    "PENSION"
+  ],
+  "knowledgeCoverage": 100,
+  "workflowCoverage": 100,
+  "playbookCoverage": 100,
+  "orphanNodes": 0,
+  "validationErrors": 0,
+  "coverage": {
+    "LOSS": 100,
+    "FRAUD": 95,
+    "GRIEVANCE": 88,
+    "EMERGENCY": 92
+  }
+}

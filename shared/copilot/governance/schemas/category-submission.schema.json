@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CategorySubmission",
+  "type": "OBJECT",
+  "required": ["submissionType", "categoryKey", "parentNode", "description"],
+  "properties": {
+    "submissionType": {
+      "type": "STRING",
+      "enum": ["NEW_CATEGORY"]
+    },
+    "categoryKey": {
+      "type": "STRING",
+      "pattern": "^[A-Z0-9_]+$"
+    },
+    "parentNode": {
+      "type": "STRING"
+    },
+    "description": {
+      "type": "STRING"
+    }
+  }
+}

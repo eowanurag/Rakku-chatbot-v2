@@ -1,0 +1,29 @@
+{
+  "releaseVersion": "2.8.0",
+  "releaseScore": 96,
+  "previousReleaseScore": null,
+  "trend": "UNKNOWN",
+  "deploymentReady": true,
+  "blockingLevel": "NONE",
+  "timestamp": "2026-06-19T11:22:14.124Z",
+  "unitPassRate": 95,
+  "integrationPassRate": 95,
+  "e2ePassRate": 95,
+  "releasePassRate": 95,
+  "graphCoverage": 93,
+  "dictionaryCoverage": 100,
+  "avgResponseTimeMs": 0,
+  "startupTimeMs": 0,
+  "memoryLeakPass": true,
+  "cacheIntegrityPass": true,
+  "migrationPass": true,
+  "ciGatePass": true,
+  "privacyPass": true,
+  "goldenJourneyPass": true,
+  "trendHistory": [
+    {
+      "date": "2026-06-19T11:22:14.124Z",
+      "score": 96
+    }
+  ]
+}

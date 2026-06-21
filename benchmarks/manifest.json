@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "citizenQueriesCount": 100,
+  "citizenQueriesCount": 1005,
   "ambiguousQueriesCount": 25,
   "nonCaseQueriesCount": 25,
   "checksums": {
-    "citizenQueries": "E661FB193DF5C87CBA260E0298818155",
+    "citizenQueries": "C55B9093DDEBF0AC067ECBC5415E3CAF",
     "ambiguousQueries": "969330012E7C7A4F02C8BE1CDA3FF7B3",
     "nonCaseQueries": "CCB08452346E826E5C8DB02F7BE8C7F7"
   }

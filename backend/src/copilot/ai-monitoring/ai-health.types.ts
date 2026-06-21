@@ -1,0 +1,5 @@
+export enum AiHealthStatus {
+  HEALTHY = 'HEALTHY',
+  DEGRADED = 'DEGRADED',
+  UNAVAILABLE = 'UNAVAILABLE'
+}

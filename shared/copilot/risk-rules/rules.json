@@ -327,6 +327,231 @@
           "newRisk": "HIGH"
         }
       ]
+    },
+    "DRIVING_LICENSE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "VOTER_ID": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "RATION_CARD": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "PROPERTY_DOCUMENT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "EDUCATION_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "OTHER_DOCUMENT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "VEHICLE_DOCUMENTS": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "RC": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "INSURANCE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "POLLUTION_CERTIFICATE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "PERMIT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "BIKE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CAR": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "COMMERCIAL_VEHICLE": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "OTHER_PROPERTY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "DEBIT_CARD": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "ATM": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "OTP": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "SOCIAL_MEDIA": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CYBER_EXTORTION": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "IDENTITY_THEFT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "CHILD_MISSING": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "WOMEN_SAFETY": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "SENIOR_CITIZEN": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
+    },
+    "ACCIDENT": {
+      "baseRisk": "LOW",
+      "modifiers": [
+        {
+          "condition": "misuseSuspected == true",
+          "newRisk": "HIGH"
+        }
+      ]
     }
   }
 }
