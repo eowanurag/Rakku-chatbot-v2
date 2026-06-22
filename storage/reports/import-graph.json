@@ -1,0 +1,31 @@
+{
+  "description": "Protection graph mappings of file import traces, including dynamic, reflection-loaded, and test fixtures.",
+  "nodes": [
+    {
+      "id": "backend/src/main.ts",
+      "type": "entry"
+    },
+    {
+      "id": "backend/src/app.module.ts",
+      "type": "module"
+    },
+    {
+      "id": "frontend/src/app/page.tsx",
+      "type": "page"
+    }
+  ],
+  "edges": [
+    {
+      "source": "backend/src/main.ts",
+      "target": "backend/src/app.module.ts"
+    }
+  ],
+  "protectedPaths": [
+    "scripts/",
+    "migrations/",
+    "fixtures/",
+    "cron",
+    "dynamic",
+    "reflection"
+  ]
+}

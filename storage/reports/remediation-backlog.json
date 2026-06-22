@@ -1,0 +1,35 @@
+[
+  {
+    "id": "TASK-001",
+    "priority": "P0",
+    "category": "DATABASE",
+    "title": "Add missing database index parameters",
+    "description": "Create indexes on Citizen, Complaint, CharacterCertificate, ChatHistory, and Verification tables to prevent linear scan bottlenecks.",
+    "estimatedEffortHours": 4,
+    "estimatedPerformanceGain": "40%",
+    "status": "OPEN",
+    "sourceReport": "database-remediation-report.json"
+  },
+  {
+    "id": "TASK-002",
+    "priority": "P1",
+    "category": "ARCHITECTURE",
+    "title": "Consolidate duplicate NestJS controllers & modules",
+    "description": "Sunset legacy duplicate services inside backend/src/complaint-intelligence and backend/src/situation-assessment and point imports to copilot/cie and copilot/sae packages.",
+    "estimatedEffortHours": 6,
+    "estimatedPerformanceGain": "Maintainability cleanup",
+    "status": "OPEN",
+    "sourceReport": "module-consolidation-plan.json"
+  },
+  {
+    "id": "TASK-003",
+    "priority": "P2",
+    "category": "REPOSITORY",
+    "title": "Remove orphan files from project source structure",
+    "description": "Manually review and delete 82 unreferenced files classified as safe-to-delete under state/ hooks/ and components/ dirs.",
+    "estimatedEffortHours": 4,
+    "estimatedPerformanceGain": "Bundle size optimization",
+    "status": "OPEN",
+    "sourceReport": "orphan-file-certification.json"
+  }
+]

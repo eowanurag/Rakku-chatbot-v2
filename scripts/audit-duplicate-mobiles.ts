@@ -1,10 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+import { registerTimeoutGuard } from './utils/timeout-guard';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  registerTimeoutGuard(120000, async () => {
+    await prisma.$disconnect();
+  });
+
   // Find duplicate mobile numbers
   const duplicateMobilesGroup = await prisma.citizen.groupBy({
     by: ['mobileNumber'],

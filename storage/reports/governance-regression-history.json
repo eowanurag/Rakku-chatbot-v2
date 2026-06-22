@@ -1,0 +1,20 @@
+[
+  {
+    "timestamp": "2026-06-22T09:08:47.834Z",
+    "regressions": [
+      "Repository health degraded by 30 points.",
+      "Technical debt increased by 350 points."
+    ],
+    "severity": "WARNING",
+    "hasRegression": true
+  },
+  {
+    "timestamp": "2026-06-22T09:26:51.610Z",
+    "regressions": [
+      "Repository health degraded by 30 points.",
+      "Technical debt increased by 350 points."
+    ],
+    "severity": "WARNING",
+    "hasRegression": true
+  }
+]

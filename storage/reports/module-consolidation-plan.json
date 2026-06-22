@@ -1,0 +1,32 @@
+{
+  "candidates": [
+    {
+      "sourceA": "backend/src/complaint-intelligence/complaint-intelligence.controller.ts",
+      "sourceB": "backend/src/copilot/cie/complaint-intelligence.controller.ts",
+      "duplicatePercentage": 100,
+      "recommendation": "Deprecate legacy backend/src/complaint-intelligence/ controller and retain standard copilot/cie controller.",
+      "riskLevel": "LOW"
+    },
+    {
+      "sourceA": "backend/src/complaint-intelligence/complaint-intelligence.service.ts",
+      "sourceB": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "duplicatePercentage": 100,
+      "recommendation": "Consolidate duplicate service. Direct all imports to copilot/cie and remove backend/src/complaint-intelligence/.",
+      "riskLevel": "MEDIUM"
+    },
+    {
+      "sourceA": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "sourceB": "backend/src/situation-assessment/situation-assessment.service.ts",
+      "duplicatePercentage": 100,
+      "recommendation": "Direct NestJS container to resolve situation-assessment.service from copilot/sae and sunset legacy service.",
+      "riskLevel": "MEDIUM"
+    },
+    {
+      "sourceA": "ConfirmComplaintDto",
+      "sourceB": "ConfirmAssessmentDto",
+      "duplicatePercentage": 100,
+      "recommendation": "Create a shared DTO schema under shared/dto package and import it.",
+      "riskLevel": "LOW"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "unusedDependencies": [],
+  "unusedDevDependencies": [],
+  "missingDependencies": [
+    "@backend/chat",
+    "@backend/prisma.service",
+    "@backend/complaint",
+    "@backend/verification",
+    "@backend/certificate",
+    "@backend/event",
+    "@backend/tracking",
+    "@backend/citizen-assistance",
+    "@nestjs/config",
+    "@nestjs/axios",
+    "rxjs",
+    "@backend/security",
+    "reflect-metadata",
+    "@backend/jurisdiction-routing",
+    "@backend/app.module",
+    "@nestjs/core",
+    "@nestjs/throttler",
+    "axios",
+    "@backend/notification",
+    "@backend/localization",
+    "js-yaml"
+  ],
+  "warnings": []
+}

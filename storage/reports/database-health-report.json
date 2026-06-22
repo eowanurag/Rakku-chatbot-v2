@@ -1,0 +1,22 @@
+{
+  "totalRecords": {
+    "citizens": 0,
+    "complaints": 0,
+    "sessions": 0,
+    "feedback": 0
+  },
+  "duplicateMobiles": 0,
+  "orphanSessions": 0,
+  "orphanComplaints": 0,
+  "orphanDrafts": 0,
+  "missingIndexes": [],
+  "uniqueConstraintsHealthy": true,
+  "expiredSessions": 0,
+  "expiredChats": 0,
+  "avgCitizenLookupMs": 0,
+  "avgWorkflowResumeMs": 0,
+  "avgComplaintLookupMs": 0,
+  "slowQueries": [],
+  "databaseOptimized": true,
+  "timestamp": "2026-06-22T05:33:27.938Z"
+}

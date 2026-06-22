@@ -1,0 +1,20 @@
+{
+  "duplicateTests": [],
+  "emptyTestFiles": [
+    "tests/helpers/prisma-test-helper.ts",
+    "tests/parity/__snapshots__/workflow_parity_snapshot.spec.ts.snap",
+    "tests/release/datasets/ai_independence_dataset.json",
+    "tests/reporting/deployment_readiness_report.ts",
+    "tests/setup.ts"
+  ],
+  "testsWithNoAssertions": [],
+  "extremelySlowTests": [
+    {
+      "test": "Workflow Parity Integration Test (NestJS Fallback Engine) Testing Complaint Workflow (Lost Mobile)",
+      "durationMs": 3204,
+      "file": "../Rakku-chatbot-v1/tests/integration/workflow_parity.spec.ts"
+    }
+  ],
+  "obsoleteTests": [],
+  "abandonedBenchmarks": []
+}

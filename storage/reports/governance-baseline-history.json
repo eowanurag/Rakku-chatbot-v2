@@ -1,0 +1,12 @@
+[
+  {
+    "repositoryHealthScore": 70,
+    "databaseHealthScore": 0,
+    "technicalDebtScore": 350,
+    "repositoryRiskScore": 78,
+    "databaseOptimizationScore": 82,
+    "criticalIssues": 1,
+    "openRecommendations": 2,
+    "generatedAt": "2026-06-22T09:25:56.593Z"
+  }
+]

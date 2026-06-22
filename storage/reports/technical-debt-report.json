@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-06-22T09:01:38.059Z",
+  "debtScore": 350,
+  "classification": "CRITICAL",
+  "breakdown": {
+    "deadCodeCount": 19,
+    "orphanFilesCount": 82,
+    "duplicateModulesCount": 4,
+    "missingIndexesCount": 55,
+    "obsoleteTestsCount": 3,
+    "dependencyIssuesCount": 21
+  }
+}

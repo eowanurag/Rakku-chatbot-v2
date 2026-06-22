@@ -1,0 +1,10 @@
+{
+  "timestamp": "2026-06-22T09:02:27.317Z",
+  "tableGrowth": "stable",
+  "indexGrowth": "stable",
+  "duplicateRecords": 0,
+  "orphanRecords": 0,
+  "slowQueryCounts": 0,
+  "unusedIndexesCount": 6,
+  "missingIndexesCount": 55
+}

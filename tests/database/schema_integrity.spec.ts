@@ -1,6 +1,13 @@
 import { PrismaService } from '@backend/prisma.service';
 
 describe('Database Schema Integrity and Index Validation Spec', () => {
+  beforeEach(async () => {
+    await cleanupDatabase();
+  });
+
+  afterAll(async () => {
+    await disconnectPrisma();
+  });
   let prisma: PrismaService;
 
   beforeAll(() => {
@@ -8,9 +15,7 @@ describe('Database Schema Integrity and Index Validation Spec', () => {
     prisma = new PrismaService();
   });
 
-  afterAll(async () => {
-    await prisma.$disconnect();
-  });
+  
 
   it('should verify that the AuditLog table exists and has correct index definitions in PostgreSQL', async () => {
     // We query pg_indexes for the 'AuditLog' table (or 'audit_log' if lowercased, but Prisma preserves casing)

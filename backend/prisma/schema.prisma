@@ -11,7 +11,7 @@ datasource db {
 model Citizen {
   id                   String                 @id @default(cuid())
   fullName             String
-  mobileNumber         String
+  mobileNumber         String                 @unique
   email                String?
   addressLine1         String?
   addressLine2         String?
@@ -32,6 +32,8 @@ model Citizen {
   permissions          EventPermission[]
   notifications        Notification[]
   verifications        Verification[]
+
+  @@index([updatedAt])
 }
 
 model Complaint {
@@ -51,6 +53,8 @@ model Complaint {
   updatedAt                DateTime                @updatedAt
   citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
   jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
+
+  @@index([citizenId, referenceNumber, status])
 }
 
 model Verification {
@@ -138,6 +142,8 @@ model WorkflowSession {
   isCompleted Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([citizenId, serviceType, isCompleted])
 }
 
 model AuditLog {
@@ -266,6 +272,8 @@ model CitizenFeedback {
   category     String?
   subcategory  String?
   createdAt    DateTime @default(now())
+
+  @@index([citizenId, createdAt])
 }
 
 model PoliceStation {

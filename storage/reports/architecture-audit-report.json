@@ -1,0 +1,883 @@
+{
+  "duplicateServices": [
+    {
+      "class1": "ChatService",
+      "file1": "backend/src/chat/chat.service.ts",
+      "class2": "AiCircuitBreakerService",
+      "file2": "backend/src/copilot/ai-resilience/ai-circuit-breaker.service.ts",
+      "similarity": 0.6428571428571429
+    },
+    {
+      "class1": "ChatService",
+      "file1": "backend/src/chat/chat.service.ts",
+      "class2": "CueHealthService",
+      "file2": "backend/src/copilot/cue/analytics/cue-health.service.ts",
+      "similarity": 0.7692307692307693
+    },
+    {
+      "class1": "ChatService",
+      "file1": "backend/src/chat/chat.service.ts",
+      "class2": "CueService",
+      "file2": "backend/src/copilot/cue/runtime/cue.service.ts",
+      "similarity": 0.6363636363636364
+    },
+    {
+      "class1": "ChatService",
+      "file1": "backend/src/chat/chat.service.ts",
+      "class2": "CertificateService",
+      "file2": "backend/src/workflows/certificate/certificate.service.ts",
+      "similarity": 0.8181818181818182
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "AnalyticsService",
+      "file2": "backend/src/citizen-assistance/analytics.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "PoliceStationService",
+      "file2": "backend/src/citizen-assistance/police-station.service.ts",
+      "similarity": 0.7857142857142857
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "ComplaintIntelligenceService",
+      "file2": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "DictionaryGovernanceService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "DictionaryLifecycleService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "JurisdictionAnalyticsService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "JurisdictionService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "KnowledgeService",
+      "file2": "backend/src/knowledge/knowledge.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "NotificationService",
+      "file2": "backend/src/notification/notification.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "ValidationService",
+      "file1": "backend/src/chat/validation.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.7857142857142857
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "PoliceStationService",
+      "file2": "backend/src/citizen-assistance/police-station.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "DictionaryGovernanceService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "DictionaryLifecycleService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "SituationAssessmentService",
+      "file2": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "JurisdictionAnalyticsService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "similarity": 0.7647058823529411
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "AnalyticsService",
+      "file1": "backend/src/citizen-assistance/analytics.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "HelplineService",
+      "file1": "backend/src/citizen-assistance/helpline.service.ts",
+      "class2": "IntelligenceService",
+      "file2": "backend/src/citizen-assistance/intelligence.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "IntelligenceService",
+      "file1": "backend/src/citizen-assistance/intelligence.service.ts",
+      "class2": "PoliceStationService",
+      "file2": "backend/src/citizen-assistance/police-station.service.ts",
+      "similarity": 0.6428571428571429
+    },
+    {
+      "class1": "IntelligenceService",
+      "file1": "backend/src/citizen-assistance/intelligence.service.ts",
+      "class2": "ComplaintIntelligenceService",
+      "file2": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "IntelligenceService",
+      "file1": "backend/src/citizen-assistance/intelligence.service.ts",
+      "class2": "RoutingPolicyService",
+      "file2": "backend/src/jurisdiction-routing/routing-policy.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "IntelligenceService",
+      "file1": "backend/src/citizen-assistance/intelligence.service.ts",
+      "class2": "EventService",
+      "file2": "backend/src/workflows/event/event.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "ComplaintIntelligenceService",
+      "file2": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "DictionaryGovernanceService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "DictionaryLifecycleService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "SituationAssessmentService",
+      "file2": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "JurisdictionAnalyticsService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.7333333333333333
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "RoutingPolicyService",
+      "file2": "backend/src/jurisdiction-routing/routing-policy.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "NotificationService",
+      "file2": "backend/src/notification/notification.service.ts",
+      "similarity": 0.7142857142857143
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.7333333333333333
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "EventService",
+      "file2": "backend/src/workflows/event/event.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "PoliceStationService",
+      "file1": "backend/src/citizen-assistance/police-station.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.7142857142857143
+    },
+    {
+      "class1": "AiBudgetService",
+      "file1": "backend/src/copilot/ai-budget/ai-budget.service.ts",
+      "class2": "AiDependencyAuditService",
+      "file2": "backend/src/copilot/ai-governance/ai-dependency-audit.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "AiBudgetService",
+      "file1": "backend/src/copilot/ai-budget/ai-budget.service.ts",
+      "class2": "AiCircuitBreakerService",
+      "file2": "backend/src/copilot/ai-resilience/ai-circuit-breaker.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "AiDependencyAuditService",
+      "file1": "backend/src/copilot/ai-governance/ai-dependency-audit.service.ts",
+      "class2": "DictionaryExportService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-export.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "AiDependencyAuditService",
+      "file1": "backend/src/copilot/ai-governance/ai-dependency-audit.service.ts",
+      "class2": "DictionaryGovernanceReportService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "AiDependencyAuditService",
+      "file1": "backend/src/copilot/ai-governance/ai-dependency-audit.service.ts",
+      "class2": "JurisdictionAnalyticsService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "similarity": 0.631578947368421
+    },
+    {
+      "class1": "AiCircuitBreakerService",
+      "file1": "backend/src/copilot/ai-resilience/ai-circuit-breaker.service.ts",
+      "class2": "CueHealthService",
+      "file2": "backend/src/copilot/cue/analytics/cue-health.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "AiCircuitBreakerService",
+      "file1": "backend/src/copilot/ai-resilience/ai-circuit-breaker.service.ts",
+      "class2": "CueService",
+      "file2": "backend/src/copilot/cue/runtime/cue.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "AiCircuitBreakerService",
+      "file1": "backend/src/copilot/ai-resilience/ai-circuit-breaker.service.ts",
+      "class2": "CertificateService",
+      "file2": "backend/src/workflows/certificate/certificate.service.ts",
+      "similarity": 0.6428571428571429
+    },
+    {
+      "class1": "ComplaintIntelligenceService",
+      "file1": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.875
+    },
+    {
+      "class1": "CueHealthService",
+      "file1": "backend/src/copilot/cue/analytics/cue-health.service.ts",
+      "class2": "CueReplayService",
+      "file2": "backend/src/copilot/cue/analytics/cue-replay.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "CueHealthService",
+      "file1": "backend/src/copilot/cue/analytics/cue-health.service.ts",
+      "class2": "CueService",
+      "file2": "backend/src/copilot/cue/runtime/cue.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "CueHealthService",
+      "file1": "backend/src/copilot/cue/analytics/cue-health.service.ts",
+      "class2": "CertificateService",
+      "file2": "backend/src/workflows/certificate/certificate.service.ts",
+      "similarity": 0.6428571428571429
+    },
+    {
+      "class1": "CueReplayService",
+      "file1": "backend/src/copilot/cue/analytics/cue-replay.service.ts",
+      "class2": "CueService",
+      "file2": "backend/src/copilot/cue/runtime/cue.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "DictionaryExportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-export.service.ts",
+      "class2": "DictionaryGovernanceReportService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "similarity": 0.7647058823529411
+    },
+    {
+      "class1": "DictionaryExportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-export.service.ts",
+      "class2": "DictionaryGovernanceService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "similarity": 0.75
+    },
+    {
+      "class1": "DictionaryExportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-export.service.ts",
+      "class2": "DictionaryLifecycleService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "DictionaryExportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-export.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "DictionaryGovernanceReportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "class2": "DictionaryGovernanceService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "similarity": 0.8666666666666667
+    },
+    {
+      "class1": "DictionaryGovernanceReportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "class2": "DictionaryLifecycleService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "DictionaryGovernanceReportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "DictionaryGovernanceReportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.631578947368421
+    },
+    {
+      "class1": "DictionaryGovernanceReportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "DictionaryGovernanceReportService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance-report.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "DictionaryGovernanceService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "class2": "DictionaryLifecycleService",
+      "file2": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "similarity": 0.75
+    },
+    {
+      "class1": "DictionaryGovernanceService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "DictionaryGovernanceService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "class2": "NotificationService",
+      "file2": "backend/src/notification/notification.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "DictionaryGovernanceService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-governance.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "DictionaryLifecycleService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "class2": "JurisdictionLifecycleService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-lifecycle.service.ts",
+      "similarity": 0.6842105263157895
+    },
+    {
+      "class1": "DictionaryLifecycleService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.7058823529411765
+    },
+    {
+      "class1": "DictionaryLifecycleService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "class2": "NotificationService",
+      "file2": "backend/src/notification/notification.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "DictionaryLifecycleService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "DictionaryLifecycleService",
+      "file1": "backend/src/copilot/cue/governance/dictionary-lifecycle.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "CueService",
+      "file1": "backend/src/copilot/cue/runtime/cue.service.ts",
+      "class2": "SreService",
+      "file2": "backend/src/copilot/sre/sre.service.ts",
+      "similarity": 0.75
+    },
+    {
+      "class1": "CueService",
+      "file1": "backend/src/copilot/cue/runtime/cue.service.ts",
+      "class2": "CertificateService",
+      "file2": "backend/src/workflows/certificate/certificate.service.ts",
+      "similarity": 0.6363636363636364
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "JurisdictionAnalyticsService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "similarity": 0.7222222222222222
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "JurisdictionService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "NotificationService",
+      "file2": "backend/src/notification/notification.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.75
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "SubmissionFingerprintService",
+      "file2": "backend/src/security/submission-fingerprint.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "SituationAssessmentService",
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "GraphMissService",
+      "file1": "backend/src/copilot/sre/analytics/graph-miss.service.ts",
+      "class2": "MetricsService",
+      "file2": "backend/src/localization/localization.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "SreService",
+      "file1": "backend/src/copilot/sre/sre.service.ts",
+      "class2": "MetricsService",
+      "file2": "backend/src/localization/localization.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "SreService",
+      "file1": "backend/src/copilot/sre/sre.service.ts",
+      "class2": "EventService",
+      "file2": "backend/src/workflows/event/event.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "JurisdictionAnalyticsService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "class2": "JurisdictionLifecycleService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction-lifecycle.service.ts",
+      "similarity": 0.7894736842105263
+    },
+    {
+      "class1": "JurisdictionAnalyticsService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "class2": "JurisdictionService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "similarity": 0.7647058823529411
+    },
+    {
+      "class1": "JurisdictionAnalyticsService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.631578947368421
+    },
+    {
+      "class1": "JurisdictionAnalyticsService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.65
+    },
+    {
+      "class1": "JurisdictionAnalyticsService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-analytics.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.631578947368421
+    },
+    {
+      "class1": "JurisdictionLifecycleService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-lifecycle.service.ts",
+      "class2": "JurisdictionService",
+      "file2": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "similarity": 0.7647058823529411
+    },
+    {
+      "class1": "JurisdictionLifecycleService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction-lifecycle.service.ts",
+      "class2": "LocationResolverService",
+      "file2": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "similarity": 0.631578947368421
+    },
+    {
+      "class1": "JurisdictionService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "JurisdictionService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.6875
+    },
+    {
+      "class1": "JurisdictionService",
+      "file1": "backend/src/jurisdiction-routing/jurisdiction.service.ts",
+      "class2": "SubmissionFingerprintService",
+      "file2": "backend/src/security/submission-fingerprint.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "LocationResolverService",
+      "file1": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "class2": "RoutingPolicyService",
+      "file2": "backend/src/jurisdiction-routing/routing-policy.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "LocationResolverService",
+      "file1": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "LocationResolverService",
+      "file1": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "class2": "NotificationService",
+      "file2": "backend/src/notification/notification.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "LocationResolverService",
+      "file1": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "LocationResolverService",
+      "file1": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "LocationResolverService",
+      "file1": "backend/src/jurisdiction-routing/location-resolver.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "RoutingPolicyService",
+      "file1": "backend/src/jurisdiction-routing/routing-policy.service.ts",
+      "class2": "RoutingTargetRegistryService",
+      "file2": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "similarity": 0.7222222222222222
+    },
+    {
+      "class1": "RoutingPolicyService",
+      "file1": "backend/src/jurisdiction-routing/routing-policy.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.6111111111111112
+    },
+    {
+      "class1": "RoutingTargetRegistryService",
+      "file1": "backend/src/jurisdiction-routing/routing-target-registry.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.6666666666666666
+    },
+    {
+      "class1": "MetricsService",
+      "file1": "backend/src/localization/localization.service.ts",
+      "class2": "EventService",
+      "file2": "backend/src/workflows/event/event.service.ts",
+      "similarity": 0.6363636363636364
+    },
+    {
+      "class1": "NotificationService",
+      "file1": "backend/src/notification/notification.service.ts",
+      "class2": "RecommendationRouterService",
+      "file2": "backend/src/orchestration/recommendation-router.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "NotificationService",
+      "file1": "backend/src/notification/notification.service.ts",
+      "class2": "CertificateService",
+      "file2": "backend/src/workflows/certificate/certificate.service.ts",
+      "similarity": 0.6923076923076923
+    },
+    {
+      "class1": "NotificationService",
+      "file1": "backend/src/notification/notification.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "NotificationService",
+      "file1": "backend/src/notification/notification.service.ts",
+      "class2": "EventService",
+      "file2": "backend/src/workflows/event/event.service.ts",
+      "similarity": 0.6153846153846154
+    },
+    {
+      "class1": "NotificationService",
+      "file1": "backend/src/notification/notification.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.8461538461538461
+    },
+    {
+      "class1": "RecommendationRouterService",
+      "file1": "backend/src/orchestration/recommendation-router.service.ts",
+      "class2": "ComplaintService",
+      "file2": "backend/src/workflows/complaint/complaint.service.ts",
+      "similarity": 0.6470588235294118
+    },
+    {
+      "class1": "RecommendationRouterService",
+      "file1": "backend/src/orchestration/recommendation-router.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "CertificateService",
+      "file1": "backend/src/workflows/certificate/certificate.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.6923076923076923
+    },
+    {
+      "class1": "ComplaintService",
+      "file1": "backend/src/workflows/complaint/complaint.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.625
+    },
+    {
+      "class1": "EventService",
+      "file1": "backend/src/workflows/event/event.service.ts",
+      "class2": "VerificationService",
+      "file2": "backend/src/workflows/verification/verification.service.ts",
+      "similarity": 0.6153846153846154
+    }
+  ],
+  "duplicateValidators": [],
+  "potentialMergeCandidates": [
+    {
+      "file1": "backend/src/complaint-intelligence/complaint-intelligence.controller.ts",
+      "file2": "backend/src/copilot/cie/complaint-intelligence.controller.ts",
+      "similarity": 1,
+      "reason": "Identical file names in different directories"
+    },
+    {
+      "file1": "backend/src/complaint-intelligence/complaint-intelligence.module.ts",
+      "file2": "backend/src/copilot/cie/complaint-intelligence.module.ts",
+      "similarity": 1,
+      "reason": "Identical file names in different directories"
+    },
+    {
+      "file1": "backend/src/complaint-intelligence/complaint-intelligence.service.ts",
+      "file2": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "similarity": 1,
+      "reason": "Identical file names in different directories"
+    },
+    {
+      "file1": "backend/src/copilot/sae/situation-assessment.controller.ts",
+      "file2": "backend/src/situation-assessment/situation-assessment.controller.ts",
+      "similarity": 1,
+      "reason": "Identical file names in different directories"
+    },
+    {
+      "file1": "backend/src/copilot/sae/situation-assessment.module.ts",
+      "file2": "backend/src/situation-assessment/situation-assessment.module.ts",
+      "similarity": 1,
+      "reason": "Identical file names in different directories"
+    },
+    {
+      "file1": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "file2": "backend/src/situation-assessment/situation-assessment.service.ts",
+      "similarity": 1,
+      "reason": "Identical file names in different directories"
+    }
+  ],
+  "duplicateDTOs": [
+    {
+      "dto1": "ConfirmComplaintDto",
+      "dto2": "ConfirmAssessmentDto",
+      "properties": [
+        "assessmentId",
+        "sessionId"
+      ]
+    },
+    {
+      "dto1": "OverrideComplaintDto",
+      "dto2": "OverrideAssessmentDto",
+      "properties": [
+        "assessmentId",
+        "citizenSelectedIntent",
+        "citizenSelectedService",
+        "sessionId"
+      ]
+    }
+  ],
+  "duplicateConstants": []
+}

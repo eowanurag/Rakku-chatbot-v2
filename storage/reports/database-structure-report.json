@@ -1,0 +1,695 @@
+{
+  "duplicates": {},
+  "orphans": {},
+  "emptyTables": [
+    "Citizen",
+    "Complaint",
+    "CharacterCertificate",
+    "ChatHistory",
+    "KnowledgeItem",
+    "WorkflowSession",
+    "AuditLog",
+    "TrackingRecord",
+    "ConversationInsight",
+    "IntentTrainingData",
+    "ConversationSentiment",
+    "UnansweredQuestion",
+    "LearningEvent",
+    "KnowledgeCategory",
+    "AggregatedMetric",
+    "KnowledgeArticle",
+    "SubmissionFingerprint",
+    "UnderstandingCandidate",
+    "IntentClassification",
+    "SituationAssessmentSession",
+    "ComplaintSession",
+    "ComplaintAssessment",
+    "UnderstandingReviewQueue",
+    "ScenarioAssessment",
+    "CueReplayResult",
+    "Verification",
+    "EventPermission",
+    "CitizenFeedback",
+    "ScenarioSession",
+    "Notification",
+    "CitizenPreference"
+  ],
+  "largestTables": [
+    {
+      "table": "PoliceStation",
+      "count": 76
+    },
+    {
+      "table": "JurisdictionMapping",
+      "count": 76
+    },
+    {
+      "table": "JurisdictionResolutionHistory",
+      "count": 10
+    },
+    {
+      "table": "JurisdictionResolutionEvent",
+      "count": 9
+    },
+    {
+      "table": "UnderstandingTerm",
+      "count": 8
+    },
+    {
+      "table": "WorkflowAnalytics",
+      "count": 6
+    },
+    {
+      "table": "JurisdictionResolution",
+      "count": 6
+    },
+    {
+      "table": "ScenarioGraphCandidate",
+      "count": 2
+    },
+    {
+      "table": "JurisdictionRegistryVersion",
+      "count": 1
+    }
+  ],
+  "missingIndexes": [
+    {
+      "table": "Citizen",
+      "column": "createdAt"
+    },
+    {
+      "table": "Complaint",
+      "column": "createdAt"
+    },
+    {
+      "table": "Complaint",
+      "column": "updatedAt"
+    },
+    {
+      "table": "CharacterCertificate",
+      "column": "citizenId"
+    },
+    {
+      "table": "CharacterCertificate",
+      "column": "createdAt"
+    },
+    {
+      "table": "CharacterCertificate",
+      "column": "updatedAt"
+    },
+    {
+      "table": "ChatHistory",
+      "column": "sessionId"
+    },
+    {
+      "table": "ChatHistory",
+      "column": "createdAt"
+    },
+    {
+      "table": "KnowledgeItem",
+      "column": "createdAt"
+    },
+    {
+      "table": "WorkflowSession",
+      "column": "createdAt"
+    },
+    {
+      "table": "WorkflowSession",
+      "column": "updatedAt"
+    },
+    {
+      "table": "TrackingRecord",
+      "column": "citizenId"
+    },
+    {
+      "table": "TrackingRecord",
+      "column": "createdAt"
+    },
+    {
+      "table": "TrackingRecord",
+      "column": "updatedAt"
+    },
+    {
+      "table": "ConversationInsight",
+      "column": "sessionId"
+    },
+    {
+      "table": "ConversationInsight",
+      "column": "citizenId"
+    },
+    {
+      "table": "ConversationInsight",
+      "column": "createdAt"
+    },
+    {
+      "table": "IntentTrainingData",
+      "column": "createdAt"
+    },
+    {
+      "table": "WorkflowAnalytics",
+      "column": "createdAt"
+    },
+    {
+      "table": "ConversationSentiment",
+      "column": "sessionId"
+    },
+    {
+      "table": "ConversationSentiment",
+      "column": "createdAt"
+    },
+    {
+      "table": "UnansweredQuestion",
+      "column": "createdAt"
+    },
+    {
+      "table": "PoliceStation",
+      "column": "createdAt"
+    },
+    {
+      "table": "PoliceStation",
+      "column": "updatedAt"
+    },
+    {
+      "table": "LearningEvent",
+      "column": "createdAt"
+    },
+    {
+      "table": "AggregatedMetric",
+      "column": "createdAt"
+    },
+    {
+      "table": "JurisdictionRegistryVersion",
+      "column": "createdAt"
+    },
+    {
+      "table": "JurisdictionMapping",
+      "column": "createdAt"
+    },
+    {
+      "table": "JurisdictionMapping",
+      "column": "updatedAt"
+    },
+    {
+      "table": "JurisdictionResolutionEvent",
+      "column": "createdAt"
+    },
+    {
+      "table": "JurisdictionResolution",
+      "column": "createdAt"
+    },
+    {
+      "table": "JurisdictionResolution",
+      "column": "updatedAt"
+    },
+    {
+      "table": "KnowledgeArticle",
+      "column": "updatedAt"
+    },
+    {
+      "table": "UnderstandingTerm",
+      "column": "createdAt"
+    },
+    {
+      "table": "UnderstandingCandidate",
+      "column": "createdAt"
+    },
+    {
+      "table": "SituationAssessmentSession",
+      "column": "createdAt"
+    },
+    {
+      "table": "SituationAssessmentSession",
+      "column": "updatedAt"
+    },
+    {
+      "table": "ComplaintSession",
+      "column": "createdAt"
+    },
+    {
+      "table": "ComplaintSession",
+      "column": "updatedAt"
+    },
+    {
+      "table": "UnderstandingReviewQueue",
+      "column": "createdAt"
+    },
+    {
+      "table": "ScenarioGraphCandidate",
+      "column": "createdAt"
+    },
+    {
+      "table": "ScenarioAssessment",
+      "column": "createdAt"
+    },
+    {
+      "table": "CueReplayResult",
+      "column": "createdAt"
+    },
+    {
+      "table": "Verification",
+      "column": "citizenId"
+    },
+    {
+      "table": "Verification",
+      "column": "createdAt"
+    },
+    {
+      "table": "Verification",
+      "column": "updatedAt"
+    },
+    {
+      "table": "EventPermission",
+      "column": "citizenId"
+    },
+    {
+      "table": "EventPermission",
+      "column": "createdAt"
+    },
+    {
+      "table": "EventPermission",
+      "column": "updatedAt"
+    },
+    {
+      "table": "CitizenFeedback",
+      "column": "sessionId"
+    },
+    {
+      "table": "ScenarioSession",
+      "column": "createdAt"
+    },
+    {
+      "table": "ScenarioSession",
+      "column": "updatedAt"
+    },
+    {
+      "table": "Notification",
+      "column": "citizenId"
+    },
+    {
+      "table": "Notification",
+      "column": "createdAt"
+    },
+    {
+      "table": "CitizenPreference",
+      "column": "createdAt"
+    }
+  ],
+  "unusedIndexes": [
+    {
+      "table": "saml_providers",
+      "index": "saml_providers_sso_provider_id_idx"
+    },
+    {
+      "table": "saml_relay_states",
+      "index": "saml_relay_states_sso_provider_id_idx"
+    },
+    {
+      "table": "saml_relay_states",
+      "index": "saml_relay_states_for_email_idx"
+    },
+    {
+      "table": "flow_state",
+      "index": "idx_auth_code"
+    },
+    {
+      "table": "sso_domains",
+      "index": "sso_domains_domain_idx"
+    },
+    {
+      "table": "flow_state",
+      "index": "idx_user_id_auth_method"
+    },
+    {
+      "table": "refresh_tokens",
+      "index": "refresh_tokens_updated_at_idx"
+    },
+    {
+      "table": "flow_state",
+      "index": "flow_state_created_at_idx"
+    },
+    {
+      "table": "saml_relay_states",
+      "index": "saml_relay_states_created_at_idx"
+    },
+    {
+      "table": "sessions",
+      "index": "sessions_not_after_idx"
+    },
+    {
+      "table": "mfa_challenges",
+      "index": "mfa_challenge_created_at_idx"
+    },
+    {
+      "table": "mfa_factors",
+      "index": "mfa_factors_user_id_idx"
+    },
+    {
+      "table": "refresh_tokens",
+      "index": "refresh_tokens_instance_id_idx"
+    },
+    {
+      "table": "refresh_tokens",
+      "index": "refresh_tokens_instance_id_user_id_idx"
+    },
+    {
+      "table": "users",
+      "index": "confirmation_token_idx"
+    },
+    {
+      "table": "audit_log_entries",
+      "index": "audit_logs_instance_id_idx"
+    },
+    {
+      "table": "users",
+      "index": "users_instance_id_idx"
+    },
+    {
+      "table": "refresh_tokens",
+      "index": "refresh_tokens_token_unique"
+    },
+    {
+      "table": "users",
+      "index": "users_instance_id_email_idx"
+    },
+    {
+      "table": "users",
+      "index": "recovery_token_idx"
+    },
+    {
+      "table": "refresh_tokens",
+      "index": "refresh_tokens_parent_idx"
+    },
+    {
+      "table": "users",
+      "index": "email_change_token_new_idx"
+    },
+    {
+      "table": "users",
+      "index": "reauthentication_token_idx"
+    },
+    {
+      "table": "users",
+      "index": "email_change_token_current_idx"
+    },
+    {
+      "table": "sessions",
+      "index": "user_id_created_at_idx"
+    },
+    {
+      "table": "mfa_factors",
+      "index": "mfa_factors_user_friendly_name_unique"
+    },
+    {
+      "table": "mfa_factors",
+      "index": "factor_id_created_at_idx"
+    },
+    {
+      "table": "sessions",
+      "index": "sessions_user_id_idx"
+    },
+    {
+      "table": "mfa_amr_claims",
+      "index": "amr_id_pk"
+    },
+    {
+      "table": "refresh_tokens",
+      "index": "refresh_tokens_session_id_revoked_idx"
+    },
+    {
+      "table": "sso_providers",
+      "index": "sso_providers_resource_id_idx"
+    },
+    {
+      "table": "secrets",
+      "index": "secrets_name_idx"
+    },
+    {
+      "table": "sso_domains",
+      "index": "sso_domains_sso_provider_id_idx"
+    },
+    {
+      "table": "identities",
+      "index": "identities_user_id_idx"
+    },
+    {
+      "table": "identities",
+      "index": "identities_email_idx"
+    },
+    {
+      "table": "identities",
+      "index": "identities_provider_id_provider_unique"
+    },
+    {
+      "table": "users",
+      "index": "users_is_anonymous_idx"
+    },
+    {
+      "table": "sso_providers",
+      "index": "sso_providers_resource_id_pattern_idx"
+    },
+    {
+      "table": "one_time_tokens",
+      "index": "one_time_tokens_token_hash_hash_idx"
+    },
+    {
+      "table": "one_time_tokens",
+      "index": "one_time_tokens_relates_to_hash_idx"
+    },
+    {
+      "table": "mfa_factors",
+      "index": "unique_phone_factor_per_user"
+    },
+    {
+      "table": "oauth_clients",
+      "index": "oauth_clients_deleted_at_idx"
+    },
+    {
+      "table": "oauth_authorizations",
+      "index": "oauth_auth_pending_exp_idx"
+    },
+    {
+      "table": "custom_oauth_providers",
+      "index": "custom_oauth_providers_identifier_idx"
+    },
+    {
+      "table": "custom_oauth_providers",
+      "index": "custom_oauth_providers_provider_type_idx"
+    },
+    {
+      "table": "oauth_consents",
+      "index": "oauth_consents_user_client_unique"
+    },
+    {
+      "table": "oauth_consents",
+      "index": "oauth_consents_active_user_client_idx"
+    },
+    {
+      "table": "oauth_consents",
+      "index": "oauth_consents_user_order_idx"
+    },
+    {
+      "table": "oauth_consents",
+      "index": "oauth_consents_active_client_idx"
+    },
+    {
+      "table": "custom_oauth_providers",
+      "index": "custom_oauth_providers_enabled_idx"
+    },
+    {
+      "table": "sessions",
+      "index": "sessions_oauth_client_id_idx"
+    },
+    {
+      "table": "custom_oauth_providers",
+      "index": "custom_oauth_providers_created_at_idx"
+    },
+    {
+      "table": "oauth_client_states",
+      "index": "idx_oauth_client_states_created_at"
+    },
+    {
+      "table": "webauthn_credentials",
+      "index": "webauthn_credentials_user_id_idx"
+    },
+    {
+      "table": "webauthn_challenges",
+      "index": "webauthn_challenges_user_id_idx"
+    },
+    {
+      "table": "webauthn_challenges",
+      "index": "webauthn_challenges_expires_at_idx"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_email"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_created_at_desc"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_last_sign_in_at_desc"
+    },
+    {
+      "table": "users",
+      "index": "idx_users_name"
+    },
+    {
+      "table": "objects",
+      "index": "bucketid_objname"
+    },
+    {
+      "table": "objects",
+      "index": "name_prefix_search"
+    },
+    {
+      "table": "buckets",
+      "index": "bname"
+    },
+    {
+      "table": "objects",
+      "index": "idx_objects_bucket_id_name"
+    },
+    {
+      "table": "s3_multipart_uploads",
+      "index": "idx_multipart_uploads_list"
+    },
+    {
+      "table": "vector_indexes",
+      "index": "vector_indexes_name_bucket_id_idx"
+    },
+    {
+      "table": "buckets_analytics",
+      "index": "buckets_analytics_unique_name_idx"
+    },
+    {
+      "table": "objects",
+      "index": "idx_objects_bucket_id_name_lower"
+    },
+    {
+      "table": "subscription",
+      "index": "pk_subscription"
+    },
+    {
+      "table": "subscription",
+      "index": "ix_realtime_subscription_entity"
+    },
+    {
+      "table": "AuditLog",
+      "index": "AuditLog_createdAt_idx"
+    },
+    {
+      "table": "SituationAssessmentSession",
+      "index": "SituationAssessmentSession_sessionId_idx"
+    },
+    {
+      "table": "ComplaintAssessment",
+      "index": "ComplaintAssessment_incidentType_idx"
+    },
+    {
+      "table": "AuditLog",
+      "index": "AuditLog_sessionId_idx"
+    },
+    {
+      "table": "CitizenFeedback",
+      "index": "CitizenFeedback_citizenId_createdAt_idx"
+    },
+    {
+      "table": "SubmissionFingerprint",
+      "index": "SubmissionFingerprint_serviceType_idx"
+    },
+    {
+      "table": "IntentClassification",
+      "index": "IntentClassification_predictedIntent_idx"
+    },
+    {
+      "table": "IntentClassification",
+      "index": "IntentClassification_createdAt_idx"
+    },
+    {
+      "table": "Citizen",
+      "index": "Citizen_updatedAt_idx"
+    },
+    {
+      "table": "WorkflowSession",
+      "index": "WorkflowSession_citizenId_serviceType_isCompleted_idx"
+    },
+    {
+      "table": "WorkflowSession",
+      "index": "idx_active_workflows"
+    },
+    {
+      "table": "Complaint",
+      "index": "Complaint_citizenId_referenceNumber_status_idx"
+    },
+    {
+      "table": "Complaint",
+      "index": "idx_open_complaints"
+    },
+    {
+      "table": "ComplaintAssessment",
+      "index": "ComplaintAssessment_createdAt_idx"
+    }
+  ],
+  "duplicateIndexes": [
+    {
+      "table": "users",
+      "index1": "users_email_partial_key",
+      "index2": "idx_users_email"
+    },
+    {
+      "table": "oauth_consents",
+      "index1": "oauth_consents_user_client_unique",
+      "index2": "oauth_consents_active_user_client_idx"
+    },
+    {
+      "table": "custom_oauth_providers",
+      "index1": "custom_oauth_providers_identifier_key",
+      "index2": "custom_oauth_providers_identifier_idx"
+    },
+    {
+      "table": "objects",
+      "index1": "bucketid_objname",
+      "index2": "idx_objects_bucket_id_name"
+    },
+    {
+      "table": "SituationAssessmentSession",
+      "index1": "SituationAssessmentSession_sessionId_key",
+      "index2": "SituationAssessmentSession_sessionId_idx"
+    },
+    {
+      "table": "ComplaintSession",
+      "index1": "ComplaintSession_sessionId_key",
+      "index2": "ComplaintSession_sessionId_idx"
+    }
+  ],
+  "alwaysNullColumns": [
+    {
+      "table": "JurisdictionRegistryVersion",
+      "column": "description"
+    },
+    {
+      "table": "JurisdictionResolutionEvent",
+      "column": "actorId"
+    },
+    {
+      "table": "JurisdictionResolution",
+      "column": "workflowId"
+    },
+    {
+      "table": "JurisdictionResolutionHistory",
+      "column": "previousTargetType"
+    },
+    {
+      "table": "JurisdictionResolutionHistory",
+      "column": "previousTargetId"
+    },
+    {
+      "table": "JurisdictionResolutionHistory",
+      "column": "actorId"
+    }
+  ],
+  "missingPrimaryKeys": [],
+  "largeJsonColumns": []
+}

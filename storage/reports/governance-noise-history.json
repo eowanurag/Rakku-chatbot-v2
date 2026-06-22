@@ -1,0 +1,10 @@
+[
+  {
+    "totalRecommendations": 60,
+    "duplicateRecommendations": 34,
+    "staleRecommendations": 0,
+    "noiseRatio": 0.57,
+    "status": "NEEDS_ATTENTION",
+    "generatedAt": "2026-06-22T09:26:38.886Z"
+  }
+]

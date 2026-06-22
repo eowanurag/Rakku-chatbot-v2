@@ -1,0 +1,236 @@
+[
+  {
+    "id": "REC-DB-001",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_citizen_createdat on table Citizen column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-002",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_complaint_createdat on table Complaint column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-004",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_charactercertificate_citizenid on table CharacterCertificate column citizenId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-007",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_chathistory_sessionid on table ChatHistory column sessionId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-009",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_knowledgeitem_createdat on table KnowledgeItem column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-010",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_workflowsession_createdat on table WorkflowSession column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-012",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_trackingrecord_citizenid on table TrackingRecord column citizenId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-015",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_conversationinsight_sessionid on table ConversationInsight column sessionId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-018",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_intenttrainingdata_createdat on table IntentTrainingData column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-022",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_unansweredquestion_createdat on table UnansweredQuestion column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-023",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_policestation_createdat on table PoliceStation column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-025",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_learningevent_createdat on table LearningEvent column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-026",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_aggregatedmetric_createdat on table AggregatedMetric column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-027",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_jurisdictionregistryversion_createdat on table JurisdictionRegistryVersion column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-034",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_understandingterm_createdat on table UnderstandingTerm column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-036",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_situationassessmentsession_createdat on table SituationAssessmentSession column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-041",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_scenariographcandidate_createdat on table ScenarioGraphCandidate column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-043",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_cuereplayresult_createdat on table CueReplayResult column createdAt.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-044",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_verification_citizenid on table Verification column citizenId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-047",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_eventpermission_citizenid on table EventPermission column citizenId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-DB-053",
+    "priority": "P0",
+    "category": "DATABASE",
+    "type": "MISSING_INDEX",
+    "description": "Create missing index idx_notification_citizenid on table Notification column citizenId.",
+    "estimatedGain": "15%",
+    "estimatedEffort": "1h"
+  },
+  {
+    "id": "REC-REP-001",
+    "priority": "P2",
+    "category": "REPOSITORY",
+    "type": "ORPHAN_CLEANUP",
+    "description": "Safely delete 5 verified orphan files including state and hook files.",
+    "estimatedGain": "Minimal footprint size reduction",
+    "estimatedEffort": "4h"
+  },
+  {
+    "id": "REC-ARCH-001",
+    "priority": "P1",
+    "category": "ARCHITECTURE",
+    "type": "DUPLICATE_CONSOLIDATION",
+    "description": "Deprecate legacy backend/src/complaint-intelligence/ controller and retain standard copilot/cie controller.",
+    "estimatedGain": "De-duplicate logic and prevent runtime sync divergence",
+    "estimatedEffort": "3h"
+  },
+  {
+    "id": "REC-ARCH-002",
+    "priority": "P1",
+    "category": "ARCHITECTURE",
+    "type": "DUPLICATE_CONSOLIDATION",
+    "description": "Consolidate duplicate service. Direct all imports to copilot/cie and remove backend/src/complaint-intelligence/.",
+    "estimatedGain": "De-duplicate logic and prevent runtime sync divergence",
+    "estimatedEffort": "3h"
+  },
+  {
+    "id": "REC-ARCH-003",
+    "priority": "P1",
+    "category": "ARCHITECTURE",
+    "type": "DUPLICATE_CONSOLIDATION",
+    "description": "Direct NestJS container to resolve situation-assessment.service from copilot/sae and sunset legacy service.",
+    "estimatedGain": "De-duplicate logic and prevent runtime sync divergence",
+    "estimatedEffort": "3h"
+  },
+  {
+    "id": "REC-ARCH-004",
+    "priority": "P1",
+    "category": "ARCHITECTURE",
+    "type": "DUPLICATE_CONSOLIDATION",
+    "description": "Create a shared DTO schema under shared/dto package and import it.",
+    "estimatedGain": "De-duplicate logic and prevent runtime sync divergence",
+    "estimatedEffort": "3h"
+  }
+]

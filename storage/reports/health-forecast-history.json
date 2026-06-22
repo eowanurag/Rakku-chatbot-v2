@@ -1,0 +1,24 @@
+[
+  {
+    "generatedAt": "2026-06-22T09:08:40.690Z",
+    "confidence": 0.95,
+    "trend": "IMPROVING",
+    "periods": {
+      "7 Days": {
+        "repositoryHealthScore": 71,
+        "databaseHealthScore": 2,
+        "technicalDebtScore": 345
+      },
+      "30 Days": {
+        "repositoryHealthScore": 75,
+        "databaseHealthScore": 10,
+        "technicalDebtScore": 330
+      },
+      "90 Days": {
+        "repositoryHealthScore": 80,
+        "databaseHealthScore": 15,
+        "technicalDebtScore": 310
+      }
+    }
+  }
+]

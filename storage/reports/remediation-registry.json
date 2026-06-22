@@ -1,0 +1,24 @@
+[
+  {
+    "recommendationId": "REC-001",
+    "sourceReport": "database-remediation-report.json",
+    "type": "database index creation",
+    "priority": "P0",
+    "status": "PENDING",
+    "approved": false,
+    "executed": false,
+    "notes": "Create indexes on Citizen(createdAt), Citizen(updatedAt) to optimize list sorting.",
+    "createdAt": "2026-06-22T14:30:00Z"
+  },
+  {
+    "recommendationId": "REC-002",
+    "sourceReport": "orphan-file-certification.json",
+    "type": "code cleanup",
+    "priority": "P2",
+    "status": "PENDING",
+    "approved": false,
+    "executed": false,
+    "notes": "Clean up 82 orphan files after team validation.",
+    "createdAt": "2026-06-22T14:30:00Z"
+  }
+]

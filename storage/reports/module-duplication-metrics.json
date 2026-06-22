@@ -1,0 +1,31 @@
+{
+  "duplicateModules": [
+    "backend/src/complaint-intelligence/complaint-intelligence.controller.ts <-> backend/src/copilot/cie/complaint-intelligence.controller.ts",
+    "backend/src/complaint-intelligence/complaint-intelligence.service.ts <-> backend/src/copilot/cie/complaint-intelligence.service.ts",
+    "backend/src/copilot/sae/situation-assessment.service.ts <-> backend/src/situation-assessment/situation-assessment.service.ts",
+    "ConfirmComplaintDto <-> ConfirmAssessmentDto"
+  ],
+  "mergeCandidates": [
+    {
+      "fileA": "backend/src/complaint-intelligence/complaint-intelligence.controller.ts",
+      "fileB": "backend/src/copilot/cie/complaint-intelligence.controller.ts",
+      "potentialGain": "100% reduction"
+    },
+    {
+      "fileA": "backend/src/complaint-intelligence/complaint-intelligence.service.ts",
+      "fileB": "backend/src/copilot/cie/complaint-intelligence.service.ts",
+      "potentialGain": "100% reduction"
+    },
+    {
+      "fileA": "backend/src/copilot/sae/situation-assessment.service.ts",
+      "fileB": "backend/src/situation-assessment/situation-assessment.service.ts",
+      "potentialGain": "100% reduction"
+    },
+    {
+      "fileA": "ConfirmComplaintDto",
+      "fileB": "ConfirmAssessmentDto",
+      "potentialGain": "100% reduction"
+    }
+  ],
+  "estimatedReduction": 6000
+}

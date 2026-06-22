@@ -1,0 +1,19 @@
+{
+  "tests": [
+    {
+      "file": "tests/helpers/prisma-test-helper.ts",
+      "classification": "empty test",
+      "recommendedAction": "Convert helper file to simple utility rather than describing it inside Jest, or export properly."
+    },
+    {
+      "file": "tests/reporting/deployment_readiness_report.ts",
+      "classification": "obsolete script",
+      "recommendedAction": "Move reporting script out of test suite into scripts directory to prevent Jest from scanning it."
+    },
+    {
+      "file": "tests/setup.ts",
+      "classification": "empty test setup",
+      "recommendedAction": "Retain setup file but configure Jest to ignore it as a runnable test file."
+    }
+  ]
+}

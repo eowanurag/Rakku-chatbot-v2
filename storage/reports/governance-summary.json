@@ -1,0 +1,13 @@
+{
+  "generatedAt": "2026-06-22T09:07:37.441Z",
+  "repositoryHealthScore": 70,
+  "databaseHealthScore": 0,
+  "technicalDebtScore": 350,
+  "repositoryDrift": "HEALTHY",
+  "databaseDrift": "HEALTHY",
+  "criticalIssues": 0,
+  "openRecommendations": 2,
+  "estimatedCleanupHours": 53,
+  "status": "NEEDS_ATTENTION",
+  "lastAuditTime": "2026-06-22T09:07:37.441Z"
+}

@@ -1,0 +1,97 @@
+[
+  {
+    "type": "Unused Service (Orphan File)",
+    "name": "AiBudgetService",
+    "file": "backend/src/copilot/ai-budget/ai-budget.service.ts"
+  },
+  {
+    "type": "Unused Service (Orphan File)",
+    "name": "AiDependencyAuditService",
+    "file": "backend/src/copilot/ai-governance/ai-dependency-audit.service.ts"
+  },
+  {
+    "type": "Unused Service (Orphan File)",
+    "name": "AiCircuitBreakerService",
+    "file": "backend/src/copilot/ai-resilience/ai-circuit-breaker.service.ts"
+  },
+  {
+    "type": "Unused Service (Orphan File)",
+    "name": "GraphMissService",
+    "file": "backend/src/copilot/sre/analytics/graph-miss.service.ts"
+  },
+  {
+    "type": "Unused Service (Orphan File)",
+    "name": "SreService",
+    "file": "backend/src/copilot/sre/sre.service.ts"
+  },
+  {
+    "type": "Unused Component",
+    "name": "ActionButtonGroup.tsx",
+    "file": "frontend/src/components/chat/ActionButtonGroup.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "ChatBubble.tsx",
+    "file": "frontend/src/components/chat/ChatBubble.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "index.ts",
+    "file": "frontend/src/components/chat/index.ts"
+  },
+  {
+    "type": "Unused Component",
+    "name": "TypingIndicator.tsx",
+    "file": "frontend/src/components/chat/TypingIndicator.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "ErrorBoundary.tsx",
+    "file": "frontend/src/components/layout/ErrorBoundary.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "Footer.tsx",
+    "file": "frontend/src/components/layout/Footer.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "Header.tsx",
+    "file": "frontend/src/components/layout/Header.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "index.ts",
+    "file": "frontend/src/components/layout/index.ts"
+  },
+  {
+    "type": "Unused Component",
+    "name": "ErrorCard.tsx",
+    "file": "frontend/src/components/system/ErrorCard.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "OfflineBanner.tsx",
+    "file": "frontend/src/components/system/OfflineBanner.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "RetryCard.tsx",
+    "file": "frontend/src/components/system/RetryCard.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "index.ts",
+    "file": "frontend/src/components/tracking/index.ts"
+  },
+  {
+    "type": "Unused Component",
+    "name": "TrackingTimeline.tsx",
+    "file": "frontend/src/components/tracking/TrackingTimeline.tsx"
+  },
+  {
+    "type": "Unused Component",
+    "name": "index.ts",
+    "file": "frontend/src/components/ui/index.ts"
+  }
+]
