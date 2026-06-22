@@ -22,6 +22,8 @@
     "axios",
     "@backend/notification",
     "@backend/localization",
+    "zustand",
+    "react",
     "js-yaml"
   ],
   "warnings": []

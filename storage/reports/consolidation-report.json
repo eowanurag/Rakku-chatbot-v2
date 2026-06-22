@@ -1,0 +1,17 @@
+{
+  "deprecatedModules": [
+    "complaint-intelligence",
+    "situation-assessment"
+  ],
+  "replacementModules": [
+    "copilot/cie",
+    "copilot/sae"
+  ],
+  "apiCompatibilityMapping": {
+    "complaint-intelligence.controller.ts": "Forwarding to copilot/cie/complaint-intelligence.controller.ts",
+    "complaint-intelligence.service.ts": "Forwarding to copilot/cie/complaint-intelligence.service.ts",
+    "situation-assessment.controller.ts": "Forwarding to copilot/sae/situation-assessment.controller.ts",
+    "situation-assessment.service.ts": "Forwarding to copilot/sae/situation-assessment.service.ts"
+  },
+  "migrationStatus": "SUCCESSFUL"
+}

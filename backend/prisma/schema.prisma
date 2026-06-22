@@ -33,6 +33,7 @@ model Citizen {
   notifications        Notification[]
   verifications        Verification[]
 
+  @@index([createdAt])
   @@index([updatedAt])
 }
 
@@ -55,6 +56,9 @@ model Complaint {
   jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
 
   @@index([citizenId, referenceNumber, status])
+  @@index([createdAt])
+  @@index([updatedAt])
+  @@index([citizenId, status])
 }
 
 model Verification {
@@ -72,6 +76,10 @@ model Verification {
   updatedAt                DateTime                @updatedAt
   citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
   jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
+
+  @@index([citizenId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model CharacterCertificate {
@@ -91,6 +99,10 @@ model CharacterCertificate {
   updatedAt                DateTime                @updatedAt
   citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
   jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
+
+  @@index([citizenId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model EventPermission {
@@ -115,6 +127,10 @@ model EventPermission {
   updatedAt                DateTime                @updatedAt
   citizen                  Citizen                 @relation(fields: [citizenId], references: [id])
   jurisdictionResolution   JurisdictionResolution? @relation(fields: [jurisdictionResolutionId], references: [id])
+
+  @@index([citizenId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model ChatHistory {
@@ -123,6 +139,9 @@ model ChatHistory {
   role      String
   message   String
   createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
 }
 
 model KnowledgeItem {
@@ -131,6 +150,8 @@ model KnowledgeItem {
   question  String
   answer    String
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model WorkflowSession {
@@ -144,6 +165,8 @@ model WorkflowSession {
   updatedAt   DateTime @updatedAt
 
   @@index([citizenId, serviceType, isCompleted])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model AuditLog {
@@ -168,6 +191,10 @@ model TrackingRecord {
   statusHistory   Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  @@index([citizenId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model ConversationInsight {
@@ -180,6 +207,10 @@ model ConversationInsight {
   language        String
   resolved        Boolean  @default(false)
   createdAt       DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([citizenId])
+  @@index([createdAt])
 }
 
 model ConversationSentiment {
@@ -189,6 +220,9 @@ model ConversationSentiment {
   emotion      String
   workflowType String?
   createdAt    DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
 }
 
 model UnansweredQuestion {
@@ -198,6 +232,8 @@ model UnansweredQuestion {
   frequency Int      @default(1)
   resolved  Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model IntentTrainingData {
@@ -208,6 +244,8 @@ model IntentTrainingData {
   verifiedIntent String?
   confidence     Float
   createdAt      DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model WorkflowAnalytics {
@@ -217,6 +255,8 @@ model WorkflowAnalytics {
   completed    Boolean  @default(false)
   abandoned    Boolean  @default(false)
   createdAt    DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model CitizenPreference {
@@ -227,6 +267,8 @@ model CitizenPreference {
   lastWorkflow      String?
   lastVisit         DateTime @default(now())
   createdAt         DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model KnowledgeCategory {
@@ -245,6 +287,8 @@ model KnowledgeArticle {
   notHelpfulCount Int               @default(0)
   updatedAt       DateTime          @updatedAt
   category        KnowledgeCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([updatedAt])
 }
 
 model LearningEvent {
@@ -253,6 +297,8 @@ model LearningEvent {
   severity  String
   details   Json
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model AggregatedMetric {
@@ -260,6 +306,8 @@ model AggregatedMetric {
   metricKey String
   value     Json
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model CitizenFeedback {
@@ -274,6 +322,7 @@ model CitizenFeedback {
   createdAt    DateTime @default(now())
 
   @@index([citizenId, createdAt])
+  @@index([sessionId])
 }
 
 model PoliceStation {
@@ -291,6 +340,9 @@ model PoliceStation {
   updatedAt    DateTime                 @updatedAt
   mappings     JurisdictionMapping[]
   resolutions  JurisdictionResolution[]
+
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model JurisdictionRegistryVersion {
@@ -299,6 +351,8 @@ model JurisdictionRegistryVersion {
   description String?
   createdAt   DateTime              @default(now())
   mappings    JurisdictionMapping[]
+
+  @@index([createdAt])
 }
 
 model JurisdictionMapping {
@@ -313,6 +367,9 @@ model JurisdictionMapping {
   updatedAt         DateTime                    @updatedAt
   policeStation     PoliceStation               @relation(fields: [policeStationId], references: [id])
   registryVersion   JurisdictionRegistryVersion @relation(fields: [registryVersionId], references: [id])
+
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model JurisdictionResolution {
@@ -437,6 +494,8 @@ model SituationAssessmentSession {
   updatedAt             DateTime @updatedAt
 
   @@index([sessionId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model ComplaintSession {
@@ -451,6 +510,8 @@ model ComplaintSession {
   updatedAt             DateTime @updatedAt
 
   @@index([sessionId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model ComplaintAssessment {
@@ -569,6 +630,9 @@ model ScenarioSession {
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model ScenarioAssessment {
@@ -602,6 +666,7 @@ model ScenarioAssessment {
   createdAt               DateTime @default(now())
 
   @@index([sessionId])
+  @@index([createdAt])
 }
 
 model UnderstandingCandidate {
@@ -618,6 +683,8 @@ model UnderstandingCandidate {
   approvedBy         String?
   approvedAt         DateTime?
   createdAt          DateTime  @default(now())
+
+  @@index([createdAt])
 }
 
 model UnderstandingTerm {
@@ -630,6 +697,8 @@ model UnderstandingTerm {
   exportedVersion String?
   exportedAt      DateTime?
   createdAt       DateTime  @default(now())
+
+  @@index([createdAt])
 }
 
 model UnderstandingReviewQueue {
@@ -638,6 +707,8 @@ model UnderstandingReviewQueue {
   reviewType    String
   status        String
   createdAt     DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model CueReplayResult {
@@ -647,6 +718,8 @@ model CueReplayResult {
   newVersion       String
   improvementScore Float
   createdAt        DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model ScenarioGraphCandidate {
@@ -656,6 +729,8 @@ model ScenarioGraphCandidate {
   occurrences  Int      @default(1)
   status       String   // PENDING, APPROVED, REJECTED
   createdAt    DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 

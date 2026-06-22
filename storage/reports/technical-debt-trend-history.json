@@ -5,5 +5,12 @@
     "daysToHealthyState": 0,
     "trend": "STABLE",
     "generatedAt": "2026-06-22T09:26:43.760Z"
+  },
+  {
+    "debtVelocity": 0,
+    "debtBurnRate": 0,
+    "daysToHealthyState": 0,
+    "trend": "STABLE",
+    "generatedAt": "2026-06-22T09:52:45.899Z"
   }
 ]

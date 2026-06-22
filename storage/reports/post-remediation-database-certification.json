@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-06-22T09:58:39.391Z",
+  "activeIndexCount": 128,
+  "schemaIndexesCount": 70,
+  "databaseHealthScore": 100,
+  "checks": {
+    "DuplicateMobiles": 0,
+    "OrphanRecords": 0,
+    "MissingIndexes": 0,
+    "DuplicateIndexes": 0
+  },
+  "performance": {
+    "beforeLatencyMs": 130.5,
+    "afterLatencyMs": 1.8,
+    "improvementPercent": 98.62,
+    "databaseHealthScore": 100
+  }
+}

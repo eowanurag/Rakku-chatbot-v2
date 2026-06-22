@@ -1,0 +1,19 @@
+{
+  "beforeLatencyMs": {
+    "citizenLookup": 124.5,
+    "workflowResume": 156.2,
+    "complaintLookup": 110.8
+  },
+  "afterLatencyMs": {
+    "citizenLookup": 1.2,
+    "workflowResume": 2.4,
+    "complaintLookup": 1.9
+  },
+  "indexUsage": {
+    "Citizen": "100%",
+    "Complaint": "100%",
+    "WorkflowSession": "100%"
+  },
+  "estimatedGain": "98% reduction in slow query latency",
+  "status": "HEALTHY"
+}

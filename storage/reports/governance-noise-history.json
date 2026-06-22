@@ -6,5 +6,13 @@
     "noiseRatio": 0.57,
     "status": "NEEDS_ATTENTION",
     "generatedAt": "2026-06-22T09:26:38.886Z"
+  },
+  {
+    "totalRecommendations": 26,
+    "duplicateRecommendations": 0,
+    "staleRecommendations": 0,
+    "noiseRatio": 0,
+    "status": "HEALTHY",
+    "generatedAt": "2026-06-22T09:52:38.851Z"
   }
 ]

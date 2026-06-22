@@ -62,13 +62,15 @@ interface ChatSessionState {
 
   // Temporary pre-onboarding fields
   preOnboardingMobile?: string;
+  preOnboardingCompleted?: boolean;
   returningCitizen?: boolean;
   profileLoaded?: boolean;
   profileModified?: boolean;
   pendingScenarioId?: string;
   pendingWorkflowId?: string;
   pendingIntent?: string;
-  pendingWorkflowState?: unknown;
+  pendingWorkflowState?: any;
+  pendingWorkflow?: string;
 }
 
 const TRANSLATIONS = {
@@ -88,6 +90,21 @@ const TRANSLATIONS = {
     upcopApp: "\n\n*Baaki official services ke liye, official **UPCOP App** download karein: [Google Play Store](https://play.google.com/store/apps/details?id=com.up.uppolice).* ",
   },
 };
+
+const ONBOARDING_STEPS = [
+  'PRE_ONBOARDING_WELCOME',
+  'PRE_ONBOARDING_LOOKUP',
+  'PRE_ONBOARDING_RESUME_CHOICE',
+  'PRE_ONBOARDING_OPTIONS',
+  'IDENTIFY_NAME',
+  'IDENTIFY_LOCATION',
+  'CONFIRM_CITY',
+  'CONFIRM_LOCATION',
+  'IDENTIFY_ADDRESS',
+  'CONFIRM_PROFILE',
+  'MODIFY_PROFILE_SELECT',
+  'MODIFY_PROFILE_INPUT'
+];
 
 @Injectable()
 export class ChatService {
@@ -421,6 +438,26 @@ export class ChatService {
       state.citizen.longitude = longitude;
     }
 
+    // Pre-onboarding Wrapper Interception BEFORE FastAPI
+    const isProfileStep = ONBOARDING_STEPS.includes(state.step);
+    if (!state.citizen.isConfirmed && state.workflow !== 'tracking' && (isProfileStep || (state.step !== 'START' && state.step !== '' && state.step !== 'ASK_FEEDBACK'))) {
+      this.logger.log(`Intercepting message in onboarding state: ${state.step}`);
+      const localResult = !state.preOnboardingCompleted
+        ? await this.runPreOnboardingWrapper(state, sanitizedMessage)
+        : await this.runCitizenIdentificationFlow(state, sanitizedMessage);
+      
+      if (localResult && localResult.response) {
+        localResult.response = this.validationService.sanitizeOutput(localResult.response);
+      }
+      await this.logWorkflowTrace(sessionId, 'FALLBACK', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
+      await this.saveSession(sessionId, state);
+      return {
+        ...localResult,
+        avatar_state: (localResult as any).avatar_state || 'TALKING',
+        _debug: { activeEngine: 'PRE_ONBOARDING_WRAPPER', step: state.step, workflow: state.workflow }
+      };
+    }
+
     try {
       this.logger.log(`Forwarding message to FastAPI AI service: ${this.aiServiceUrl}/chat/message`);
       const response = await firstValueFrom(
@@ -437,6 +474,17 @@ export class ChatService {
 
       if (responseData && responseData.state) {
         Object.assign(state, responseData.state);
+      }
+
+      // Pre-onboarding Wrapper Interception AFTER FastAPI (on workflow selection)
+      if (!state.citizen.isConfirmed && state.workflow && state.workflow !== 'tracking' && !state.preOnboardingCompleted) {
+        this.logger.log(`Workflow intent classified but citizen is not confirmed. Launching pre-onboarding wrapper.`);
+        state.step = 'START';
+        const wrapperResult = await this.runPreOnboardingWrapper(state, '');
+        if (wrapperResult && wrapperResult.response) {
+          responseData.response = this.validationService.sanitizeOutput(wrapperResult.response);
+          responseData.suggestions = wrapperResult.suggestions;
+        }
       }
 
       // Log workflow trace for FastAPI path
@@ -599,7 +647,7 @@ export class ChatService {
       const resolution = await this.jurisdictionService.resolveJurisdiction({
         serviceType: normalizedService,
         routingContext: context,
-        location: locationText || [citizen?.addressLine1, citizen?.addressLine2, citizen?.city, citizen?.district].filter(Boolean).join(', ') || 'Lucknow',
+        location: locationText || [citizen?.addressLine1, citizen?.addressLine2, citizen?.city, citizen?.district].filter(Boolean).join(', ') || '',
         resolutionSource: hasGps ? ResolutionSource.GPS : ResolutionSource.TEXT_INPUT,
         coordinates: gpsCoordinates,
       });
@@ -1403,6 +1451,9 @@ export class ChatService {
 
     // Enforce Citizen Identification & Confirmation first (unless already confirmed)
     if (!state.citizen.isConfirmed && state.workflow !== 'tracking') {
+      if (!state.preOnboardingCompleted) {
+        return this.runPreOnboardingWrapper(state, message);
+      }
       return this.runCitizenIdentificationFlow(state, message);
     }
 
@@ -1539,7 +1590,6 @@ export class ChatService {
     return /^UP-(CMP|TV|CC|EP)-\d{4}-\d{4,6}$/.test(normalized);
   }
 
-  // --- Enhancement 6: Dead-End Detection ---
   private async validateWorkflowResponse(
     result: { response: string; suggestions?: string[] } | null,
     sessionId: string,
@@ -1571,17 +1621,14 @@ export class ChatService {
     return result;
   }
 
-  private async runCitizenIdentificationFlow(
+  private async runPreOnboardingWrapper(
     state: ChatSessionState,
     message: string,
   ): Promise<{ response: string; suggestions?: string[] }> {
     const cleanMsg = message.trim().toLowerCase();
     const lang = state.language || 'en';
-    const isHi = lang === 'hi';
-    const isHinglish = lang === 'hinglish';
     const stepStr = String(state.step);
 
-    // Initial transition to pre-onboarding welcome
     if (stepStr === 'START' || stepStr === '') {
       state.step = 'PRE_ONBOARDING_WELCOME';
     }
@@ -1589,12 +1636,16 @@ export class ChatService {
     const currentStep = String(state.step);
 
     if (currentStep === 'PRE_ONBOARDING_WELCOME') {
-      // Persist intent context if present before lookup
       if (state.workflow) {
         state.pendingWorkflowId = state.workflow;
         state.pendingIntent = state.pendingIntent || state.data.pendingIntent || '';
         state.pendingWorkflowState = state.currentWorkflowState || '';
         state.pendingScenarioId = state.data.pendingScenarioId || '';
+        state.pendingWorkflow = state.workflow;
+        if ((state as any).scenarioId) state.pendingScenarioId = (state as any).scenarioId;
+        if ((state as any).workflowId) state.pendingWorkflowId = (state as any).workflowId;
+        if ((state as any).intent) state.pendingIntent = (state as any).intent;
+        if ((state as any).workflowState) state.pendingWorkflowState = (state as any).workflowState;
       }
       state.step = 'PRE_ONBOARDING_LOOKUP';
       return {
@@ -1613,16 +1664,13 @@ export class ChatService {
       const normalizedMobile = this.validationService.normalizeMobile(message)!;
       state.preOnboardingMobile = normalizedMobile;
 
-      // Profile Lookup with DB Timeout / Corrupted Profile Edge Cases handling
       let citizenRecord: any = null;
       try {
-        // Query database for matching mobile
         const records = await this.prisma.citizen.findMany({
           where: { mobileNumber: normalizedMobile },
           orderBy: { createdAt: 'desc' },
         });
         if (records && records.length > 0) {
-          // If multiple, take the first one; check if profile is corrupted
           const record = records[0];
           if (!record.fullName) {
             throw new Error('Corrupted profile: Missing fullName');
@@ -1631,8 +1679,8 @@ export class ChatService {
         }
       } catch (err) {
         this.logger.error(`Mobile lookup failed: ${err.message}`);
-        // Graceful fallback on lookup failure
         state.citizen.mobileNumber = normalizedMobile;
+        state.preOnboardingCompleted = true;
         state.step = 'IDENTIFY_NAME';
         return {
           response: "We couldn't retrieve your profile right now.\n\nPlease continue with a new registration or try again later.\n\n" + this.formatMessage('PROFILE_NAME_REQUEST', lang, ''),
@@ -1641,7 +1689,6 @@ export class ChatService {
       }
 
       if (citizenRecord) {
-        // Populate state.citizen from citizenRecord
         state.citizen.id = citizenRecord.id;
         state.citizen.fullName = citizenRecord.fullName;
         state.citizen.mobileNumber = citizenRecord.mobileNumber;
@@ -1658,36 +1705,30 @@ export class ChatService {
         state.profileLoaded = true;
         state.returningCitizen = true;
 
-        // Check for prior sessions/drafts to resume
         try {
           const priorSessions = await this.prisma.workflowSession.findMany({
             where: {
               citizenId: citizenRecord.id,
               isCompleted: false,
-              id: { not: state.data.sessionId }, // exclude current session ID
+              id: { not: state.data.sessionId },
             },
             orderBy: { updatedAt: 'desc' },
           });
 
           if (priorSessions && priorSessions.length > 0) {
-            // Priority ordering: Active Workflow -> Draft Application -> Pending Submission -> New Request
-            // Retrieve sessions that match active/draft/pending conditions
             let selectedSession: any = null;
             let sessionType = 'New Request';
 
-            // 1. Active Workflow
             const active = priorSessions.find(s => s.currentStep !== 'START' && s.currentStep !== '1' && s.currentStep !== 'CONFIRM_PROFILE');
             if (active) {
               selectedSession = active;
               sessionType = 'Active Workflow';
             } else {
-              // 2. Draft Application
               const draft = priorSessions.find(s => String(s.currentStep).includes('DRAFT') || (s.stateJson as any)?.step === 'DRAFT_READY');
               if (draft) {
                 selectedSession = draft;
                 sessionType = 'Draft Application';
               } else {
-                // 3. Pending Submission
                 const pending = priorSessions.find(s => s.currentStep === 'CONFIRM_PROFILE' || s.currentStep === 'REVIEW_APPLICANT_PROFILE');
                 if (pending) {
                   selectedSession = pending;
@@ -1700,7 +1741,7 @@ export class ChatService {
               state.data.pendingResumeSession = selectedSession.id;
               state.step = 'PRE_ONBOARDING_RESUME_CHOICE';
               return {
-                response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nI found a previous ${sessionType} on file. Would you like to continue?`,
+                response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Not provided'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nI found a previous ${sessionType} on file. Would you like to continue?`,
                 suggestions: ['Continue Previous Application', 'Start New Request'],
               };
             }
@@ -1709,15 +1750,14 @@ export class ChatService {
           this.logger.warn(`Draft recovery query failed: ${e.message}`);
         }
 
-        // If no prior session to offer, show existing citizen flow option cards
         state.step = 'PRE_ONBOARDING_OPTIONS';
         return {
-          response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nWould you like to continue with these details?`,
+          response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Not provided'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nWould you like to continue with these details?`,
           suggestions: ['Continue', 'Update Profile', 'Use Different Details'],
         };
       } else {
-        // New Citizen Flow
         state.citizen.mobileNumber = normalizedMobile;
+        state.preOnboardingCompleted = true;
         state.step = 'IDENTIFY_NAME';
         return {
           response: `I couldn't find an existing profile for this mobile number.\n\nLet's create your profile.\n\n${this.formatMessage('PROFILE_NAME_REQUEST', lang, '')}`,
@@ -1736,14 +1776,17 @@ export class ChatService {
               const loadedState = typeof resSess.stateJson === 'string' ? JSON.parse(resSess.stateJson) : resSess.stateJson;
               Object.assign(state, loadedState);
               state.citizen.isConfirmed = true;
+              state.preOnboardingCompleted = true;
               state.step = loadedState.step || '1';
-              // Restore intent storage
               if (state.pendingWorkflowId) {
                 state.workflow = state.pendingWorkflowId as any;
                 state.currentWorkflowState = state.pendingWorkflowState as any;
                 state.data.pendingIntent = state.pendingIntent;
+                if (state.pendingScenarioId) (state as any).scenarioId = state.pendingScenarioId;
+                if (state.pendingWorkflowId) (state as any).workflowId = state.pendingWorkflowId;
+                if (state.pendingIntent) (state as any).intent = state.pendingIntent;
+                if (state.pendingWorkflowState) (state as any).workflowState = state.pendingWorkflowState;
               }
-              // Resume execution
               let res: any;
               if (state.workflow === 'complaint') {
                 res = await this.runComplaintWorkflow(state, "");
@@ -1766,11 +1809,10 @@ export class ChatService {
           }
         }
       }
-      // Start New Request (clearing wrapper resume variables, going to options)
       delete state.data.pendingResumeSession;
       state.step = 'PRE_ONBOARDING_OPTIONS';
       return {
-        response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Lucknow'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nWould you like to continue with these details?`,
+        response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Not provided'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nWould you like to continue with these details?`,
         suggestions: ['Continue', 'Update Profile', 'Use Different Details'],
       };
     }
@@ -1778,16 +1820,21 @@ export class ChatService {
     if (currentStep === 'PRE_ONBOARDING_OPTIONS') {
       if (cleanMsg === 'continue' || cleanMsg.includes('option:continue') || cleanMsg === 'yes') {
         state.citizen.isConfirmed = true;
-        // Restore intent storage
+        state.preOnboardingCompleted = true;
         if (state.pendingWorkflowId) {
           state.workflow = state.pendingWorkflowId as any;
           state.currentWorkflowState = state.pendingWorkflowState as any;
           state.data.pendingIntent = state.pendingIntent;
-          // Clear intent storage wrapper fields
+          if (state.pendingScenarioId) (state as any).scenarioId = state.pendingScenarioId;
+          if (state.pendingWorkflowId) (state as any).workflowId = state.pendingWorkflowId;
+          if (state.pendingIntent) (state as any).intent = state.pendingIntent;
+          if (state.pendingWorkflowState) (state as any).workflowState = state.pendingWorkflowState;
+          
           delete state.pendingWorkflowId;
           delete state.pendingWorkflowState;
           delete state.pendingIntent;
           delete state.pendingScenarioId;
+          delete state.pendingWorkflow;
         }
         
         state.step = '1';
@@ -1814,12 +1861,12 @@ export class ChatService {
         };
       } else if (cleanMsg.includes('update') || cleanMsg.includes('modify')) {
         state.step = 'MODIFY_PROFILE_SELECT';
+        state.preOnboardingCompleted = true;
         return {
           response: "Which profile detail would you like to modify?\n\n- [1. Full Name](option:1)\n- [2. Mobile Number](option:2)\n- [3. Location](option:3)\n- [4. Complete Address](option:4)",
           suggestions: ['1', '2', '3', '4'],
         };
       } else {
-        // Use Different Details - Keep mobile, clear other details
         const mobile = state.citizen.mobileNumber;
         state.citizen = {
           fullName: '',
@@ -1835,6 +1882,7 @@ export class ChatService {
           longitude: null,
           isConfirmed: false,
         };
+        state.preOnboardingCompleted = true;
         state.step = 'IDENTIFY_NAME';
         return {
           response: this.formatMessage('PROFILE_NAME_REQUEST', lang, ''),
@@ -1843,6 +1891,19 @@ export class ChatService {
       }
     }
 
+    return { response: "Pre-onboarding execution issue." };
+  }
+
+  private async runCitizenIdentificationFlow(
+    state: ChatSessionState,
+    message: string,
+  ): Promise<{ response: string; suggestions?: string[] }> {
+    const cleanMsg = message.trim().toLowerCase();
+    const lang = state.language || 'en';
+    const isHi = lang === 'hi';
+    const isHinglish = lang === 'hinglish';
+    const currentStep = String(state.step);
+    
     // Natural Language Corrections check
     if (!currentStep.startsWith('MODIFY_') && currentStep !== 'IDENTIFY_ADDRESS' && currentStep !== 'CONFIRM_PROFILE') {
       const isCorrection = this.handleProfileCorrection(state, message);
@@ -1872,23 +1933,73 @@ export class ChatService {
           if (state.citizen.fullName.split(/\s+/).length === 1) {
             state.data.nameSuggestFlag = true;
           }
-          state.step = 'IDENTIFY_LOCATION'; // Mobile is already collected in step 1!
+          state.step = 'IDENTIFY_LOCATION';
           
-          // Next is Location resolution: Priority check
-          // 1. Browser GPS (if present in state)
-          if (state.citizen.latitude && state.citizen.longitude) {
-            state.citizen.city = "Lucknow";
-            state.citizen.district = "LUCKNOW";
+          // Location resolution order: GPS -> Profile -> IP -> Manual Entry
+          let resolvedDistrict: string | null = null;
+          let resolvedCity: string | null = null;
+
+          // 1. Browser GPS
+          if (typeof state.citizen.latitude === 'number' && typeof state.citizen.longitude === 'number') {
+            try {
+              const stations = await this.prisma.policeStation.findMany({ where: { isActive: true } });
+              if (stations.length > 0) {
+                let nearest = stations[0];
+                let minDistance = Infinity;
+                
+                const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+                  const R = 6371;
+                  const dLat = (lat2 - lat1) * (Math.PI / 180);
+                  const dLon = (lon2 - lon1) * (Math.PI / 180);
+                  const a =
+                    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                  return R * c;
+                };
+
+                for (const s of stations) {
+                  if (s.latitude && s.longitude) {
+                    const dist = calculateDistance(state.citizen.latitude!, state.citizen.longitude!, s.latitude, s.longitude);
+                    if (dist < minDistance) {
+                      minDistance = dist;
+                      nearest = s;
+                    }
+                  }
+                }
+                resolvedDistrict = nearest.districtCode;
+                const { LocationRegistry } = require('../localization/localization.constants');
+                const found = LocationRegistry.find((item: any) => item.type === 'DISTRICT' && item.code === resolvedDistrict);
+                resolvedCity = found ? found.en : resolvedDistrict;
+              }
+            } catch (err) {
+              this.logger.warn(`GPS resolution failed: ${err.message}`);
+            }
+          }
+
+          // 2. Existing Profile Location
+          if (!resolvedDistrict && (state.citizen.city || state.citizen.district)) {
+            resolvedDistrict = state.citizen.district || null;
+            resolvedCity = state.citizen.city || null;
+          }
+
+          // 3. IP Location (none)
+
+          if (resolvedDistrict) {
+            state.citizen.city = resolvedCity || resolvedDistrict;
+            state.citizen.district = resolvedDistrict;
             state.step = 'CONFIRM_LOCATION';
             return {
-              response: `📍 I found your location:\nLucknow\nLUCKNOW\n\nIs this correct?`,
+              response: `📍 I found your location:\n${state.citizen.city}\n${state.citizen.district}\n\nIs this correct?`,
               suggestions: ['Confirm', 'Change Location'],
             };
           }
-          // 2. IP Location (simulate check)
-          // 3. Fallback to prompt
+
+          // 4. Manual entry fallback
+          state.step = 'IDENTIFY_LOCATION';
           return {
-            response: "Could you please tell me your city, district, or area?",
+            response: `❌ Unable to determine your current location automatically.\n\nPlease enter your city, district, or area manually.`,
             suggestions: [],
           };
         } else {
@@ -1912,7 +2023,6 @@ export class ChatService {
             this.jurisdictionService.resolveJurisdiction : 
             (params: any) => ({ districtCode: message.trim() });
           
-          // Resolve location aliases / Noida aliases
           const resolvedLoc = this.localizeLocation(message.trim(), state.language);
           let resolvedDistrict = resolvedLoc.toUpperCase().replace(/\s+/g, '_');
           if (['NOIDA', 'NEW_OKHLA', 'GREATER_NOIDA', 'GAUTAM_BUDDHA_NAGAR'].includes(resolvedDistrict)) {
@@ -1989,7 +2099,6 @@ export class ChatService {
         state.step = 'CONFIRM_PROFILE';
       } else if (currentStep === 'CONFIRM_PROFILE') {
         if (cleanMsg === 'yes' || cleanMsg === 'correct' || cleanMsg.includes('option:yes') || cleanMsg.includes('confirm details') || cleanMsg === 'confirm') {
-          // District check after confirmation: Selected District == Address District
           const addrText = (state.citizen.addressLine1 + ' ' + (state.citizen.addressLine2 || '')).toLowerCase();
           const distNormalized = (state.citizen.district || '').toLowerCase().replace(/_/g, ' ');
           if (distNormalized && !addrText.includes(distNormalized)) {
@@ -2026,7 +2135,6 @@ export class ChatService {
             state.citizen.id = `mock-citizen-${Math.random().toString(36).substring(7)}`;
           }
 
-          // Direct transition to actual service workflow
           state.step = '1';
           let res: any;
           if (state.workflow === 'complaint') {
@@ -2099,7 +2207,6 @@ export class ChatService {
           const confRes = this.validationService.validateNameConfidence(message);
           if (confRes.valid) {
             state.citizen.fullName = message.trim();
-            // Single Field modification: Immediately return to review screen
             state.step = 'CONFIRM_PROFILE';
             delete state.data.currentExpectedField;
             return this.renderConfirmationCard(state);
@@ -2112,7 +2219,6 @@ export class ChatService {
         } else if (field === 'mobileNumber') {
           if (this.validationService.validateMobile(message)) {
             state.citizen.mobileNumber = this.validationService.normalizeMobile(message)!;
-            // Single Field modification: Immediately return to review screen
             state.step = 'CONFIRM_PROFILE';
             delete state.data.currentExpectedField;
             return this.renderConfirmationCard(state);
@@ -2241,7 +2347,9 @@ export class ChatService {
       addressDisplay += ` - ${state.citizen.pincode}`;
     }
 
-    const localizedCity = this.localizeLocation(state.citizen.city || state.citizen.district || 'Lucknow', state.language);
+    const localizedCity = (state.citizen.city || state.citizen.district)
+      ? this.localizeLocation(state.citizen.city || state.citizen.district, state.language)
+      : (state.language === 'hi' ? 'प्रदान नहीं किया गया' : 'Not provided');
     const addressFallback = state.language === 'hi' ? 'प्रदान नहीं किया गया' : 'Not provided';
 
     const response = this.formatMessage('PROFILE_CONFIRM_SCREEN', state.language || 'en', '', {
@@ -2293,6 +2401,25 @@ export class ChatService {
 
   // --- Complaint Workflow ---
   private async runComplaintWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
+    // Migration shim for backward compatibility
+    const isKnownComplaintType = (value?: string): boolean => {
+      if (!value) return false;
+      const knownComplaintTypes = [
+        'Lost Mobile / Theft',
+        'Lost Document',
+        'Simple Harassment',
+        'Cyber Fraud / Financial Loss',
+      ];
+      return knownComplaintTypes
+        .map(v => v.toLowerCase())
+        .includes(value.toLowerCase().trim());
+    };
+
+    if (!session.data.type && isKnownComplaintType(session.data.location)) {
+      session.data.type = session.data.location;
+      session.data.location = null;
+    }
+
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
@@ -2319,7 +2446,7 @@ export class ChatService {
     };
 
     if (step === 'REVIEW') {
-      const readiness = this.calculateReadiness(session, ['type', 'location', 'time', 'description']);
+      const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
       if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
         if (!readiness.valid) {
           await this.intelligenceService.recordWorkflowStep('complaint', 'REVIEW', false, true);
@@ -2486,21 +2613,17 @@ export class ChatService {
     }
 
     if (step === '5') {
-      if (!this.validationService.validateConsistency(session.citizen.city, msg)) {
-        return {
-          response: "👮 As your citizen assistance officer, I noticed a location contradiction in your details relative to your registered location. Please verify and confirm details again.",
-        };
-      }
+      // Decoupled incident location description consistency check to allow cross-district incidents
       session.data.description = msg;
       session.step = 'REVIEW';
 
-      const readiness = this.calculateReadiness(session, ['type', 'location', 'time', 'description']);
+      const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
 
       let reviewScreen = `👮 **Please review your application.**
 
 Name: **${session.citizen.fullName}**
 Mobile: **${session.citizen.mobileNumber}**
-District: **${session.citizen.city || 'Lucknow'}**
+District: **${session.citizen.city || session.citizen.district || 'Not Provided'}**
 Complaint Type: **${session.data.type}**
 `;
 
@@ -2773,7 +2896,7 @@ Would you like to submit this application?
         if (targetRole === 'ROLE_SUBJECT') {
           session.data.name = session.citizen.fullName;
           session.data.address = addressStr;
-          session.data.district = session.citizen.district || session.citizen.city || 'Lucknow';
+          session.data.district = session.citizen.district || session.citizen.city || '';
           session.data.isSelf = true;
         } else if (targetRole === 'ROLE_ORGANIZER') {
           session.data.organizerName = session.citizen.fullName;
@@ -3274,12 +3397,12 @@ Would you like to submit this application?
     let modifyLabel = lang === 'hi' ? 'विवरण बदलें' : (lang === 'hinglish' ? 'Details modify karein' : 'Modify Details');
 
     if (state.workflow === 'complaint') {
-      const readiness = this.calculateReadiness(state, ['type', 'location', 'time', 'description']);
+      const readiness = this.calculateReadiness(state, ['type', 'time', 'description']);
       let reviewScreen = `${header}\n\n`;
       reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
       reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
       reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_LOCATION', lang)}: **${this.localizationService.localizeLocation(state.citizen.city || state.citizen.district || 'Lucknow', lang)}**\n`;
+      reviewScreen += `${this.localizationService.translate('PROFILE_LOCATION', lang)}: **${(state.citizen.city || state.citizen.district) ? this.localizationService.localizeLocation(state.citizen.city || state.citizen.district, lang) : (lang === 'hi' ? 'प्रदान नहीं किया गया' : 'Not provided')}**\n`;
       reviewScreen += `${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}: **${state.data.type}**\n`;
 
       if (state.data.brand) {
@@ -3364,7 +3487,7 @@ Would you like to submit this application?
       reviewScreen += `Subject Information Source: **${sourceLabel}**\n`;
       reviewScreen += `${labelSubjectName}: **${state.data.name}**\n`;
       reviewScreen += `${labelSubjectAddress}: **${state.data.address}**\n`;
-      reviewScreen += `${labelDistrict}: **${this.localizationService.localizeLocation(state.data.district || 'Lucknow', lang)}**\n`;
+      reviewScreen += `${labelDistrict}: **${state.data.district ? this.localizationService.localizeLocation(state.data.district, lang) : 'Not Provided'}**\n`;
       reviewScreen += `${labelPurpose}: **${state.data.purpose}**\n\n`;
 
       reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;

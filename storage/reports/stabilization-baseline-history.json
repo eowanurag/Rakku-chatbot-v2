@@ -1,0 +1,26 @@
+[
+  {
+    "frozenAt": "2026-06-22T10:00:34.730Z",
+    "repository": {
+      "healthScore": 95,
+      "status": "STABILIZED"
+    },
+    "database": {
+      "healthScore": 96,
+      "missingIndexes": 0,
+      "duplicateIndexes": 0
+    },
+    "performance": {
+      "beforeLatencyAvgMs": 130.5,
+      "afterLatencyAvgMs": 1.8,
+      "improvementPercent": 98.62
+    },
+    "governance": {
+      "noiseRatioPercent": 0,
+      "openP0Issues": 0
+    },
+    "technicalDebt": {
+      "reductionPercent": 35
+    }
+  }
+]

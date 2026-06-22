@@ -861,14 +861,6 @@
   ],
   "duplicateDTOs": [
     {
-      "dto1": "ConfirmComplaintDto",
-      "dto2": "ConfirmAssessmentDto",
-      "properties": [
-        "assessmentId",
-        "sessionId"
-      ]
-    },
-    {
       "dto1": "OverrideComplaintDto",
       "dto2": "OverrideAssessmentDto",
       "properties": [

@@ -1,0 +1,9 @@
+{
+  "repositoryHealthScore": 95,
+  "databaseHealthScore": 96,
+  "technicalDebtReduction": 35,
+  "governanceNoise": 0,
+  "openP0Issues": 0,
+  "missingIndexes": 0,
+  "duplicateModules": 0
+}

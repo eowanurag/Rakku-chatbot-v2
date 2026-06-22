@@ -18,7 +18,8 @@
     "db:optimize-dev": "npm run db:reset-dev && npm run db:cleanup-sessions && npm run db:cleanup-chat && npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/audit-duplicate-mobiles.ts && npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/generate-database-health-report.ts && npm run db:benchmark",
     "test:database": "jest --config jest.database.config.js --runInBand",
     "test:database:ci": "jest --config jest.database.config.js --forceExit",
-    "test:database:debug": "jest --config jest.database.config.js --detectOpenHandles --logHeapUsage"
+    "test:database:debug": "jest --config jest.database.config.js --detectOpenHandles --logHeapUsage",
+    "governance:freeze-baseline": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/freeze-stabilization-baseline.ts"
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.15",

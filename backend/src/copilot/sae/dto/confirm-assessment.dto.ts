@@ -1,11 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { ConfirmComplaintDto } from '../../cie/dto/confirm-complaint.dto';
 
-export class ConfirmAssessmentDto {
-  @IsString()
-  @IsNotEmpty()
-  sessionId: string;
+export class ConfirmAssessmentDto extends ConfirmComplaintDto {}
 
-  @IsString()
-  @IsNotEmpty()
-  assessmentId: string;
-}
