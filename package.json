@@ -10,7 +10,8 @@
     "test:integration": "npx jest tests/integration",
     "test:e2e": "npx jest tests/e2e",
     "test:release": "npx jest --runInBand tests/release",
-    "release:report": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/generate-release-health-report.ts"
+    "release:report": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/generate-release-health-report.ts",
+    "db:reset-dev": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/reset-development-data.ts"
   },
   "devDependencies": {
     "@nestjs/testing": "^10.4.15",
