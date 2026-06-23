@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -732,5 +731,64 @@ model ScenarioGraphCandidate {
 
   @@index([createdAt])
 }
+
+model WorkflowCompletionMetrics {
+  id                   String   @id @default(uuid())
+  sessionId            String
+  workflowType         String
+  completionPercentage Float
+  abandonmentRisk      String
+  completed            Boolean
+  createdAt            DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model DraftRecoveryEvent {
+  id            String   @id @default(uuid())
+  sessionId     String
+  recovered     Boolean
+  recoveredStep String?
+  recoveredAt   DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([recoveredAt])
+}
+
+model OfflineSyncEvent {
+  id           String   @id @default(uuid())
+  syncId       String
+  eventType    String
+  payloadSize  Int
+  success      Boolean
+  createdAt    DateTime @default(now())
+
+  @@index([syncId])
+  @@index([createdAt])
+}
+
+model CitizenRecommendationEvent {
+  id                 String   @id @default(uuid())
+  sessionId          String
+  recommendationType String
+  accepted           Boolean
+  createdAt          DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model CitizenWorkflowEvent {
+  id           String   @id @default(uuid())
+  sessionId    String
+  workflowType String
+  eventType    String
+  createdAt    DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
 
 

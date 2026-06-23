@@ -32,4 +32,8 @@ export interface SituationAssessment {
   clarificationType?: ClarificationType;
   clarificationPrompt?: string;
   missingInformation: MissingInfoItem[];
+  severity?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  riskCategory?: "WOMEN_SAFETY" | "CHILD_RISK" | "DOMESTIC_VIOLENCE" | "CYBER_FRAUD" | "MISSING_PERSON" | "ACCIDENT" | null;
+  escalation?: "NORMAL" | "PRIORITY" | "EMERGENCY";
+  immediateActions?: string[];
 }

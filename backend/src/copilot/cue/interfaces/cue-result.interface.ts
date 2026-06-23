@@ -39,4 +39,7 @@ export interface CueResult {
   provider: "DICTIONARY";
   processingTimeMs: number;
   dictionaryReleaseVersion: string;
+  singleIncident?: boolean;
+  intentSwitched?: boolean;
+  persistedEntities?: Record<string, string[]>;
 }

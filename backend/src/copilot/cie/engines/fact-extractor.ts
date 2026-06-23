@@ -79,6 +79,42 @@ export class FactExtractor {
       }
     }
 
+    // bankName rule
+    const bankMatch = cleanText.match(/\b(sbi|hdfc|icici|pnb|axis|kotak|paytm|yes bank|state bank)\b/i);
+    if (bankMatch && !isFieldExtractedByRegex('bank_name')) {
+      facts.push({ field: 'bank_name', value: bankMatch[1].toUpperCase(), confidence: 0.99, source: 'USER' });
+    }
+
+    // transactionId rule
+    const txMatch = cleanText.match(/(?:transaction|tx|txn)\s*(?:id|number|ref)?\s*([a-zA-Z0-9]+)/i);
+    if (txMatch && !isFieldExtractedByRegex('transaction_id')) {
+      facts.push({ field: 'transaction_id', value: txMatch[1], confidence: 0.99, source: 'USER' });
+    }
+
+    // upiId rule
+    const upiMatch = cleanText.match(/\b([a-zA-Z0-9.\-_]+@[a-zA-Z0-9]+)\b/);
+    if (upiMatch && !isFieldExtractedByRegex('upi_id')) {
+      facts.push({ field: 'upi_id', value: upiMatch[1], confidence: 0.99, source: 'USER' });
+    }
+
+    // vehicleRegistration rule
+    const vehicleRegMatch = cleanText.match(/\b([a-z]{2}[0-9]{2}[a-z]{1,2}[0-9]{4})\b/i);
+    if (vehicleRegMatch && !isFieldExtractedByRegex('vehicle_registration')) {
+      facts.push({ field: 'vehicle_registration', value: vehicleRegMatch[1].toUpperCase(), confidence: 0.99, source: 'USER' });
+    }
+
+    // documentNumber rule
+    const docNumMatch = cleanText.match(/\b([a-z]{5}[0-9]{4}[a-z]|\d{12})\b/i);
+    if (docNumMatch && !isFieldExtractedByRegex('document_number')) {
+      facts.push({ field: 'document_number', value: docNumMatch[1].toUpperCase(), confidence: 0.99, source: 'USER' });
+    }
+
+    // witnessName rule
+    const witnessMatch = cleanText.match(/(?:witness|gavah|gavaha)\s+(?:name\s+is\s+)?([A-Za-z\s]+)/i);
+    if (witnessMatch && !isFieldExtractedByRegex('witness_name')) {
+      facts.push({ field: 'witness_name', value: witnessMatch[1].trim(), confidence: 0.99, source: 'USER' });
+    }
+
     // 3. Fallback to Gemini AI if API key is present and AI is enabled
     const isAiDisabled = process.env.AI_DISABLED === 'true';
     if (this.apiKey && !isAiDisabled) {

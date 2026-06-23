@@ -86,4 +86,5 @@ export interface ComplaintAssessmentResult {
   draftText: string;
   reviewSections: ReviewSections;
   narrativeSnapshots?: NarrativeSnapshot[];
+  entities?: Record<string, any>;
 }

@@ -264,6 +264,7 @@ ${promptLabel}`;
     }
 
     const classificationText = cueResult ? cueResult.normalizedNarrative : text;
+    const lowerText = (text || '').toLowerCase();
 
     // 1. Try Rule-based
     let ruleResult = this.ruleClassifier.classify(classificationText);
@@ -271,7 +272,15 @@ ${promptLabel}`;
     let finalCategory = "GUIDANCE";
     let confidence = 0.5;
 
-    if (ruleResult) {
+    const isEmergencyInput = lowerText.includes('suicide') || lowerText.includes('end my life') || lowerText.includes('kill myself') || lowerText.includes('self harm') || lowerText.includes('self-harm') ||
+      lowerText.includes('accident') || lowerText.includes('crash') || lowerText.includes('hit and run') || lowerText.includes('collision') || lowerText.includes('injury') || lowerText.includes('injured') || lowerText.includes('medical') || lowerText.includes('ambulance') ||
+      lowerText.includes('women') || lowerText.includes('girl') || lowerText.includes('teasing') || lowerText.includes('harass') || lowerText.includes('eve') || lowerText.includes('molest');
+
+    if (isEmergencyInput) {
+      finalIntent = 'EMERGENCY_HELP';
+      finalCategory = 'EMERGENCY';
+      confidence = 1.0;
+    } else if (ruleResult) {
       finalIntent = ruleResult.intent;
       finalCategory = ruleResult.category;
       confidence = ruleResult.confidence;
@@ -355,7 +364,86 @@ ${promptLabel}`;
       }
     }
 
-    if (assessment.requiresClarification) {
+    // Post-process assessment with severity, risk category, escalation, and immediate actions
+    let isEmergency = false;
+    let emergencyMsg = '';
+
+    // Risk category mapping
+    if (lowerText.includes('suicide') || lowerText.includes('end my life') || lowerText.includes('kill myself') || lowerText.includes('self harm') || lowerText.includes('self-harm') || lowerText.includes('9152987821')) {
+      assessment.riskCategory = 'SUICIDE_RISK';
+      assessment.urgency = 'CRITICAL';
+      isEmergency = true;
+      emergencyMsg = `🚨 **EMERGENCY NOTICE (Suicide Risk):**\nIf you or someone you know is struggling or in distress, help is available. Please contact:\n- Suicide Helpline: **9152987821**\n- Emergency Services: **112**`;
+    } else if (lowerText.includes('women') || lowerText.includes('girl') || lowerText.includes('teasing') || lowerText.includes('harass') || lowerText.includes('eve') || lowerText.includes('molest') || lowerText.includes('181')) {
+      assessment.riskCategory = 'WOMEN_SAFETY';
+      assessment.urgency = 'HIGH';
+      isEmergency = true;
+      emergencyMsg = `🚨 **EMERGENCY NOTICE (Women Safety):**\nFor immediate assistance and safety, please contact:\n- Women Safety Helpline: **181**\n- Emergency Services: **112**`;
+    } else if (lowerText.includes('child') || lowerText.includes('kid') || lowerText.includes('baby') || lowerText.includes('minor') || lowerText.includes('orphan') || lowerText.includes('1098')) {
+      assessment.riskCategory = 'CHILD_RISK';
+      assessment.urgency = 'HIGH';
+      isEmergency = true;
+      emergencyMsg = `🚨 **EMERGENCY NOTICE (Child Emergency):**\nFor child protection and emergencies, please contact:\n- Child Emergency Helpline: **1098**`;
+    } else if (lowerText.includes('accident') || lowerText.includes('crash') || lowerText.includes('hit and run') || lowerText.includes('collision') || lowerText.includes('injury') || lowerText.includes('injured') || lowerText.includes('medical') || lowerText.includes('ambulance') || lowerText.includes('108')) {
+      assessment.riskCategory = 'ACCIDENT';
+      assessment.urgency = 'CRITICAL';
+      isEmergency = true;
+      emergencyMsg = `🚨 **EMERGENCY NOTICE (Medical Emergency):**\nFor immediate medical attention and rescue, please contact:\n- Medical Emergency Helpline: **108**`;
+    } else if (lowerText.includes('cyber') || lowerText.includes('online') || lowerText.includes('fraud') || lowerText.includes('transaction') || lowerText.includes('otp') || lowerText.includes('scam') || lowerText.includes('bank') || lowerText.includes('account') || lowerText.includes('card') || lowerText.includes('1930')) {
+      assessment.riskCategory = 'CYBER_FRAUD';
+      assessment.urgency = 'HIGH';
+      isEmergency = true;
+      emergencyMsg = `🚨 **EMERGENCY NOTICE (Cyber Fraud):**\nTo report cyber financial fraud immediately, please contact:\n- Cyber Fraud Helpline: **1930**`;
+    } else if (lowerText.includes('domestic') || lowerText.includes('wife') || lowerText.includes('husband') || lowerText.includes('abuse') || lowerText.includes('violence')) {
+      assessment.riskCategory = 'DOMESTIC_VIOLENCE';
+    } else if (lowerText.includes('missing') || lowerText.includes('run away') || lowerText.includes('kidnap') || lowerText.includes('lost person')) {
+      assessment.riskCategory = 'MISSING_PERSON';
+    } else {
+      assessment.riskCategory = null;
+    }
+
+    // Vulnerability detection
+    const isSeniorCitizen = lowerText.includes('senior citizen') || lowerText.includes('old man') || lowerText.includes('old lady') || lowerText.includes('grandfather') || lowerText.includes('grandmother') || lowerText.includes('elderly');
+    const isRepeatVictim = lowerText.includes('repeat victim') || lowerText.includes('second time') || lowerText.includes('happened again') || lowerText.includes('reported before');
+    
+    (assessment as any).seniorCitizen = isSeniorCitizen;
+    (assessment as any).repeatVictim = isRepeatVictim;
+    (assessment as any).vulnerabilityDetected = isSeniorCitizen || isRepeatVictim;
+
+    if (isSeniorCitizen || isRepeatVictim) {
+      assessment.urgency = 'HIGH';
+      assessment.severity = 'HIGH';
+      assessment.escalation = 'PRIORITY';
+      (assessment as any).whyEscalated = isSeniorCitizen ? 'Escalated due to elderly/senior citizen involvement.' : 'Escalated due to repeat victim profile.';
+      (assessment as any).recommendedAction = 'Assign to prioritized citizen care desk and expedite contact.';
+    } else {
+      assessment.severity = assessment.urgency;
+      // Escalation mapping
+      if (assessment.severity === 'CRITICAL') {
+        assessment.escalation = 'EMERGENCY';
+      } else if (assessment.severity === 'HIGH') {
+        assessment.escalation = 'PRIORITY';
+      } else {
+        assessment.escalation = 'NORMAL';
+      }
+      (assessment as any).whyEscalated = 'Standard priority assessment.';
+      (assessment as any).recommendedAction = 'Regular routing.';
+    }
+
+    // Immediate action guidance
+    if (assessment.riskCategory === 'CYBER_FRAUD') {
+      assessment.immediateActions = ["Call 1930 immediately", "Preserve transaction screenshots / bank statements", "Avoid sharing any OTPs or passwords"];
+    } else if (assessment.severity === 'CRITICAL' || assessment.escalation === 'EMERGENCY') {
+      assessment.immediateActions = ["Call 112 emergency services", "Share your live location", "Move to a safe public space"];
+    } else {
+      assessment.immediateActions = ["Provide incident details clearly", "Keep identity proof ready"];
+    }
+
+    if (isEmergency) {
+      assessment.requiresClarification = true;
+      assessment.clarificationType = "EMERGENCY_FAST_PATH";
+      assessment.clarificationPrompt = `${emergencyMsg}\n\nDo you still wish to continue filing an official complaint?`;
+    } else if (assessment.requiresClarification) {
       assessment.clarificationType = assessment.clarificationType || "SERVICE_SELECTION";
       assessment.clarificationPrompt = assessment.clarificationPrompt || "I'd like to understand your situation better. Could you tell me a little more about what happened?";
     } else {

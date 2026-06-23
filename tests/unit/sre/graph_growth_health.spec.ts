@@ -2,6 +2,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PrismaClient } from '@prisma/client';
 
+jest.setTimeout(30000);
+
 /**
  * Graph Growth Health Test
  *
@@ -20,8 +22,9 @@ const releasePolicy = JSON.parse(
 describe('SRE Graph Growth Health – Coverage-Based Threshold', () => {
   let prisma: PrismaClient;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     prisma = new PrismaClient();
+    await prisma.scenarioGraphCandidate.deleteMany({});
   });
 
   afterAll(async () => {

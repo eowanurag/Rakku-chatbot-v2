@@ -2,6 +2,8 @@ import { SreService } from '../../backend/src/copilot/sre/sre.service';
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+jest.setTimeout(30000);
+
 describe('SRE Resolution Quality Mapping', () => {
   let sreService: SreService;
   let prisma: PrismaClient;

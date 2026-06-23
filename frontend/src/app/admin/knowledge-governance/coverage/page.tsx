@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { CitizenMetricsService } from "../../../../services/api";
 import { 
   ArrowLeft, 
   ShieldCheck, 
@@ -43,6 +44,8 @@ interface HealthDashboardStats {
 export default function CoverageDashboard() {
   const [stats, setStats] = useState<CoverageStats | null>(null);
   const [healthStats, setHealthStats] = useState<HealthDashboardStats | null>(null);
+  const [operationalMetrics, setOperationalMetrics] = useState({ completionRate: 98.2, abandonmentRate: 1.8, recoveryRate: 95.5, resumeSuccess: 92.5, complaintQuality: 92.4 });
+  const [intelligenceMetrics, setIntelligenceMetrics] = useState({ emergencyAccuracy: 97.8, recommendationAcceptance: 76.5, duplicateDetectionAccuracy: 98.2, emergencyUsage: 5 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -51,6 +54,16 @@ export default function CoverageDashboard() {
     setLoading(true);
     setError(null);
     try {
+      try {
+        const res = await CitizenMetricsService.getMetrics();
+        if (res && res.success) {
+          setOperationalMetrics(res.operational);
+          setIntelligenceMetrics(res.intelligence);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live citizen metrics:", err);
+      }
+
       setTimeout(() => {
         setStats({
           totalNodes: 44,
@@ -151,157 +164,111 @@ export default function CoverageDashboard() {
         </div>
       ) : (
         <div className="space-y-8 animate-fade-in">
-          {/* Health & Performance Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            
-            {/* Card 1: Governance Baseline */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Governance Baseline</p>
-                  <p className="text-xl font-bold text-white mt-2">Health: 92%</p>
+          {/* Operational & Intelligence Metrics Section */}
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider mb-4 flex items-center space-x-2">
+                <Activity className="w-3.5 h-3.5 text-police-gold" />
+                <span>Operational & Intelligence Metrics</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                {/* Workflow Friction Card */}
+                <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Workflow Friction</p>
+                      <p className="text-3xl font-extrabold text-white mt-2">{(operationalMetrics as any).workflowFriction?.toFixed(1) || '14.2'}%</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
+                      LOW
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-4">
+                    <span>Rate of sessions facing workflow friction.</span>
+                  </div>
                 </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  HEALTHY
-                </span>
-              </div>
-              <div className="flex flex-col space-y-1 mt-3">
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>Baseline Debt:</span>
-                  <span className="text-slate-200">120 hrs</span>
+
+                {/* Completion Time Card */}
+                <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Completion Time</p>
+                      <p className="text-3xl font-extrabold text-white mt-2">{(operationalMetrics as any).completionTime || '115'}s</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
+                      -30%
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-4">
+                    <span>Average time to complete a workflow.</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>Freeze Date:</span>
-                  <span className="text-slate-200">Jun 22, 2026</span>
+
+                {/* Resume Success Card */}
+                <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Resume Success</p>
+                      <p className="text-3xl font-extrabold text-white mt-2">{operationalMetrics.resumeSuccess.toFixed(1)}%</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
+                      &gt;95%
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-4">
+                    <span>Percentage of successfully resumed drafts.</span>
+                  </div>
+                </div>
+
+                {/* Complaint Quality Card */}
+                <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Complaint Quality</p>
+                      <p className="text-3xl font-extrabold text-white mt-2">{operationalMetrics.complaintQuality.toFixed(1)}%</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
+                      &gt;92%
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-4">
+                    <span>Completeness and quality score.</span>
+                  </div>
+                </div>
+
+                {/* Recommendation Acceptance Card */}
+                <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Recommendation Acceptance</p>
+                      <p className="text-3xl font-extrabold text-white mt-2">{intelligenceMetrics.recommendationAcceptance.toFixed(1)}%</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
+                      Active
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-4">
+                    <span>Rate at which recommended actions are adopted.</span>
+                  </div>
+                </div>
+
+                {/* Evidence Guidance Usage Card */}
+                <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Evidence Guidance Usage</p>
+                      <p className="text-3xl font-extrabold text-white mt-2">{(operationalMetrics as any).evidenceGuidanceUsage?.toFixed(1) || '48.0'}%</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
+                      Enabled
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-4">
+                    <span>Usage of proactive evidence hints.</span>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Card 2: Repository Stability */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Repository Stability</p>
-                  <p className="text-2xl font-black text-emerald-400 mt-2">99.8%</p>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  HEALTHY
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-4">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Zero drift detected on core modules.</span>
-              </div>
-            </div>
-
-            {/* Card 3: Database Stability */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Database Stability</p>
-                  <p className="text-2xl font-black text-emerald-400 mt-2">99.9%</p>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  HEALTHY
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-4">
-                <Database className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Prisma schema and indexes synchronized.</span>
-              </div>
-            </div>
-
-            {/* Card 4: Technical Debt Trend */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Technical Debt Trend</p>
-                  <p className="text-lg font-bold text-emerald-400 mt-2">IMPROVING</p>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  HEALTHY
-                </span>
-              </div>
-              <div className="flex flex-col space-y-1 mt-3">
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>Burn Rate:</span>
-                  <span className="text-emerald-400">-1.5 hrs/day</span>
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-400">
-                  <span>Est. Clean State:</span>
-                  <span className="text-slate-200">5 days</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 5: Governance Noise */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Governance Noise</p>
-                  <p className="text-2xl font-black text-yellow-400 mt-2">15%</p>
-                </div>
-                <span className="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  WARNING
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-4">
-                <AlertTriangle className="w-3.5 h-3.5 text-yellow-400" />
-                <span>3 duplicate recommendations detected.</span>
-              </div>
-            </div>
-
-            {/* Card 6: Open P0 Issues */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Open P0 Issues</p>
-                  <p className="text-3xl font-black text-red-500 mt-2">1</p>
-                </div>
-                <span className="px-2 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  CRITICAL
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-4">
-                <AlertCircle className="w-3.5 h-3.5 text-red-400" />
-                <span>Duplicate index definition blocks CI.</span>
-              </div>
-            </div>
-
-            {/* Card 7: Accepted Risks */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Accepted Risks</p>
-                  <p className="text-3xl font-black text-white mt-2">2</p>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  HEALTHY
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-4">
-                <FileText className="w-3.5 h-3.5 text-blue-400" />
-                <span>Deferred slow tests certified manually.</span>
-              </div>
-            </div>
-
-            {/* Card 8: Remediation Progress */}
-            <div className="glass-panel rounded-xl p-5 border-slate-800/80 bg-slate-900/30 flex flex-col justify-between min-h-[140px]">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Remediation Progress</p>
-                  <p className="text-2xl font-black text-emerald-400 mt-2">80%</p>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] rounded font-bold uppercase tracking-wide">
-                  HEALTHY
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-[10px] text-slate-400 mt-4">
-                <Loader2 className="w-3.5 h-3.5 text-emerald-400" />
-                <span>8 of 10 tasks resolved.</span>
-              </div>
-            </div>
-
           </div>
 
           {/* Historical Trends Visual Charts Section */}

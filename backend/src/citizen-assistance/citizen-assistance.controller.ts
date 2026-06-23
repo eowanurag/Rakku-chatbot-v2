@@ -2,6 +2,7 @@ import { Controller, Get, Post, Query, Body, BadRequestException, Logger } from 
 import { HelplineService } from './helpline.service';
 import { PoliceStationService } from './police-station.service';
 import { AnalyticsService } from './analytics.service';
+import { CitizenMetricsService } from '../copilot/workflow-completion/citizen-metrics.service';
 
 @Controller('citizen-assistance')
 export class CitizenAssistanceController {
@@ -11,7 +12,19 @@ export class CitizenAssistanceController {
     private readonly helplineService: HelplineService,
     private readonly policeStationService: PoliceStationService,
     private readonly analyticsService: AnalyticsService,
+    private readonly citizenMetricsService: CitizenMetricsService,
   ) {}
+
+  @Get('metrics')
+  async getMetrics() {
+    const operational = await this.citizenMetricsService.getOperationalMetrics();
+    const intelligence = await this.citizenMetricsService.getIntelligenceMetrics();
+    return {
+      success: true,
+      operational,
+      intelligence
+    };
+  }
 
   @Get('helplines')
   getHelplines() {

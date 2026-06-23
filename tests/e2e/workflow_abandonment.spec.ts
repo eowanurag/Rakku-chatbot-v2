@@ -1,34 +1,90 @@
-import { SreService } from '../../backend/src/copilot/sre/sre.service';
-import { PrismaClient } from '@prisma/client';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { ChatService } from '@backend/chat/chat.service';
+import { PrismaService } from '@backend/prisma.service';
+import { ValidationService } from '@backend/chat/validation.service';
+import { ComplaintService } from '@backend/complaint/complaint.service';
+import { VerificationService } from '@backend/verification/verification.service';
+import { CertificateService } from '@backend/certificate/certificate.service';
+import { EventService } from '@backend/event/event.service';
+import { TrackingService } from '@backend/tracking/tracking.service';
+import { AnalyticsService } from '@backend/citizen-assistance/analytics.service';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { IntelligenceService } from '@backend/citizen-assistance/intelligence.service';
+import { throwError } from 'rxjs';
 
-describe('Workflow Abandonment and Loop Validation E2E Suite', () => {
-  let sreService: SreService;
-  let prisma: PrismaClient;
-  const sessionId = `abandonment-test-${Date.now()}`;
+describe('Workflow Abandonment Spec', () => {
+  let prisma: PrismaService;
+  let chatService: ChatService;
 
-  beforeAll(() => {
-    const emitter = new EventEmitter2();
-    sreService = new SreService(emitter);
-    prisma = new PrismaClient();
+  beforeAll(async () => {
+    jest.setTimeout(45000);
+    prisma = new PrismaService();
+    await prisma.$connect();
+    const config = new ConfigService();
+    const validation = new ValidationService();
+    const complaint = new ComplaintService(prisma);
+    const verification = new VerificationService(prisma);
+    const certificate = new CertificateService(prisma);
+    const event = new EventService(prisma);
+    const tracking = new TrackingService(prisma);
+    const analytics = new AnalyticsService();
+    const intelligence = new IntelligenceService(prisma);
+
+    const httpService = new HttpService();
+    httpService.post = () => throwError(() => new Error('Forced connection failure for testing')) as any;
+
+    chatService = new ChatService(
+      httpService,
+      config,
+      complaint,
+      verification,
+      certificate,
+      event,
+      tracking,
+      analytics,
+      prisma,
+      validation,
+      intelligence
+    );
   });
 
   afterAll(async () => {
-    await prisma.scenarioAssessment.deleteMany({ where: { sessionId } }).catch(() => {});
-    await prisma.scenarioSession.deleteMany({ where: { sessionId } }).catch(() => {});
+    if (chatService && chatService['checkpointService']) {
+      chatService['checkpointService'].onModuleDestroy();
+    }
     await prisma.$disconnect();
   });
 
-  it('should verify dialog transitions complete successfully without dead ends or infinite loops', async () => {
-    const turn = await sreService.processIntent(
-      sessionId,
-      ['THEFT', 'VEHICLE', 'BIKE'],
-      {},
-      { cueConfidence: 0.99, saeConfidence: 0.98, scenarioHints: ['THEFT', 'VEHICLE', 'BIKE'] }
-    );
-    expect(turn.scenario).toBe('BIKE');
+  it('should log workflow abandonment metrics on cancel', async () => {
+    const sess = `sess-abandon-${Date.now()}`;
+    const mobile = `9${String(Date.now()).substring(4)}`;
 
-    const completionRate = 98.0;
-    expect(completionRate).toBeGreaterThanOrEqual(95);
-  });
+    process.env.ENABLE_SAE = 'false';
+    process.env.ENABLE_CIE = 'false';
+    await chatService.sendMessage('English', sess);
+    await chatService.sendMessage('File Complaint', sess);
+    await chatService.sendMessage(mobile, sess);
+    await chatService.sendMessage('Ramesh Kumar', sess);
+    await chatService.sendMessage('Lucknow', sess);
+    await chatService.sendMessage('Confirm', sess);
+    await chatService.sendMessage('Aliganj, Lucknow', sess);
+    await chatService.sendMessage('Confirm Details', sess);
+
+    // Complaint type select
+    await chatService.sendMessage('Lost Mobile / Theft', sess);
+
+    // Click Cancel Button
+    const res = await chatService.sendMessage('action:CANCEL_APPLICATION', sess);
+    expect(res.response.toLowerCase()).toContain('cancel');
+
+    // Verify metrics in DB
+    const metrics = await prisma.workflowCompletionMetrics.findFirst({
+      where: { sessionId: sess },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    expect(metrics).toBeDefined();
+    expect(metrics?.completed).toBe(false);
+    expect(metrics?.abandonmentRisk).toBe('HIGH');
+  }, 30000);
 });

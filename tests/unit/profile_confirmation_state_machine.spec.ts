@@ -21,8 +21,20 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
   let prisma: PrismaService;
   let validation: ValidationService;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     prisma = new PrismaService();
+    try {
+      await prisma.complaint.deleteMany({});
+      await prisma.verification.deleteMany({});
+      await prisma.characterCertificate.deleteMany({});
+      await prisma.eventPermission.deleteMany({});
+      await prisma.trackingRecord.deleteMany({});
+      await prisma.citizenWorkflowEvent.deleteMany({});
+      await prisma.workflowSession.deleteMany({});
+      await prisma.citizen.deleteMany({});
+    } catch (e) {
+      // Ignore if some tables don't exist
+    }
     const config = new ConfigService();
     validation = new ValidationService();
     const complaint = new ComplaintService(prisma);
@@ -49,6 +61,21 @@ describe('Profile Confirmation & Citizen Identification State Machine Test', () 
       validation,
       intelligence
     );
+  });
+
+  beforeEach(async () => {
+    try {
+      await prisma.complaint.deleteMany({});
+      await prisma.verification.deleteMany({});
+      await prisma.characterCertificate.deleteMany({});
+      await prisma.eventPermission.deleteMany({});
+      await prisma.trackingRecord.deleteMany({});
+      await prisma.citizenWorkflowEvent.deleteMany({});
+      await prisma.workflowSession.deleteMany({});
+      await prisma.citizen.deleteMany({});
+    } catch (e) {
+      console.error('DATABASE CLEANUP ERROR IN beforeEach:', e);
+    }
   });
 
   const debugLog = (step: string, message: string, nextStep: string, citizen: any) => {

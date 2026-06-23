@@ -209,6 +209,67 @@ export class ComplaintIntelligenceService {
       this.logger.warn(`Failed to persist CIE logs: ${dbErr.message}`);
     }
 
+    // Entity extraction heuristics
+    const lowerText = text.toLowerCase();
+    const incidentDateVal = facts.find(f => f.field === 'incident_date')?.value || undefined;
+    const incidentLocationVal = facts.find(f => f.field === 'incident_location')?.value || undefined;
+    
+    let victimNameVal: string | undefined = undefined;
+    const victimMatch = text.match(/(?:victim|my name is|citizen)\s+(?:name\s+is\s+)?([A-Za-z\s]+)/i);
+    if (victimMatch) {
+      victimNameVal = victimMatch[1].trim();
+    }
+
+    let suspectNameVal: string | undefined = undefined;
+    const suspectMatch = text.match(/(?:suspect|accused|chor)\s+(?:name\s+is\s+)?([A-Za-z\s]+)/i);
+    if (suspectMatch) {
+      suspectNameVal = suspectMatch[1].trim();
+    }
+
+    let financialLossVal: number | undefined = undefined;
+    const lossMatch = lowerText.match(/(?:lost|loss|stolen|amount|fraud|rs\.?|₹)\s*(?:rs\.?|₹)?\s*([0-9,]+)/);
+    if (lossMatch) {
+      financialLossVal = parseFloat(lossMatch[1].replace(/,/g, ''));
+    }
+
+    let deviceDetailsVal: string | undefined = undefined;
+    const deviceBrand = facts.find(f => f.field === 'property_brand')?.value;
+    if (deviceBrand) {
+      deviceDetailsVal = `${deviceBrand} phone`;
+    }
+
+    let documentDetailsVal: string | undefined = undefined;
+    const docType = facts.find(f => f.field === 'document_type')?.value;
+    if (docType) {
+      documentDetailsVal = docType;
+    }
+
+    let vehicleDetailsVal: string | undefined = undefined;
+    const bankNameVal = facts.find(f => f.field === 'bank_name')?.value || undefined;
+    const transactionIdVal = facts.find(f => f.field === 'transaction_id')?.value || undefined;
+    const upiIdVal = facts.find(f => f.field === 'upi_id')?.value || undefined;
+    const vehicleRegVal = facts.find(f => f.field === 'vehicle_registration')?.value || undefined;
+    const docNumVal = facts.find(f => f.field === 'document_number')?.value || undefined;
+    const witnessNameVal = facts.find(f => f.field === 'witness_name')?.value || undefined;
+
+    const entities = {
+      incidentType,
+      incidentDate: incidentDateVal,
+      incidentLocation: incidentLocationVal,
+      victimName: victimNameVal,
+      suspectName: suspectNameVal,
+      financialLoss: financialLossVal,
+      deviceDetails: deviceDetailsVal,
+      documentDetails: documentDetailsVal,
+      vehicleDetails: vehicleDetailsVal,
+      bankName: bankNameVal,
+      transactionId: transactionIdVal,
+      upiId: upiIdVal,
+      vehicleRegistration: vehicleRegVal,
+      documentNumber: docNumVal,
+      witnessName: witnessNameVal
+    };
+
     return {
       incidentType,
       complaintReadinessScore,
@@ -219,7 +280,8 @@ export class ComplaintIntelligenceService {
       contradictions,
       draftText,
       reviewSections,
-      narrativeSnapshots: snapshots
+      narrativeSnapshots: snapshots,
+      entities
     };
   }
 }

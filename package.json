@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "build": "npm run build --prefix backend",
     "validate-library": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/validate-message-library.ts",
     "sync-library": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" scripts/sync-message-library.ts",
     "test:library-validation": "npx ts-node -O \"{\\\"module\\\":\\\"commonjs\\\"}\" backend/src/chat/message_library_validation_test.ts",

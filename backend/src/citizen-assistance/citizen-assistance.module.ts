@@ -8,9 +8,10 @@ import { PrismaService } from '../prisma.service';
 import { CitizenAssistanceController } from './citizen-assistance.controller';
 import { JurisdictionRoutingModule } from '../jurisdiction-routing/jurisdiction-routing.module';
 import { SubmissionFingerprintService } from '../security/submission-fingerprint.service';
+import { WorkflowCompletionModule } from '../copilot/workflow-completion/workflow-completion.module';
 
 @Module({
-  imports: [JurisdictionRoutingModule],
+  imports: [JurisdictionRoutingModule, WorkflowCompletionModule],
   controllers: [CitizenAssistanceController, IntelligenceController],
   providers: [HelplineService, PoliceStationService, AnalyticsService, IntelligenceService, PrismaService, SubmissionFingerprintService],
   exports: [HelplineService, PoliceStationService, AnalyticsService, IntelligenceService, SubmissionFingerprintService],

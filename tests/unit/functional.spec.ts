@@ -59,8 +59,8 @@ describe('Functional Workflows (Comprehensive)', () => {
     await chatService.sendMessage("hello", sess);
     await chatService.sendMessage("english", sess);
     await chatService.sendMessage("File Complaint", sess);
-    await chatService.sendMessage("Raj", sess);
     await chatService.sendMessage("9999000099", sess);
+    await chatService.sendMessage("Raj", sess);
     await chatService.sendMessage("Lucknow", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("Sector 7, Gomti Nagar, Lucknow - 226002", sess);

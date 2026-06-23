@@ -1,0 +1,84 @@
+import { ChatService } from '@backend/chat/chat.service';
+import { PrismaService } from '@backend/prisma.service';
+import { ValidationService } from '@backend/chat/validation.service';
+import { ComplaintService } from '@backend/complaint/complaint.service';
+import { VerificationService } from '@backend/verification/verification.service';
+import { CertificateService } from '@backend/certificate/certificate.service';
+import { EventService } from '@backend/event/event.service';
+import { TrackingService } from '@backend/tracking/tracking.service';
+import { AnalyticsService } from '@backend/citizen-assistance/analytics.service';
+import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+import { IntelligenceService } from '@backend/citizen-assistance/intelligence.service';
+import { throwError } from 'rxjs';
+
+describe('Session Checkpointing Spec', () => {
+  let prisma: PrismaService;
+  let chatService: ChatService;
+
+  beforeAll(async () => {
+    jest.setTimeout(45000);
+    prisma = new PrismaService();
+    await prisma.$connect();
+    const config = new ConfigService();
+    const validation = new ValidationService();
+    const complaint = new ComplaintService(prisma);
+    const verification = new VerificationService(prisma);
+    const certificate = new CertificateService(prisma);
+    const event = new EventService(prisma);
+    const tracking = new TrackingService(prisma);
+    const analytics = new AnalyticsService();
+    const intelligence = new IntelligenceService(prisma);
+
+    const httpService = new HttpService();
+    httpService.post = () => throwError(() => new Error('Forced connection failure for testing')) as any;
+
+    chatService = new ChatService(
+      httpService,
+      config,
+      complaint,
+      verification,
+      certificate,
+      event,
+      tracking,
+      analytics,
+      prisma,
+      validation,
+      intelligence
+    );
+  });
+
+  afterAll(async () => {
+    if (chatService && chatService['checkpointService']) {
+      chatService['checkpointService'].onModuleDestroy();
+    }
+    await prisma.$disconnect();
+  });
+
+  it('should save session checkpoints at each completed step', async () => {
+    const sess = `sess-chk-${Date.now()}`;
+    const mobile = `9${String(Date.now()).substring(4)}`;
+
+    process.env.ENABLE_SAE = 'false';
+    process.env.ENABLE_CIE = 'false';
+    await chatService.sendMessage('English', sess);
+    await chatService.sendMessage('File Complaint', sess);
+    await chatService.sendMessage(mobile, sess);
+    await chatService.sendMessage('Ramesh Kumar', sess);
+    await chatService.sendMessage('Lucknow', sess);
+    await chatService.sendMessage('Confirm', sess);
+    await chatService.sendMessage('Aliganj, Lucknow', sess);
+    await chatService.sendMessage('Confirm Details', sess);
+
+    // Enter Complaint type
+    await chatService.sendMessage('Lost Mobile / Theft', sess);
+
+    // Wait a brief period to allow debounced save (500ms) to resolve
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const state = await chatService.getOrCreateSession(sess);
+    expect(state.resumeInformation).toBeDefined();
+    expect(state.resumeInformation?.workflowId).toBe('complaint');
+    expect(state.resumeInformation?.dataSnapshot?.type).toBe('Lost Mobile / Theft');
+  }, 30000);
+});

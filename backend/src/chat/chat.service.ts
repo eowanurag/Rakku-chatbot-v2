@@ -29,6 +29,26 @@ import { AiFallbackService } from '../common/ai-fallback/ai-fallback.service';
 import { RecommendationRouterService } from '../orchestration/recommendation-router.service';
 import { WorkflowLauncherService } from '../orchestration/workflow-launcher.service';
 import { WorkflowRegistryService } from '../orchestration/workflow-registry.service';
+import { ComplaintCompletenessService } from '../copilot/cie/services/complaint-completeness.service';
+import { MissingSuggestionsService } from '../copilot/cie/services/missing-suggestions.service';
+import { DuplicateComplaintService } from '../copilot/db-cie/services/duplicate-complaint.service';
+import { IncidentClusteringService } from '../copilot/db-cie/services/incident-clustering.service';
+import { SreRecommendationsService } from '../copilot/sre/services/sre-recommendations.service';
+import { ConsensusEngineService } from '../copilot/consensus/consensus-engine.service';
+import { ComplaintIntelligenceService } from '../copilot/cie/complaint-intelligence.service';
+import { CueService } from '../copilot/cue/runtime/cue.service';
+import { DictionaryUnderstandingProvider } from '../copilot/cue/runtime/providers/dictionary-understanding.provider';
+import { CheckpointService } from '../copilot/workflow-completion/checkpoint.service';
+import { WorkflowCompletionService } from '../copilot/workflow-completion/workflow-completion.service';
+import { DraftRecoveryService } from '../copilot/workflow-completion/draft-recovery.service';
+import { ComplaintGuidanceService } from '../copilot/cie/services/complaint-guidance.service';
+import { TimelineGeneratorService } from '../copilot/cie/services/timeline-generator.service';
+import { WorkflowFrictionService } from '../copilot/workflow-completion/workflow-friction.service';
+import { QuestionAssistanceService } from '../copilot/workflow-completion/question-assistance.service';
+import { ProgressService } from '../copilot/workflow-completion/progress.service';
+import { EvidenceGuidanceService } from '../copilot/cie/services/evidence-guidance.service';
+import { JurisdictionGuidanceService } from '../copilot/cie/services/jurisdiction-guidance.service';
+import { WorkflowInsightsService } from '../copilot/workflow-completion/workflow-insights.service';
 
 interface CitizenState {
   id?: string;
@@ -71,7 +91,31 @@ interface ChatSessionState {
   pendingIntent?: string;
   pendingWorkflowState?: any;
   pendingWorkflow?: string;
-}
+    intelligence?: {
+      entities: Record<string, any>;
+      severity: string | null;
+      riskCategory: string | null;
+      recommendations: string[];
+      completeness: 'INCOMPLETE' | 'PARTIAL' | 'READY';
+      confidence: number | null;
+      clarificationRequired: boolean;
+    };
+    backActionsCount?: number;
+    validationFailuresCount?: number;
+    modificationsCount?: number;
+    offlineDisconnectsCount?: number;
+    lastActivityAt?: string;
+    resumeInformation?: {
+      workflowId: string;
+      step: string;
+      dataSnapshot: Record<string, any>;
+      lastUpdatedAt: string;
+    };
+    lastCompletedQuestion?: string;
+    lastCitizenInput?: string;
+    resumeSummary?: string;
+    resumeTimestamp?: number;
+  }
 
 const TRANSLATIONS = {
   en: {
@@ -118,6 +162,25 @@ export class ChatService {
   private readonly situationAssessmentService: SituationAssessmentService;
   private readonly recommendationRouterService: RecommendationRouterService;
   private readonly workflowLauncherService: WorkflowLauncherService;
+  private readonly complaintCompletenessService: ComplaintCompletenessService;
+  private readonly missingSuggestionsService: MissingSuggestionsService;
+  private readonly duplicateComplaintService: DuplicateComplaintService;
+  private readonly incidentClusteringService: IncidentClusteringService;
+  private readonly sreRecommendationsService: SreRecommendationsService;
+  private readonly consensusEngineService: ConsensusEngineService;
+  private readonly complaintIntelligenceService: ComplaintIntelligenceService;
+  private readonly cueService: CueService;
+  private readonly checkpointService: CheckpointService;
+  private readonly workflowCompletionService: WorkflowCompletionService;
+  private readonly draftRecoveryService: DraftRecoveryService;
+  private readonly complaintGuidanceService: ComplaintGuidanceService;
+  private readonly timelineGeneratorService: TimelineGeneratorService;
+  public readonly workflowFrictionService: WorkflowFrictionService;
+  public readonly questionAssistanceService: QuestionAssistanceService;
+  public readonly progressService: ProgressService;
+  public readonly evidenceGuidanceService: EvidenceGuidanceService;
+  public readonly jurisdictionGuidanceService: JurisdictionGuidanceService;
+  public readonly workflowInsightsService: WorkflowInsightsService;
 
   constructor(
     private readonly httpService: HttpService,
@@ -138,7 +201,34 @@ export class ChatService {
     situationAssessmentService?: SituationAssessmentService,
     recommendationRouterService?: RecommendationRouterService,
     workflowLauncherService?: WorkflowLauncherService,
+    checkpointService?: CheckpointService,
+    workflowCompletionService?: WorkflowCompletionService,
+    draftRecoveryService?: DraftRecoveryService,
+    complaintGuidanceService?: ComplaintGuidanceService,
+    timelineGeneratorService?: TimelineGeneratorService,
   ) {
+    this.checkpointService = checkpointService || new CheckpointService(this.prisma);
+    this.workflowCompletionService = workflowCompletionService || new WorkflowCompletionService(this.prisma);
+    this.draftRecoveryService = draftRecoveryService || new DraftRecoveryService(this.prisma);
+    this.complaintGuidanceService = complaintGuidanceService || new ComplaintGuidanceService();
+    this.timelineGeneratorService = timelineGeneratorService || new TimelineGeneratorService();
+
+    this.workflowFrictionService = new WorkflowFrictionService();
+    this.questionAssistanceService = new QuestionAssistanceService();
+    this.progressService = new ProgressService();
+    this.evidenceGuidanceService = new EvidenceGuidanceService();
+    this.jurisdictionGuidanceService = new JurisdictionGuidanceService();
+    this.workflowInsightsService = new WorkflowInsightsService(this.prisma);
+
+    this.complaintCompletenessService = new ComplaintCompletenessService();
+    this.missingSuggestionsService = new MissingSuggestionsService();
+    this.duplicateComplaintService = new DuplicateComplaintService(this.prisma);
+    this.incidentClusteringService = new IncidentClusteringService(this.prisma);
+    this.sreRecommendationsService = new SreRecommendationsService();
+    this.consensusEngineService = new ConsensusEngineService();
+    this.complaintIntelligenceService = new ComplaintIntelligenceService(this.prisma);
+    this.cueService = new CueService(new DictionaryUnderstandingProvider(), this.prisma);
+
     this.localizationService = localizationService || new LocalizationService(new MetricsService());
     this.situationAssessmentService = situationAssessmentService || new SituationAssessmentService(
       this.prisma,
@@ -350,9 +440,47 @@ export class ChatService {
         where: { id: sessionId },
       });
       if (session) {
-        return typeof session.stateJson === 'string'
+        const state = typeof session.stateJson === 'string'
           ? JSON.parse(session.stateJson)
           : session.stateJson as unknown as ChatSessionState;
+
+        // Legacy Complaint Session Migration Shim (V2.8)
+        if (state && state.workflow === 'complaint' && state.data) {
+          const knownComplaintTypes = [
+            'Lost Mobile / Theft',
+            'Lost Document',
+            'Simple Harassment',
+            'Cyber Fraud / Financial Loss',
+          ];
+          const isKnownComplaintType = (value?: string): boolean => {
+            if (!value) return false;
+            return knownComplaintTypes
+              .map(v => v.toLowerCase())
+              .includes(value.toLowerCase().trim());
+          };
+          if (!state.data.type && isKnownComplaintType(state.data.location)) {
+            state.data.type = state.data.location;
+            state.data.location = null;
+          }
+          if (!state.languageSelected) {
+            state.languageSelected = true;
+            if (!state.language) {
+              state.language = 'en';
+            }
+          }
+        }
+        if (state && !state.intelligence) {
+          state.intelligence = {
+            entities: {},
+            severity: null,
+            riskCategory: null,
+            recommendations: [],
+            completeness: 'INCOMPLETE',
+            confidence: null,
+            clarificationRequired: false
+          };
+        }
+        return state;
       }
     } catch (e) {
       this.logger.warn(`Failed to read session from DB: ${e.message}`);
@@ -382,10 +510,20 @@ export class ChatService {
       serviceType: null,
       applicationData: {},
       referenceNumber: '',
+      intelligence: {
+        entities: {},
+        severity: null,
+        riskCategory: null,
+        recommendations: [],
+        completeness: 'INCOMPLETE',
+        confidence: null,
+        clarificationRequired: false
+      }
     };
   }
 
   async saveSession(sessionId: string, state: ChatSessionState): Promise<void> {
+    state.lastActivityAt = new Date().toISOString();
     try {
       await this.prisma.workflowSession.upsert({
         where: { id: sessionId },
@@ -401,6 +539,11 @@ export class ChatService {
           serviceType: state.workflow || null,
         },
       });
+
+      // Auto-save checkpoint debounced at 500ms
+      if (state.workflow && state.step !== 'START' && state.step !== 'CONFIRM_PROFILE') {
+        this.checkpointService.saveCheckpointDebounced(sessionId, state.workflow, state.step, state.data);
+      }
     } catch (e) {
       this.logger.warn(`Failed to save session to DB: ${e.message}`);
     }
@@ -422,6 +565,27 @@ export class ChatService {
 
     // Load session state
     const state = await this.getOrCreateSession(sessionId);
+    state.lastCitizenInput = sanitizedMessage;
+    state.resumeTimestamp = Date.now();
+    if (state.step && state.step !== 'START' && state.step !== 'PRE_ONBOARDING_RESUME_CHOICE') {
+      state.lastCompletedQuestion = state.step;
+    }
+    const summaryParts: string[] = [];
+    if (state.data) {
+      if (state.data.incident_date || state.data.date) {
+        summaryParts.push(`Date: ${state.data.incident_date || state.data.date}`);
+      }
+      if (state.data.imei || state.data.imeiNumber) {
+        summaryParts.push(`IMEI: ${state.data.imei || state.data.imeiNumber}`);
+      }
+      if (state.data.transactionId || state.data.transaction_id) {
+        summaryParts.push(`Tx ID: ${state.data.transactionId || state.data.transaction_id}`);
+      }
+    }
+    state.resumeSummary = summaryParts.join(' | ') || 'Draft initiated';
+
+    const previousWorkflow = state.workflow;
+    console.log('SEND_MESSAGE STATE:', JSON.stringify(state));
     const stepBefore = String(state.step);
 
     // Synchronize language from client request if passed
@@ -436,6 +600,67 @@ export class ChatService {
     }
     if (longitude !== undefined && longitude !== null) {
       state.citizen.longitude = longitude;
+    }
+
+    // Intelligence Hardening Flow
+    try {
+      const { cueResult, cueMetadata } = await this.cueService.normalize(sanitizedMessage, sessionId);
+      const saeResult = await this.situationAssessmentService.assess(sanitizedMessage, sessionId, state.language || 'en', cueResult, cueMetadata);
+      const sreResult = this.sreRecommendationsService.getRecommendations(state.workflow || '', { ...state.citizen, ...state.data });
+      
+      let duplicateResult: any = null;
+      let clusterInsight: string | null = null;
+      if (state.workflow === 'complaint') {
+        duplicateResult = await this.duplicateComplaintService.checkDuplicate(
+          state.citizen.mobileNumber,
+          state.data.type || 'LOST_MOBILE',
+          state.data.time || '',
+          sanitizedMessage
+        );
+        clusterInsight = await this.incidentClusteringService.getClusterInsight(
+          state.data.type || 'LOST_MOBILE',
+          state.citizen.nearestPoliceStation || undefined
+        );
+      }
+
+      let cieResult: any = null;
+      if (state.workflow === 'complaint') {
+        cieResult = await this.complaintIntelligenceService.assess(
+          sanitizedMessage,
+          sessionId,
+          state.data.type || 'LOST_MOBILE',
+          state.language || 'en'
+        );
+      }
+
+      const consensus = this.consensusEngineService.getConsensus(
+        cueResult,
+        cieResult,
+        saeResult,
+        sreResult,
+        duplicateResult
+      );
+
+      // Persist to session intelligence object
+      state.intelligence = {
+        entities: {
+          ...(cueResult?.persistedEntities || {}),
+          ...(cieResult?.entities || {})
+        },
+        severity: consensus.riskLevel || null,
+        riskCategory: saeResult?.riskCategory || null,
+        recommendations: consensus.recommendations,
+        completeness: cieResult ? this.complaintCompletenessService.calculateCompleteness(cieResult.complaintReadinessScore) : 'INCOMPLETE',
+        confidence: consensus.confidence,
+        clarificationRequired: consensus.clarificationRequired || false
+      };
+
+      // Workstream H: Auto-save drafts / reliability checks
+      if (state.workflow && state.step !== 'START' && state.step !== 'CONFIRM_PROFILE') {
+        await this.saveSession(sessionId, state);
+      }
+    } catch (e) {
+      this.logger.warn(`Failed to execute intelligence hardening flow: ${e.message}`);
     }
 
     // Pre-onboarding Wrapper Interception BEFORE FastAPI
@@ -534,7 +759,7 @@ export class ChatService {
       }
 
       if (responseData && responseData.db_action) {
-        const dbResult = await this.executeDbAction(responseData.db_action);
+        const dbResult = await this.executeDbAction(responseData.db_action, sessionId);
         if (dbResult && dbResult.id) {
           state.citizen.id = dbResult.id;
           if (responseData.state && responseData.state.citizen) {
@@ -561,6 +786,7 @@ export class ChatService {
       }
 
       // Persist state to DB
+      await this.handlePostMessageMetrics(sessionId, state, previousWorkflow, stepBefore, sanitizedMessage);
       await this.saveSession(sessionId, state);
       console.log('[ChatService.sendMessage] Exit - Successfully processed message via FastAPI');
       return { 
@@ -578,6 +804,7 @@ export class ChatService {
       }
       // Log fallback step transition
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
+      await this.handlePostMessageMetrics(sessionId, state, previousWorkflow, stepBefore, sanitizedMessage);
       await this.saveSession(sessionId, state);
       console.log('[ChatService.sendMessage] Exit - Processed message via Fallback engine');
       return { 
@@ -586,7 +813,68 @@ export class ChatService {
         _debug: { activeEngine: 'FALLBACK', step: state.step, workflow: state.workflow } 
       };
     }
-  }  private async executeDbAction(dbAction: any): Promise<any> {
+  }
+
+  private async handlePostMessageMetrics(
+    sessionId: string,
+    state: ChatSessionState,
+    previousWorkflow: string | null,
+    stepBefore: string,
+    message: string
+  ): Promise<void> {
+    const cleanMsg = message.trim().toLowerCase();
+
+    // 1. Track validation failures (step didn't advance despite input)
+    if (state.workflow && state.step === stepBefore && message.trim() !== '') {
+      state.validationFailuresCount = (state.validationFailuresCount || 0) + 1;
+    }
+
+    // 2. Track modifications
+    if (cleanMsg.includes('change') || cleanMsg.includes('modify') || state.step === 'MODIFY_PROFILE_INPUT') {
+      state.modificationsCount = (state.modificationsCount || 0) + 1;
+    }
+
+    // 3. Track back actions
+    if (cleanMsg === 'back' || cleanMsg.includes('option:back')) {
+      state.backActionsCount = (state.backActionsCount || 0) + 1;
+    }
+
+    // 4. Log WORKFLOW_STARTED event
+    if (state.workflow && !previousWorkflow) {
+      await this.workflowCompletionService.logWorkflowEvent({
+        sessionId,
+        workflowType: state.workflow,
+        eventType: 'WORKFLOW_STARTED'
+      });
+    }
+
+    // 5. Log RECOMMENDATION_ACCEPTED event if applicable
+    if (state.workflow && previousWorkflow === null && state.intelligence?.recommendations) {
+      const isRecommended = state.intelligence.recommendations.some(rec => 
+        rec.toLowerCase().includes(state.workflow!.toLowerCase())
+      );
+      if (isRecommended) {
+        try {
+          await this.prisma.citizenRecommendationEvent.create({
+            data: {
+              sessionId,
+              recommendationType: state.workflow,
+              accepted: true
+            }
+          });
+          await this.workflowCompletionService.logWorkflowEvent({
+            sessionId,
+            workflowType: state.workflow,
+            eventType: 'RECOMMENDATION_ACCEPTED'
+          });
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+  }
+
+  private async executeDbAction(dbAction: any, sessionId?: string): Promise<any> {
     if (!dbAction) return null;
     const formatLongDate = (date: any): string => {
       if (!date) return '';
@@ -665,7 +953,7 @@ export class ChatService {
       if (Array.isArray(dbAction)) {
         let citizenResult = null;
         for (const action of dbAction) {
-          const res = await this.executeDbAction(action);
+          const res = await this.executeDbAction(action, sessionId);
           if (action && action.type === 'citizen') {
             citizenResult = res;
           }
@@ -760,6 +1048,21 @@ export class ChatService {
               ] as any,
             }
           });
+
+          if (sessionId) {
+            await this.workflowCompletionService.persistMetrics({
+              sessionId,
+              workflowType: 'complaint',
+              completionPercentage: 100,
+              abandonmentRisk: 'LOW',
+              completed: true
+            });
+            await this.workflowCompletionService.logWorkflowEvent({
+              sessionId,
+              workflowType: 'complaint',
+              eventType: 'WORKFLOW_COMPLETED'
+            });
+          }
           break;
         case 'verification':
           const ver = await this.verificationService.createVerification(
@@ -804,6 +1107,21 @@ export class ChatService {
               ] as any,
             }
           });
+
+          if (sessionId) {
+            await this.workflowCompletionService.persistMetrics({
+              sessionId,
+              workflowType: 'verification',
+              completionPercentage: 100,
+              abandonmentRisk: 'LOW',
+              completed: true
+            });
+            await this.workflowCompletionService.logWorkflowEvent({
+              sessionId,
+              workflowType: 'verification',
+              eventType: 'WORKFLOW_COMPLETED'
+            });
+          }
           break;
         case 'certificate':
           const usedProfileReuseCert = dbAction.data.usedProfileReuse === true || dbAction.data.isSelf === true;
@@ -871,6 +1189,21 @@ export class ChatService {
               ] as any,
             }
           });
+
+          if (sessionId) {
+            await this.workflowCompletionService.persistMetrics({
+              sessionId,
+              workflowType: 'certificate',
+              completionPercentage: 100,
+              abandonmentRisk: 'LOW',
+              completed: true
+            });
+            await this.workflowCompletionService.logWorkflowEvent({
+              sessionId,
+              workflowType: 'certificate',
+              eventType: 'WORKFLOW_COMPLETED'
+            });
+          }
           break;
         case 'event':
           const usedProfileReuseEvt = dbAction.data.usedProfileReuse === true || dbAction.data.isSelf === true;
@@ -943,6 +1276,21 @@ export class ChatService {
               ] as any,
             }
           });
+
+          if (sessionId) {
+            await this.workflowCompletionService.persistMetrics({
+              sessionId,
+              workflowType: 'event',
+              completionPercentage: 100,
+              abandonmentRisk: 'LOW',
+              completed: true
+            });
+            await this.workflowCompletionService.logWorkflowEvent({
+              sessionId,
+              workflowType: 'event',
+              eventType: 'WORKFLOW_COMPLETED'
+            });
+          }
           break;
         case 'track_query':
           const trackInfo = await this.trackingService.track(dbAction.data.referenceNumber);
@@ -1024,6 +1372,20 @@ export class ChatService {
           }
           break;
         case 'CANCEL_APPLICATION':
+          if (state.workflow) {
+            await this.workflowCompletionService.persistMetrics({
+              sessionId,
+              workflowType: state.workflow,
+              completionPercentage: this.workflowCompletionService.calculateCompletion(state.workflow, state.data),
+              abandonmentRisk: 'HIGH',
+              completed: false
+            });
+            await this.workflowCompletionService.logWorkflowEvent({
+              sessionId,
+              workflowType: state.workflow,
+              eventType: 'WORKFLOW_ABANDONED'
+            });
+          }
           state.workflow = null;
           state.step = 'START';
           state.data = {};
@@ -1224,6 +1586,38 @@ export class ChatService {
       }
     }
 
+    if (state.step === 'EMERGENCY_CONFIRM') {
+      const positiveResponses = ['yes', 'haan', 'ha', 'confirm', 'wish to file', 'complain', 'complaint', 'file a complaint', 'option:yes'];
+      const negativeResponses = ['no', 'nahi', 'cancel', 'option:no', 'don\'t wish', 'stop'];
+      
+      const isPositive = positiveResponses.some(res => cleanMsg.includes(res)) || cleanMsg === 'yes' || cleanMsg.includes('option:yes');
+      
+      if (isPositive) {
+        state.step = state.pendingWorkflowState?.step || 'START';
+        state.workflow = state.pendingWorkflowState?.workflow || 'complaint';
+        state.data = state.pendingWorkflowState?.data || {};
+        
+        let reprompt: { response: string; suggestions?: string[] };
+        if (state.workflow === 'complaint') {
+          reprompt = await this.runComplaintWorkflow(state, '');
+        } else {
+          reprompt = { response: 'Please continue with your request.' };
+        }
+        return {
+          response: `Continuing with your request.\n\n${reprompt.response}`,
+          suggestions: reprompt.suggestions
+        };
+      } else {
+        state.workflow = null;
+        state.step = 'START';
+        state.data = {};
+        return {
+          response: 'Understood. I have cancelled the complaint filing process. Let me know if you need any other help.',
+          suggestions: ['🚔 File a Complaint', '🔍 Track Status']
+        };
+      }
+    }
+
     const emergencyKeywords = [
       'danger', 'assault', 'threat', 'life', 'weapon', 'murder', 'burglar', 'attack', 'emergency',
       'मदद', 'खतरा', 'हमला', 'kidnapping', 'burglary', 'ongoing attack', 'burglary in progress', 'immediate danger',
@@ -1231,12 +1625,23 @@ export class ChatService {
       'emergency help', 'emergency contacts', 'आपातकालीन सहायता'
     ];
     if (emergencyKeywords.some(keyword => cleanMsg.includes(keyword))) {
-      state.workflow = null;
-      state.step = 'START';
-      state.data = {};
+      state.pendingWorkflowState = {
+        workflow: state.workflow,
+        step: state.step,
+        data: { ...state.data }
+      };
+      state.step = 'EMERGENCY_CONFIRM';
+      
+      const emergencyGuidance = getEmergencyMessage(state.language, this.localizationService);
+      const question = state.language === 'hi' 
+        ? "क्या आप अभी भी एक आधिकारिक शिकायत दर्ज करना चाहते हैं?"
+        : state.language === 'hinglish'
+        ? "Kya aap abhi bhi ek official complaint file karna chahte hain?"
+        : "Do you still wish to file an official complaint?";
+        
       return {
-        response: getEmergencyMessage(state.language, this.localizationService),
-        suggestions: ['🚔 File a Complaint', '🔍 Track Status'],
+        response: `${emergencyGuidance}\n\n${question}`,
+        suggestions: ['Yes', 'No']
       };
     }
 
@@ -1738,10 +2143,15 @@ export class ChatService {
             }
 
             if (selectedSession) {
+              const loadedState = typeof selectedSession.stateJson === 'string'
+                ? JSON.parse(selectedSession.stateJson)
+                : selectedSession.stateJson || {};
+              const lastQuestion = loadedState.lastCompletedQuestion || 'Incident Date';
+
               state.data.pendingResumeSession = selectedSession.id;
               state.step = 'PRE_ONBOARDING_RESUME_CHOICE';
               return {
-                response: `👤 Name: **${state.citizen.fullName}**\n📱 Mobile: **${state.citizen.mobileNumber}**\n📍 Location: **${state.citizen.city || state.citizen.district || 'Not provided'}**\n🏠 Address: **${state.citizen.addressLine1 || 'Not provided'}**\n\nI found a previous ${sessionType} on file. Would you like to continue?`,
+                response: this.draftRecoveryService.getIntelligentResumeMessage(loadedState.workflow, lastQuestion),
                 suggestions: ['Continue Previous Application', 'Start New Request'],
               };
             }
@@ -1775,9 +2185,15 @@ export class ChatService {
             if (resSess) {
               const loadedState = typeof resSess.stateJson === 'string' ? JSON.parse(resSess.stateJson) : resSess.stateJson;
               Object.assign(state, loadedState);
+              if (loadedState && loadedState.resumeInformation) {
+                state.workflow = loadedState.resumeInformation.workflowId as any;
+                state.step = loadedState.resumeInformation.step;
+                state.data = { ...loadedState.resumeInformation.dataSnapshot };
+              }
               state.citizen.isConfirmed = true;
               state.preOnboardingCompleted = true;
-              state.step = loadedState.step || '1';
+              state.step = state.step || '1';
+              await this.draftRecoveryService.recoverDraft(resumeSessionId);
               if (state.pendingWorkflowId) {
                 state.workflow = state.pendingWorkflowId as any;
                 state.currentWorkflowState = state.pendingWorkflowState as any;
@@ -2415,9 +2831,11 @@ export class ChatService {
         .includes(value.toLowerCase().trim());
     };
 
+    console.log('SHIM BEFORE:', JSON.stringify(session.data));
     if (!session.data.type && isKnownComplaintType(session.data.location)) {
       session.data.type = session.data.location;
       session.data.location = null;
+      console.log('SHIM MIGRATED:', JSON.stringify(session.data));
     }
 
     const step = session.step;
@@ -2651,6 +3069,34 @@ Description: **${session.data.description}**
 ${readiness.checklist}
 
 `;
+
+      // Check missing fields using complaintGuidanceConfig
+      const missingFields: string[] = [];
+      if (!session.data.location) missingFields.push('lastSeen');
+      if (session.data.type === 'Lost Mobile / Theft' || session.data.type === 'LOST_MOBILE') {
+        if (!session.data.brand) missingFields.push('brand');
+        if (!session.data.model) missingFields.push('mobileModel');
+        if (!session.data.imei) missingFields.push('imei');
+      } else if (session.data.type === 'Cyber Fraud / Financial Loss' || session.data.type === 'CYBER_FRAUD') {
+        if (!session.data.transactionId) missingFields.push('transactionId');
+        if (!session.data.upi) missingFields.push('upi');
+        if (!session.data.bank) missingFields.push('bank');
+      }
+
+      if (missingFields.length > 0) {
+        const guidanceMsg = this.complaintGuidanceService.generateGuidanceMessage(
+          session.data.type === 'Lost Mobile / Theft' ? 'LOST_MOBILE' :
+          session.data.type === 'Cyber Fraud / Financial Loss' ? 'CYBER_FRAUD' : session.data.type,
+          missingFields
+        );
+        reviewScreen += `\n### Guidance for Missing Details\n${guidanceMsg}\n`;
+      }
+
+      // Add timeline generator display
+      const timelineDisplay = this.timelineGeneratorService.generateTimelineDisplay('complaint');
+      if (timelineDisplay) {
+        reviewScreen += `\n${timelineDisplay}\n\n`;
+      }
 
       let sugs: string[];
       if (readiness.valid) {
