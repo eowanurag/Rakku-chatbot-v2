@@ -6,7 +6,7 @@ COPY backend/package*.json ./
 RUN npm install --legacy-peer-deps
 
 COPY backend/prisma ./prisma/
-RUN npx prisma generate && mkdir -p node_modules/.prisma && cp -R /node_modules/.prisma/client node_modules/.prisma/
+RUN npx prisma generate
 
 COPY backend/ .
 COPY shared/ /shared/

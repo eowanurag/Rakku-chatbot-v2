@@ -1,7 +1,7 @@
 export type UrgencyLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type ConfidenceBand = "LOW" | "MEDIUM" | "HIGH";
 export type AssessmentStatus = "DETECTED" | "CONFIRMED" | "REJECTED" | "CLARIFICATION_REQUIRED";
-export type ClarificationType = "SERVICE_SELECTION" | "INCIDENT_DETAILS" | "LOCATION" | "TIMELINE";
+export type ClarificationType = "SERVICE_SELECTION" | "INCIDENT_DETAILS" | "LOCATION" | "TIMELINE" | "EMERGENCY_FAST_PATH";
 
 export interface MissingInfoItem {
   field: string;
@@ -33,7 +33,7 @@ export interface SituationAssessment {
   clarificationPrompt?: string;
   missingInformation: MissingInfoItem[];
   severity?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-  riskCategory?: "WOMEN_SAFETY" | "CHILD_RISK" | "DOMESTIC_VIOLENCE" | "CYBER_FRAUD" | "MISSING_PERSON" | "ACCIDENT" | null;
+  riskCategory?: "WOMEN_SAFETY" | "CHILD_RISK" | "DOMESTIC_VIOLENCE" | "CYBER_FRAUD" | "MISSING_PERSON" | "ACCIDENT" | "SUICIDE_RISK" | null;
   escalation?: "NORMAL" | "PRIORITY" | "EMERGENCY";
   immediateActions?: string[];
 }
