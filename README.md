@@ -1,4 +1,4 @@
-# RAKKU - V2.7.8.2-A (Conversation Operational Reliability Release)
+# RAKKU - V2.8.4.2 (Citizen Workflow Hotfix Release)
 
 *Responsive Assistant for Knowledge, Kiosk & Citizen Utilities*  
 **AI-Powered Citizen Assistance Platform with CUE, SAE, SRE & CIE Transition Foundations**
@@ -17,7 +17,7 @@
 
 RAKKU is an AI-powered Digital Citizen Assistance Platform simplifying access to police and e-governance services through natural language conversations. 
 
-With **V2.7.8.2-A**, the SRE reasoning architecture is frozen and certified. This release hardens conversation reliability using Sentinel incident blocks, certified workflow outcome matrices, checksum baseline drift protections, and detailed path validations to prevent scenario drift, workflow loops, and municipal boundary leaks.
+With **V2.8.4.2**, the platform incorporates a citizen workflow hotfix. This release hardens complaint handling with natural free-text classification, robust review workflow corruption & infinite loop preventions, system action filters, confidence threshold checks, legacy session recovery, and deterministic date validation.
 
 ---
 
@@ -244,4 +244,5 @@ npx jest --runInBand tests/release tests/governance tests/evaluation tests/e2e
 | **v2.2** | Complaint Intelligence Engine (CIE) with PII Scrubbing | Completed |
 | **v2.6** | Scenario Reasoning Engine (SRE) v1.0, Governance Layer, Risk Engines | Completed |
 | **v2.7.5** | SRE Decision Authority, CUE normalisation, SAE Hint consensus (RC-1 Architecture Freeze) | Frozen & Verified |
-| **v2.7.8.2-A** | Conversation Quality Certification, Sentinel Incident Blocker Gates, Drift Protection, Docker Run | **Certified & Locked** |
+| **v2.7.8.2-A** | Conversation Quality Certification, Sentinel Incident Blocker Gates, Drift Protection, Docker Run | Certified & Locked |
+| **v2.8.4.2** | Citizen Workflow Hotfix: Natural free-text classification, review loop prevention, legacy recovery, system command filtering, confidence thresholds, and deterministic date validations | **Certified & Locked** |

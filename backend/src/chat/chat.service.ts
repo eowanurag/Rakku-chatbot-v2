@@ -49,6 +49,9 @@ import { ProgressService } from '../copilot/workflow-completion/progress.service
 import { EvidenceGuidanceService } from '../copilot/cie/services/evidence-guidance.service';
 import { JurisdictionGuidanceService } from '../copilot/cie/services/jurisdiction-guidance.service';
 import { WorkflowInsightsService } from '../copilot/workflow-completion/workflow-insights.service';
+import { ComplaintTypeClassifierService } from '../copilot/cie/services/complaint-type-classifier.service';
+import { validateIncidentDate } from './utils/validateIncidentDate';
+import { isSystemAction, normalizeComplaintText, normalizeSelection } from './utils/citizen-input.util';
 
 interface CitizenState {
   id?: string;
@@ -181,6 +184,8 @@ export class ChatService {
   public readonly evidenceGuidanceService: EvidenceGuidanceService;
   public readonly jurisdictionGuidanceService: JurisdictionGuidanceService;
   public readonly workflowInsightsService: WorkflowInsightsService;
+  private readonly complaintTypeClassifier: ComplaintTypeClassifierService;
+  private readonly sessionCache = new Map<string, ChatSessionState>();
 
   constructor(
     private readonly httpService: HttpService,
@@ -207,6 +212,7 @@ export class ChatService {
     complaintGuidanceService?: ComplaintGuidanceService,
     timelineGeneratorService?: TimelineGeneratorService,
   ) {
+    this.complaintTypeClassifier = new ComplaintTypeClassifierService();
     this.checkpointService = checkpointService || new CheckpointService(this.prisma);
     this.workflowCompletionService = workflowCompletionService || new WorkflowCompletionService(this.prisma);
     this.draftRecoveryService = draftRecoveryService || new DraftRecoveryService(this.prisma);
@@ -256,6 +262,64 @@ export class ChatService {
 
     this.aiServiceUrl = this.configService.get<string>('AI_SERVICE_URL', 'http://localhost:8000');
     this.loadMessageLibrary();
+  }
+
+  canTransition(currentState: string, nextState: string): boolean {
+    const validTransitions: Record<string, string[]> = {
+      'START': ['1', 'PRE_ONBOARDING_WELCOME', 'PRE_ONBOARDING_LOOKUP', 'IDENTIFY_NAME'],
+      'PRE_ONBOARDING_WELCOME': ['PRE_ONBOARDING_LOOKUP'],
+      'PRE_ONBOARDING_LOOKUP': ['PRE_ONBOARDING_RESUME_CHOICE', 'PRE_ONBOARDING_OPTIONS', 'IDENTIFY_NAME'],
+      'PRE_ONBOARDING_RESUME_CHOICE': ['PRE_ONBOARDING_OPTIONS', '1', '2', '3', '4', '5', '6', 'REVIEW'],
+      'PRE_ONBOARDING_OPTIONS': ['MODIFY_PROFILE_SELECT', 'IDENTIFY_NAME', '1', '2', '3', '4', '5', '6', 'REVIEW', 'START'],
+      'IDENTIFY_NAME': ['IDENTIFY_LOCATION', 'CONFIRM_LOCATION', 'START'],
+      'IDENTIFY_LOCATION': ['CONFIRM_CITY', 'CONFIRM_LOCATION', 'IDENTIFY_ADDRESS'],
+      'CONFIRM_CITY': ['CONFIRM_LOCATION'],
+      'CONFIRM_LOCATION': ['IDENTIFY_ADDRESS', 'IDENTIFY_LOCATION'],
+      'IDENTIFY_ADDRESS': ['CONFIRM_PROFILE'],
+      'CONFIRM_PROFILE': ['1', 'MODIFY_PROFILE_SELECT', 'START'],
+      'MODIFY_PROFILE_SELECT': ['MODIFY_PROFILE_INPUT'],
+      'MODIFY_PROFILE_INPUT': ['CONFIRM_PROFILE'],
+      
+      // Complaint Steps
+      '1': ['2', '2_brand', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY'],
+      '2': ['2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY'],
+      'CONFIRM_CLASSIFIED_TYPE': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE'],
+      'MULTIPLE_MATCH_CLARIFY': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE'],
+      '2_brand': ['2_model'],
+      '2_model': ['2_color'],
+      '2_color': ['2_year'],
+      '2_year': ['2_imei'],
+      '2_imei': ['3'],
+      '3': ['4'],
+      '4': ['5'],
+      '5': ['REVIEW'],
+      
+      // Review transitions
+      'REVIEW': ['REVIEW_EDIT_SELECTION', 'ASK_FEEDBACK', 'START', 'REVIEW_CONFIRM'],
+      'REVIEW_EDIT_SELECTION': ['REVIEW_EDIT_VALUE', 'REVIEW'],
+      'REVIEW_EDIT_VALUE': ['REVIEW'],
+      'REVIEW_CONFIRM': ['ASK_FEEDBACK', 'START'],
+      'ASK_FEEDBACK': ['FEEDBACK_COMMENT_OPTIONAL', 'FEEDBACK_COMMENT_REQUIRED', 'START'],
+      'FEEDBACK_COMMENT_OPTIONAL': ['START'],
+      'FEEDBACK_COMMENT_REQUIRED': ['START']
+    };
+
+    if (currentState === nextState) return true;
+
+    const isSeq = (s: string) => /^[1-9]$/.test(s) || s.startsWith('ORG_') || s.startsWith('PRP_');
+    if (isSeq(currentState) && isSeq(nextState)) return true;
+    if (isSeq(currentState) && nextState === 'REVIEW') return true;
+
+    const allowed = validTransitions[currentState];
+    return allowed ? allowed.includes(nextState) : true;
+  }
+
+  transitionTo(state: ChatSessionState, nextStep: string) {
+    if (this.canTransition(state.step, nextStep)) {
+      state.step = nextStep;
+    } else {
+      this.logger.warn(`Invalid state transition: ${state.step} -> ${nextStep}`);
+    }
   }
 
   private loadMessageLibrary() {
@@ -434,7 +498,83 @@ export class ChatService {
     };
   }
 
+  private migrateAndRecoverSession(state: ChatSessionState): void {
+    if (!state) return;
+
+    // Legacy Complaint Session Migration Shim (V2.8) & Revision 2 Legacy Session Recovery
+    if (state.workflow === 'complaint' && state.data) {
+      const knownComplaintTypes = [
+        'Lost Mobile / Theft',
+        'Lost Document',
+        'Simple Harassment',
+        'Cyber Fraud / Financial Loss',
+      ];
+      const isKnownComplaintType = (value?: string): boolean => {
+        if (!value) return false;
+        return knownComplaintTypes
+          .map(v => v.toLowerCase())
+          .includes(value.toLowerCase().trim());
+      };
+      if (!state.data.type && isKnownComplaintType(state.data.location)) {
+        state.data.type = state.data.location;
+        state.data.location = null;
+      }
+      if (!state.data.type && state.data.location && this.complaintTypeClassifier.canClassify(state.data.location)) {
+        const classification = this.complaintTypeClassifier.classify(state.data.location);
+        if (classification.matches.length > 0) {
+          state.data.type = classification.matches[0];
+          state.data.location = null;
+        }
+      }
+      if (!state.languageSelected) {
+        state.languageSelected = true;
+        if (!state.language) {
+          state.language = 'en';
+        }
+      }
+    }
+
+    // Corruption Recovery auto-clean
+    if (state.data) {
+      const fieldsToClean = [
+        'type', 'location', 'time', 'description', 'address', 'name',
+        'subjectName', 'subjectAddress', 'additionalInformation'
+      ];
+      for (const field of fieldsToClean) {
+        if (state.data[field] && isSystemAction(String(state.data[field]))) {
+          state.data[field] = null;
+        }
+      }
+    }
+    if (state.citizen) {
+      if (state.citizen.fullName && isSystemAction(state.citizen.fullName)) {
+        state.citizen.fullName = '';
+      }
+      if (state.citizen.addressLine1 && isSystemAction(state.citizen.addressLine1)) {
+        state.citizen.addressLine1 = '';
+      }
+    }
+
+    if (!state.intelligence) {
+      state.intelligence = {
+        entities: {},
+        severity: null,
+        riskCategory: null,
+        recommendations: [],
+        completeness: 'INCOMPLETE',
+        confidence: null,
+        clarificationRequired: false
+      };
+    }
+  }
+
   async getOrCreateSession(sessionId: string): Promise<ChatSessionState> {
+    if (this.sessionCache.has(sessionId)) {
+      const cachedState = this.sessionCache.get(sessionId)!;
+      this.migrateAndRecoverSession(cachedState);
+      return cachedState;
+    }
+    let stateToReturn: ChatSessionState | null = null;
     try {
       const session = await this.prisma.workflowSession.findUnique({
         where: { id: sessionId },
@@ -444,49 +584,20 @@ export class ChatService {
           ? JSON.parse(session.stateJson)
           : session.stateJson as unknown as ChatSessionState;
 
-        // Legacy Complaint Session Migration Shim (V2.8)
-        if (state && state.workflow === 'complaint' && state.data) {
-          const knownComplaintTypes = [
-            'Lost Mobile / Theft',
-            'Lost Document',
-            'Simple Harassment',
-            'Cyber Fraud / Financial Loss',
-          ];
-          const isKnownComplaintType = (value?: string): boolean => {
-            if (!value) return false;
-            return knownComplaintTypes
-              .map(v => v.toLowerCase())
-              .includes(value.toLowerCase().trim());
-          };
-          if (!state.data.type && isKnownComplaintType(state.data.location)) {
-            state.data.type = state.data.location;
-            state.data.location = null;
-          }
-          if (!state.languageSelected) {
-            state.languageSelected = true;
-            if (!state.language) {
-              state.language = 'en';
-            }
-          }
-        }
-        if (state && !state.intelligence) {
-          state.intelligence = {
-            entities: {},
-            severity: null,
-            riskCategory: null,
-            recommendations: [],
-            completeness: 'INCOMPLETE',
-            confidence: null,
-            clarificationRequired: false
-          };
-        }
-        return state;
+        this.migrateAndRecoverSession(state);
+        stateToReturn = state;
       }
     } catch (e) {
       this.logger.warn(`Failed to read session from DB: ${e.message}`);
     }
 
-    return {
+    if (stateToReturn) {
+      this.sessionCache.set(sessionId, stateToReturn);
+      return stateToReturn;
+    }
+
+
+    const newState: ChatSessionState = {
       workflow: null,
       step: 'START',
       data: {},
@@ -520,10 +631,13 @@ export class ChatService {
         clarificationRequired: false
       }
     };
+    this.sessionCache.set(sessionId, newState);
+    return newState;
   }
 
   async saveSession(sessionId: string, state: ChatSessionState): Promise<void> {
     state.lastActivityAt = new Date().toISOString();
+    this.sessionCache.set(sessionId, state);
     try {
       await this.prisma.workflowSession.upsert({
         where: { id: sessionId },
@@ -2815,6 +2929,91 @@ export class ChatService {
     return { score, checklist, valid: score === 100 };
   }
 
+  private renderComplaintReviewScreen(session: ChatSessionState, lang: 'en' | 'hi' | 'hinglish'): { response: string; suggestions?: string[] } {
+    const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
+
+    let reviewScreen = `👮 **Please review your application.**
+
+Name: **${session.citizen.fullName}**
+Mobile: **${session.citizen.mobileNumber}**
+District: **${session.citizen.city || session.citizen.district || 'Not Provided'}**
+Complaint Type: **${session.data.type}**
+`;
+
+    if (session.data.brand) {
+      reviewScreen += `\n📱 **Device Information**\n`;
+      reviewScreen += `Brand: **${session.data.brand}**\n`;
+      if (session.data.model) {
+        reviewScreen += `Model: **${session.data.model}**\n`;
+      }
+      if (session.data.color) {
+        reviewScreen += `Color: **${session.data.color}**\n`;
+      }
+      if (session.data.year) {
+        reviewScreen += `Manufacturing/Purchase Year: **${session.data.year}**\n`;
+      }
+      reviewScreen += `IMEI: **${session.data.imei || 'Not Provided'}**\n`;
+    }
+
+    reviewScreen += `Incident Location: **${session.data.location}**
+Incident Date: **${session.data.time}**
+Description: **${session.data.description}**
+
+**Validation Status**
+
+${readiness.checklist}
+
+`;
+
+    // Check missing fields using complaintGuidanceConfig
+    const missingFields: string[] = [];
+    if (!session.data.location) missingFields.push('lastSeen');
+    if (session.data.type === 'Lost Mobile / Theft' || session.data.type === 'LOST_MOBILE') {
+      if (!session.data.brand) missingFields.push('brand');
+      if (!session.data.model) missingFields.push('mobileModel');
+      if (!session.data.imei) missingFields.push('imei');
+    } else if (session.data.type === 'Cyber Fraud / Financial Loss' || session.data.type === 'CYBER_FRAUD') {
+      if (!session.data.transactionId) missingFields.push('transactionId');
+      if (!session.data.upi) missingFields.push('upi');
+      if (!session.data.bank) missingFields.push('bank');
+    }
+
+    if (missingFields.length > 0) {
+      const guidanceMsg = this.complaintGuidanceService.generateGuidanceMessage(
+        session.data.type === 'Lost Mobile / Theft' ? 'LOST_MOBILE' :
+        session.data.type === 'Cyber Fraud / Financial Loss' ? 'CYBER_FRAUD' : session.data.type,
+        missingFields
+      );
+      reviewScreen += `\n### Guidance for Missing Details\n${guidanceMsg}\n`;
+    }
+
+    // Add timeline generator display
+    const timelineDisplay = this.timelineGeneratorService.generateTimelineDisplay('complaint');
+    if (timelineDisplay) {
+      reviewScreen += `\n${timelineDisplay}\n\n`;
+    }
+
+    let sugs: string[];
+    if (readiness.valid) {
+      reviewScreen += `Would you like to submit this application?
+
+- [Submit Application](option:Submit Application)
+- [Modify Details](option:Modify Details)`;
+      sugs = ['Submit Application', 'Modify Details'];
+    } else {
+      reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.
+
+- [Modify Details](option:Modify Details)`;
+      sugs = ['Modify Details'];
+    }
+
+    return {
+      response: reviewScreen,
+      suggestions: sugs,
+    };
+  }
+
+
   // --- Complaint Workflow ---
   private async runComplaintWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     // Migration shim for backward compatibility
@@ -2831,16 +3030,17 @@ export class ChatService {
         .includes(value.toLowerCase().trim());
     };
 
-    console.log('SHIM BEFORE:', JSON.stringify(session.data));
     if (!session.data.type && isKnownComplaintType(session.data.location)) {
       session.data.type = session.data.location;
       session.data.location = null;
-      console.log('SHIM MIGRATED:', JSON.stringify(session.data));
     }
 
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
+
+    // Prevent storing system actions as values
+    const isSystem = isSystemAction(msg);
 
     const prompts = {
       en: [
@@ -2863,9 +3063,14 @@ export class ChatService {
       ],
     };
 
+    // --- Hardened Review States ---
     if (step === 'REVIEW') {
       const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
-      if (cleanMsg === 'yes' || cleanMsg === 'submit' || cleanMsg === 'confirm' || cleanMsg.includes('option:yes') || cleanMsg.includes('submit application') || cleanMsg.includes('confirm')) {
+      
+      const isConfirm = ['yes', 'submit', 'confirm', 'option:yes', 'submit application', 'confirm details', 'option:confirm details', 'option:confirm'].includes(cleanMsg);
+      const isModify = ['no', 'modify', 'modify details', 'option:no', 'option:modify details', 'option:modify'].includes(cleanMsg);
+
+      if (isConfirm) {
         if (!readiness.valid) {
           await this.intelligenceService.recordWorkflowStep('complaint', 'REVIEW', false, true);
           return {
@@ -2873,7 +3078,7 @@ export class ChatService {
             suggestions: ["Modify Details"]
           };
         }
-        session.step = 'ASK_FEEDBACK';
+        this.transitionTo(session, 'ASK_FEEDBACK');
         let fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
         if (session.data.brand) {
           fullDetails = `Brand: ${session.data.brand} | Model: ${session.data.model} | Color: ${session.data.color} | Year: ${session.data.year} | IMEI: ${session.data.imei || 'N/A'} | ` + fullDetails;
@@ -2893,8 +3098,6 @@ export class ChatService {
           }
         });
         session.data = {};
-        
-        // Log completion success metrics
         await this.intelligenceService.recordWorkflowStep('complaint', 'SUBMITTED', true, false);
 
         const completionMsg = this.formatMessage('SUCCESS_COMPLAINT', lang, '', { referenceNumber: resNum, district: session.citizen.district || session.data.location || 'your area' }) + 
@@ -2904,34 +3107,141 @@ export class ChatService {
           response: completionMsg,
           suggestions: this.getRatingSuggestions(lang),
         };
-      } else if (cleanMsg === 'no' || cleanMsg === 'modify' || cleanMsg.includes('option:no') || cleanMsg.includes('option:modify details') || cleanMsg.includes('modify')) {
+      } else if (isModify) {
+        this.transitionTo(session, 'REVIEW_EDIT_SELECTION');
+        const modifyPrompt = lang === 'hi' ? 
+          "आप किस विवरण को बदलना चाहते हैं?\n\n- [1. घटना का स्थान](option:Incident Location)\n- [2. घटना की तिथि](option:Incident Date)\n- [3. विवरण](option:Description)" :
+          lang === 'hinglish' ?
+          "Aap kaunsa detail change karna chahte hain?\n\n- [1. Incident Location](option:Incident Location)\n- [2. Incident Date](option:Incident Date)\n- [3. Description](option:Description)" :
+          "Which detail would you like to modify?\n\n- [1. Incident Location](option:Incident Location)\n- [2. Incident Date](option:Incident Date)\n- [3. Description](option:Description)";
         return {
-          response: "I may not have understood correctly. Could you please provide that information in a different way? You can correct details by typing e.g., 'Change location to Noida' or 'Change mobile to 9876543210'.",
-          suggestions: ['Submit Application'],
+          response: modifyPrompt,
+          suggestions: ['Incident Location', 'Incident Date', 'Description']
+        };
+      } else {
+        return this.renderComplaintReviewScreen(session, lang);
+      }
+    }
+
+    if (step === 'REVIEW_EDIT_SELECTION') {
+      const isLocation = ['1', 'location', 'incident location', 'option:incident location', 'option:location'].includes(cleanMsg);
+      const isDate = ['2', 'date', 'incident date', 'option:incident date', 'option:date'].includes(cleanMsg);
+      const isDesc = ['3', 'description', 'option:description', 'desc'].includes(cleanMsg);
+
+      if (isLocation) {
+        session.data.editingField = 'location';
+        this.transitionTo(session, 'REVIEW_EDIT_VALUE');
+        return {
+          response: lang === 'hi' ? "कृपया नया घटना स्थान दर्ज करें:" : "Please enter the new incident location:",
+          suggestions: []
+        };
+      } else if (isDate) {
+        session.data.editingField = 'time';
+        this.transitionTo(session, 'REVIEW_EDIT_VALUE');
+        return {
+          response: lang === 'hi' ? "कृपया नई घटना तिथि (DD/MM/YYYY) दर्ज करें:" : "Please enter the new incident date (DD/MM/YYYY):",
+          suggestions: []
+        };
+      } else if (isDesc) {
+        session.data.editingField = 'description';
+        this.transitionTo(session, 'REVIEW_EDIT_VALUE');
+        return {
+          response: lang === 'hi' ? "कृपया नया घटना विवरण दर्ज करें:" : "Please enter the new incident description:",
+          suggestions: []
+        };
+      } else {
+        const modifyPrompt = lang === 'hi' ? 
+          "आप किस विवरण को बदलना चाहते हैं?\n\n- [1. घटना का स्थान](option:Incident Location)\n- [2. घटना की तिथि](option:Incident Date)\n- [3. विवरण](option:Description)" :
+          "Which detail would you like to modify?\n\n- [1. Incident Location](option:Incident Location)\n- [2. Incident Date](option:Incident Date)\n- [3. Description](option:Description)";
+        return {
+          response: modifyPrompt,
+          suggestions: ['Incident Location', 'Incident Date', 'Description']
         };
       }
     }
 
+    if (step === 'REVIEW_EDIT_VALUE') {
+      const field = session.data.editingField;
+      if (isSystem) {
+        return {
+          response: lang === 'hi' ? "कृपया एक मान्य मान दर्ज करें (सिस्टम कमांड स्वीकार्य नहीं हैं):" : "Please enter a valid value (system commands are not allowed):",
+          suggestions: []
+        };
+      }
+      if (field === 'time') {
+        if (!validateIncidentDate(msg)) {
+          return {
+            response: "👮 As your citizen assistance officer, I'm here to help. The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
+          };
+        }
+      }
+      if (field) {
+        session.data[field] = msg;
+        delete session.data.editingField;
+      }
+      this.transitionTo(session, 'REVIEW');
+      return this.runComplaintWorkflow(session, '');
+    }
+
     if (step === '1') {
       if (session.data.type) {
-        session.step = '2';
+        this.transitionTo(session, '2');
         return this.runComplaintWorkflow(session, session.data.type);
       }
-      session.step = '2';
+      this.transitionTo(session, '2');
       return {
         response: prompts[lang][0],
         suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
       };
     }
 
+    // --- Dynamic / Natural Text Classification ---
     if (step === '2') {
+      if (!isSystem && msg) {
+        const classification = this.complaintTypeClassifier.classify(msg);
+        
+        // Multi-match classification handling
+        if (classification.matches.length > 1) {
+          this.transitionTo(session, 'MULTIPLE_MATCH_CLARIFY');
+          session.data.multipleMatchCandidates = classification.matches;
+          const multiPrompt = lang === 'hi' ? 
+            "मुझे एक से अधिक संभावित शिकायत प्रकार मिले हैं।\n\n" + classification.matches.map((m, i) => `${i + 1}. ${m}`).join('\n') + "\n\nकृपया एक चुनें।" :
+            "I found more than one possible complaint type.\n\n" + classification.matches.map((m, i) => `${i + 1}. ${m}`).join('\n') + "\n\nPlease choose one.";
+          return {
+            response: multiPrompt,
+            suggestions: classification.matches
+          };
+        }
+
+        // High / Medium Confidence Handling -> Ask confirmation
+        if (classification.confidence === 'HIGH' || classification.confidence === 'MEDIUM') {
+          const matchedType = classification.matches[0];
+          this.transitionTo(session, 'CONFIRM_CLASSIFIED_TYPE');
+          session.data.classifiedTypeCandidate = matchedType;
+          const confirmPrompt = classification.confidence === 'HIGH' ?
+            `I understand that you would like to file a ${matchedType} complaint.\n\nIs that correct?\n\n- [Yes](option:Yes)\n- [No](option:No)` :
+            `I believe this may be a ${matchedType} complaint.\n\nIs this correct?\n\n- [Yes](option:Yes)\n- [No](option:No)`;
+          return {
+            response: confirmPrompt,
+            suggestions: ['Yes', 'No']
+          };
+        }
+
+        // Low Confidence -> Menus/Other handling
+        if (classification.confidence === 'LOW') {
+          return {
+            response: "I could not determine the exact complaint type. Please choose the closest option:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
+            suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss']
+          };
+        }
+      }
+
       if (msg) session.data.type = msg;
 
-      const cleanMsgLower = msg.trim().toLowerCase();
+      const cleanMsgLower = normalizeSelection(msg).toLowerCase();
       const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('गुम') || cleanMsgLower.includes('चोरी') || cleanMsgLower.includes('stolen');
       if (isMobileTheft) {
-        session.step = '2_brand';
-        // Use centralized empathy message that includes brand prompt
+        this.transitionTo(session, '2_brand');
         session.data.empathyShown = true;
         return {
           response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
@@ -2939,15 +3249,79 @@ export class ChatService {
         };
       }
 
-      session.step = '3';
+      this.transitionTo(session, '3');
       return {
         response: prompts[lang][1],
       };
     }
 
+    if (step === 'CONFIRM_CLASSIFIED_TYPE') {
+      const isYes = ['yes', 'correct', 'option:yes', 'option:confirm', 'ha', 'haan'].includes(cleanMsg);
+      const isNo = ['no', 'option:no', 'cancel', 'nahi'].includes(cleanMsg);
+
+      if (isYes) {
+        const selectedType = session.data.classifiedTypeCandidate;
+        session.data.type = selectedType;
+        delete session.data.classifiedTypeCandidate;
+        
+        const cleanMsgLower = selectedType.toLowerCase();
+        const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('stolen');
+        if (isMobileTheft) {
+          this.transitionTo(session, '2_brand');
+          session.data.empathyShown = true;
+          return {
+            response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
+            suggestions: ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Realme', 'Vivo']
+          };
+        }
+        this.transitionTo(session, '3');
+        return {
+          response: prompts[lang][1]
+        };
+      } else {
+        delete session.data.classifiedTypeCandidate;
+        this.transitionTo(session, '2');
+        return {
+          response: prompts[lang][0],
+          suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
+        };
+      }
+    }
+
+    if (step === 'MULTIPLE_MATCH_CLARIFY') {
+      const candidates = session.data.multipleMatchCandidates || [];
+      const match = candidates.find(c => c.toLowerCase() === cleanMsg || normalizeSelection(msg).toLowerCase() === c.toLowerCase());
+      if (match) {
+        session.data.type = match;
+        delete session.data.multipleMatchCandidates;
+        const cleanMsgLower = match.toLowerCase();
+        const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('stolen');
+        if (isMobileTheft) {
+          this.transitionTo(session, '2_brand');
+          session.data.empathyShown = true;
+          return {
+            response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
+            suggestions: ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Realme', 'Vivo']
+          };
+        }
+        this.transitionTo(session, '3');
+        return {
+          response: prompts[lang][1]
+        };
+      } else {
+        const multiPrompt = lang === 'hi' ? 
+          "मुझे एक से अधिक संभावित शिकायत प्रकार मिले हैं। कृपया सही प्रकार चुनें:\n\n" + candidates.map((m, i) => `${i + 1}. ${m}`).join('\n') :
+          "I found more than one possible complaint type. Please select the correct one:\n\n" + candidates.map((m, i) => `${i + 1}. ${m}`).join('\n');
+        return {
+          response: multiPrompt,
+          suggestions: candidates
+        };
+      }
+    }
+
     if (step === '2_brand') {
-      session.data.brand = msg;
-      session.step = '2_model';
+      if (!isSystem && msg) session.data.brand = msg;
+      this.transitionTo(session, '2_model');
       return {
         response: lang === 'hi' ? "आपके खोए हुए मोबाइल का मॉडल क्या है (जैसे iPhone 15, Galaxy S23)?" :
                   lang === 'hinglish' ? "Lost mobile ka model kya hai (jaise iPhone 15, Galaxy S23)?" :
@@ -2957,8 +3331,8 @@ export class ChatService {
     }
 
     if (step === '2_model') {
-      session.data.model = msg;
-      session.step = '2_color';
+      if (!isSystem && msg) session.data.model = msg;
+      this.transitionTo(session, '2_color');
       return {
         response: lang === 'hi' ? "आपके मोबाइल का रंग क्या है?" :
                   lang === 'hinglish' ? "Mobile ka color kya hai?" :
@@ -2968,8 +3342,8 @@ export class ChatService {
     }
 
     if (step === '2_color') {
-      session.data.color = msg;
-      session.step = '2_year';
+      if (!isSystem && msg) session.data.color = msg;
+      this.transitionTo(session, '2_year');
       return {
         response: lang === 'hi' ? "फ़ोन का निर्माण/खरीद का वर्ष क्या है?" :
                   lang === 'hinglish' ? "Phone ka manufacturing/purchase year kya hai?" :
@@ -2979,8 +3353,8 @@ export class ChatService {
     }
 
     if (step === '2_year') {
-      session.data.year = msg;
-      session.step = '2_imei';
+      if (!isSystem && msg) session.data.year = msg;
+      this.transitionTo(session, '2_imei');
       return {
         response: lang === 'hi' ? "कृपया फ़ोन का 15-अंकीय IMEI नंबर दर्ज करें। आप इसे फ़ोन के बॉक्स, खरीद चालान (invoice), या अपने फ़ोन पर *#06# डायल करके पा सकते हैं। (यदि उपलब्ध नहीं है, तो आप 'skip' या 'no' टाइप कर सकते हैं):" :
                   lang === 'hinglish' ? "Please phone ka 15-digit IMEI number enter karein. Aap ise phone ke box, purchase invoice, ya dialer pe *#06# dial karke dundh sakte hain. (Agar available nahi hai, toh 'skip'/'no' type kar sakte hain):" :
@@ -3001,121 +3375,47 @@ export class ChatService {
           suggestions: ['skip']
         };
       }
-      session.data.imei = isSkip ? null : cleanImei;
-      session.data.imeiStatus = isSkip ? 'SKIPPED' : 'PROVIDED';
-      session.step = '3';
+      if (!isSystem) {
+        session.data.imei = isSkip ? null : cleanImei;
+        session.data.imeiStatus = isSkip ? 'SKIPPED' : 'PROVIDED';
+      }
+      this.transitionTo(session, '3');
       return {
         response: prompts[lang][1],
       };
     }
 
     if (step === '3') {
-      session.data.location = msg;
-      session.step = '4';
+      if (!isSystem && msg) session.data.location = msg;
+      this.transitionTo(session, '4');
       return {
         response: prompts[lang][2],
       };
     }
 
     if (step === '4') {
-      if (!this.validationService.validateDate(msg, true)) {
+      if (!validateIncidentDate(msg)) {
         return {
           response: "👮 As your citizen assistance officer, I'm here to help. The date appears invalid or in the future.\n\nPlease provide a valid date in DD/MM/YYYY format:\nExample: 15/07/2026",
         };
       }
-      session.data.time = msg;
-      session.step = '5';
+      if (!isSystem && msg) session.data.time = msg;
+      this.transitionTo(session, '5');
       return {
         response: prompts[lang][3],
       };
     }
 
     if (step === '5') {
-      // Decoupled incident location description consistency check to allow cross-district incidents
+      if (isSystem) {
+        return {
+          response: lang === 'hi' ? "कृपया एक मान्य घटना विवरण दर्ज करें (सिस्टम कमांड स्वीकार्य नहीं हैं):" : "Please enter a valid incident description (system commands are not allowed):",
+          suggestions: []
+        };
+      }
       session.data.description = msg;
-      session.step = 'REVIEW';
-
-      const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
-
-      let reviewScreen = `👮 **Please review your application.**
-
-Name: **${session.citizen.fullName}**
-Mobile: **${session.citizen.mobileNumber}**
-District: **${session.citizen.city || session.citizen.district || 'Not Provided'}**
-Complaint Type: **${session.data.type}**
-`;
-
-      if (session.data.brand) {
-        reviewScreen += `\n📱 **Device Information**\n`;
-        reviewScreen += `Brand: **${session.data.brand}**\n`;
-        if (session.data.model) {
-          reviewScreen += `Model: **${session.data.model}**\n`;
-        }
-        if (session.data.color) {
-          reviewScreen += `Color: **${session.data.color}**\n`;
-        }
-        if (session.data.year) {
-          reviewScreen += `Manufacturing/Purchase Year: **${session.data.year}**\n`;
-        }
-        reviewScreen += `IMEI: **${session.data.imei || 'Not Provided'}**\n`;
-      }
-
-      reviewScreen += `Incident Location: **${session.data.location}**
-Incident Date: **${session.data.time}**
-Description: **${session.data.description}**
-
-**Validation Status**
-
-${readiness.checklist}
-
-`;
-
-      // Check missing fields using complaintGuidanceConfig
-      const missingFields: string[] = [];
-      if (!session.data.location) missingFields.push('lastSeen');
-      if (session.data.type === 'Lost Mobile / Theft' || session.data.type === 'LOST_MOBILE') {
-        if (!session.data.brand) missingFields.push('brand');
-        if (!session.data.model) missingFields.push('mobileModel');
-        if (!session.data.imei) missingFields.push('imei');
-      } else if (session.data.type === 'Cyber Fraud / Financial Loss' || session.data.type === 'CYBER_FRAUD') {
-        if (!session.data.transactionId) missingFields.push('transactionId');
-        if (!session.data.upi) missingFields.push('upi');
-        if (!session.data.bank) missingFields.push('bank');
-      }
-
-      if (missingFields.length > 0) {
-        const guidanceMsg = this.complaintGuidanceService.generateGuidanceMessage(
-          session.data.type === 'Lost Mobile / Theft' ? 'LOST_MOBILE' :
-          session.data.type === 'Cyber Fraud / Financial Loss' ? 'CYBER_FRAUD' : session.data.type,
-          missingFields
-        );
-        reviewScreen += `\n### Guidance for Missing Details\n${guidanceMsg}\n`;
-      }
-
-      // Add timeline generator display
-      const timelineDisplay = this.timelineGeneratorService.generateTimelineDisplay('complaint');
-      if (timelineDisplay) {
-        reviewScreen += `\n${timelineDisplay}\n\n`;
-      }
-
-      let sugs: string[];
-      if (readiness.valid) {
-        reviewScreen += `Would you like to submit this application?
-
-- [Submit Application](option:Submit Application)
-- [Modify Details](option:Modify Details)`;
-        sugs = ['Submit Application', 'Modify Details'];
-      } else {
-        reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.
-
-- [Modify Details](option:Modify Details)`;
-        sugs = ['Modify Details'];
-      }
-
-      return {
-        response: reviewScreen,
-        suggestions: sugs,
-      };
+      this.transitionTo(session, 'REVIEW');
+      return this.runComplaintWorkflow(session, '');
     }
 
     return { response: this.localizationService.translate('invalidStep', lang) };
@@ -3774,7 +4074,7 @@ Would you like to submit this application?
     }
 
     if (step === '5') {
-      if (!this.validationService.validateDate(msg, false)) {
+      if (!validateIncidentDate(msg, new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10))) {
         return {
           response: "⚠️ Please provide a valid date in DD/MM/YYYY format:\nExample: 15/08/2026",
         };

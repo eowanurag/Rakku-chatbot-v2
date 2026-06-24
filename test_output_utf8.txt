@@ -1,0 +1,1104 @@
+﻿node.exe : ts-jest[config] (WARN) 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (ts-jest[config] (WARN) :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    The "ts-jest" config option "isolatedModules" is deprecated and will be removed in v30.0.0. Please use 
+"isolatedModules: true" in C:/Users/acer/OneDrive/Desktop/Training Classes/chatbot/Rakku-chatbot-v2/tsconfig.json 
+instead, see https://www.typescriptlang.org/tsconfig/#isolatedModules
+  
+[32m[Nest] 1752  - [39m24/06/2026, 9:55:55 am [32m    LOG[39m [38;5;3m[LocalizationService] [39m[32mSuccessfully loaded Message Library from C:\Users\acer\OneDrive\Desktop\Training Classes\chatbot\Rakku-chatbot-v2\backend\src\chat\message_library.json[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:55:56 am [32m    LOG[39m [38;5;3m[WorkflowRegistryService] [39m[32mLoading service mappings from: C:\Users\acer\OneDrive\Desktop\Training Classes\chatbot\Rakku-chatbot-v2\shared\copilot\service-mappings.json[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:55:56 am [32m    LOG[39m [38;5;3m[WorkflowRegistryService] [39m[32mLoaded 73 service mappings successfully.[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:55:56 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mLoaded Message Library v1.0.0 from C:\Users\acer\OneDrive\Desktop\Training Classes\chatbot\Rakku-chatbot-v2\backend\src\chat\message_library.json[39m
+  console.log
+    [ChatService.sendMessage] Entry - message: English sessionId: sess-free-text-1782275172051
+
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+
+FAIL tests/e2e/free_text_complaint_type.spec.ts (45.416 s)
+  Free Text Complaint Type E2E
+    ├ù should accept free text and ask for confirmation (20994 ms)
+
+  ΓùÅ Free Text Complaint Type E2E ΓÇ║ should accept free text and ask for confirmation
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See 
+https://jestjs.io/docs/api#testname-fn-timeout."
+
+    [0m [90m 51 |[39m   })[33m;[39m
+     [90m 52 |[39m
+    [31m[1m>[22m[39m[90m 53 |[39m   it([32m'should accept free text and ask for confirmation'[39m[33m,[39m 
+[36masync[39m () [33m=>[39m {
+     [90m    |[39m   [31m[1m^[22m[39m
+     [90m 54 |[39m     [36mconst[39m sess [33m=[39m [32m`sess-free-text-${Date.now()}`[39m[33m;[39m
+     [90m 55 |[39m     [36mconst[39m mobile [33m=[39m [32m`9${Math.floor(100000000 + Math.random() * 
+900000000)}`[39m[33m;[39m
+     [90m 56 |[39m[0m
+
+      at tests/e2e/free_text_complaint_type.spec.ts:53:3
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:15:1)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 1 total
+Snapshots:   0 total
+Time:        46.826 s
+Ran all test suites matching tests/e2e/free_text_complaint_type.spec.ts.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest 
+with `--detectOpenHandles` to troubleshoot this issue.
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:23 am [33m   WARN[39m [38;5;3m[ChatService] [39m[33mFailed to read session from DB: 
+Invalid `prisma.workflowSession.findUnique()` invocation:
+
+
+Engine is not yet connected.
+Backtrace [{ fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "napi_register_module_v1" }, { fn: "BaseThreadInitThunk" }, { fn: "RtlUserThreadStart" }][39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: {"workflow":null,"step":"START","data":{},"language":"en","languageSelected":
+false,"citizen":{"fullName":"","mobileNumber":"","email":"","addressLine1":"","addressLine2":"","city":"","district":""
+,"state":"Uttar Pradesh","pincode":"","latitude":null,"longitude":null,"isConfirmed":false},"currentWorkflowState":"STA
+RT","serviceType":null,"applicationData":{},"referenceNumber":"","intelligence":{"entities":{},"severity":null,"riskCat
+egory":null,"recommendations":[],"completeness":"INCOMPLETE","confidence":null,"clarificationRequired":false},"lastCiti
+zenInput":"English","resumeTimestamp":1782275183590,"resumeSummary":"Draft initiated"}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:57:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:31 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=english[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:31 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=1 transformationsCount=0 requiresAIReview=true[39m
+
+ReferenceError: You are trying to `require` a file after the Jest environment has been torn down. From 
+tests/e2e/free_text_complaint_type.spec.ts.
+
+    [0m [90m 109 |[39m         [32m`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:genera
+teContent?key=${this.apiKey}`[39m[33m,[39m
+     [90m 110 |[39m         {
+    [31m[1m>[22m[39m[90m 111 |[39m           contents[33m:[39m [{ parts[33m:[39m [{ text[33m:[39m prompt 
+}] }][33m,[39m
+     [90m     |[39m                                                    [31m[1m^[22m[39m
+     [90m 112 |[39m           generationConfig[33m:[39m {
+     [90m 113 |[39m             responseMimeType[33m:[39m [32m'application/json'[39m[33m,[39m
+     [90m 114 |[39m           }[33m,[39m[0m
+
+      at module.exports (backend/node_modules/follow-redirects/debug.js:7:15)
+      at Object.request (backend/node_modules/follow-redirects/index.js:557:7)
+      at dispatchHttpRequest (backend/node_modules/axios/dist/node/axios.cjs:3657:21)
+      at backend/node_modules/axios/dist/node/axios.cjs:3258:5
+      at wrapAsync (backend/node_modules/axios/dist/node/axios.cjs:3242:10)
+      at http (backend/node_modules/axios/dist/node/axios.cjs:3316:10)
+      at Axios.dispatchRequest (backend/node_modules/axios/dist/node/axios.cjs:4984:10)
+      at Axios._request (backend/node_modules/axios/dist/node/axios.cjs:5267:33)
+      at Axios.request (backend/node_modules/axios/dist/node/axios.cjs:5129:25)
+      at Axios.httpMethod [as post] (backend/node_modules/axios/dist/node/axios.cjs:5299:19)
+      at wrap (backend/node_modules/axios/dist/node/axios.cjs:27:15)
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:111:52)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:68)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:57:5)
+  console.error
+    Error invoking Gemini in AiClassifier: timeout of 5000ms exceeded
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:57:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:38 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mForwarding message to FastAPI AI service: http://localhost:8000/chat/message[39m
+  console.error
+    [ChatService.sendMessage] Warning - AI Service connection failed, using local fallback: [Error: Forced connection failure for testing]
+
+    [0m [90m 888 |[39m       }[33m;[39m
+     [90m 889 |[39m     } [36mcatch[39m (e) {
+    [31m[1m>[22m[39m[90m 890 |[39m       console[33m.[39merror([32m'[ChatService.sendMessage] Warning - AI Service connection failed, using local fallback:'[39m[33m,[39m e)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 891 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`[39m)[33m;[39m
+     [90m 892 |[39m       [36mawait[39m [36mthis[39m[33m.[39mlogWorkflowTrace(sessionId[33m,[39m [32m'FALLBACK'[39m[33m,[39m [32m'WORKFLOW_FALLBACK_USED'[39m[33m,[39m state[33m.[39mworkflow[33m,[39m stepBefore[33m,[39m [33mString[39m(state[33m.[39mstep)[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 893 |[39m       [36mconst[39m localResult [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mhandleLocalFallback(sanitizedMessage[33m,[39m sessionId[33m,[39m state)[33m;[39m[0m
+
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:890:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:57:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:38 am [33m   WARN[39m [38;5;3m[ChatService] [39m[33mAI Service connection failed (Forced connection failure for testing). Initializing local rule-based mock workflow engine.[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Exit - Processed message via Fallback engine".
+
+    [0m [90m 899 |[39m       [36mawait[39m [36mthis[39m[33m.[39mhandlePostMessageMetrics(sessionId[33m,[39m 
+state[33m,[39m previousWorkflow[33m,[39m stepBefore[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 900 |[39m       [36mawait[39m [36mthis[39m[33m.[39msaveSession(sessionId[33m,[39m state)[33m;[39m
+    [31m[1m>[22m[39m[90m 901 |[39m       console[33m.[39mlog([32m'[ChatService.sendMessage] Exit - Processed 
+message via Fallback engine'[39m)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 902 |[39m       [36mreturn[39m { 
+     [90m 903 |[39m         [33m...[39mlocalResult[33m,[39m 
+     [90m 904 |[39m         avatar_state[33m:[39m localResult[33m.[39mavatar_state [33m||[39m 
+[32m'TALKING'[39m[33m,[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:901:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:57:5)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: File Complaint sessionId: 
+sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:58:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: {"data":{},"step":"START","citizen":{"city":"","email":"","state":"Uttar Prad
+esh","pincode":"","district":"","fullName":"","latitude":null,"longitude":null,"isConfirmed":false,"addressLine1":"","a
+ddressLine2":"","mobileNumber":""},"language":"en","workflow":null,"serviceType":null,"intelligence":{"entities":{"date
+s":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":[]},"severity":"LOW","confidence":0.5,"complet
+eness":"INCOMPLETE","riskCategory":null,"recommendations":["GENERAL_GUIDANCE","Track 
+Application"],"clarificationRequired":true},"resumeSummary":"Draft initiated","lastActivityAt":"2026-06-24T04:26:39.168
+Z","applicationData":{},"referenceNumber":"","resumeTimestamp":1782275199707,"languageSelected":true,"lastCitizenInput"
+:"File Complaint","currentWorkflowState":"START"}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:58:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:40 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=complaint[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:40 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=1 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: timeout of 5000ms exceeded
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:58:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:46 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mForwarding message to FastAPI AI service: http://localhost:8000/chat/message[39m
+  console.error
+    [ChatService.sendMessage] Warning - AI Service connection failed, using local fallback: [Error: Forced connection failure for testing]
+
+    [0m [90m 888 |[39m       }[33m;[39m
+     [90m 889 |[39m     } [36mcatch[39m (e) {
+    [31m[1m>[22m[39m[90m 890 |[39m       console[33m.[39merror([32m'[ChatService.sendMessage] Warning - AI Service connection failed, using local fallback:'[39m[33m,[39m e)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 891 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`[39m)[33m;[39m
+     [90m 892 |[39m       [36mawait[39m [36mthis[39m[33m.[39mlogWorkflowTrace(sessionId[33m,[39m [32m'FALLBACK'[39m[33m,[39m [32m'WORKFLOW_FALLBACK_USED'[39m[33m,[39m state[33m.[39mworkflow[33m,[39m stepBefore[33m,[39m [33mString[39m(state[33m.[39mstep)[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 893 |[39m       [36mconst[39m localResult [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mhandleLocalFallback(sanitizedMessage[33m,[39m sessionId[33m,[39m state)[33m;[39m[0m
+
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:890:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:58:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:46 am [33m   WARN[39m [38;5;3m[ChatService] [39m[33mAI Service connection failed (Forced connection failure for testing). Initializing local rule-based mock workflow engine.[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Exit - Processed message via Fallback engine".
+
+    [0m [90m 899 |[39m       [36mawait[39m [36mthis[39m[33m.[39mhandlePostMessageMetrics(sessionId[33m,[39m 
+state[33m,[39m previousWorkflow[33m,[39m stepBefore[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 900 |[39m       [36mawait[39m [36mthis[39m[33m.[39msaveSession(sessionId[33m,[39m state)[33m;[39m
+    [31m[1m>[22m[39m[90m 901 |[39m       console[33m.[39mlog([32m'[ChatService.sendMessage] Exit - Processed 
+message via Fallback engine'[39m)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 902 |[39m       [36mreturn[39m { 
+     [90m 903 |[39m         [33m...[39mlocalResult[33m,[39m 
+     [90m 904 |[39m         avatar_state[33m:[39m localResult[33m.[39mavatar_state [33m||[39m 
+[32m'TALKING'[39m[33m,[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:901:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:58:5)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: 9555270315 sessionId: sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:59:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"PRE_ONBOARDING_LOOKUP","citizen":{"city":"","email":"","state":"Uttar Pradesh","pincode":"","distric
+t":"","fullName":"","latitude":null,"longitude":null,"isConfirmed":false,"addressLine1":"","addressLine2":"","mobileNum
+ber":""},"language":"en","workflow":"complaint","serviceType":null,"intelligence":{"entities":{"dates":[],"devices":[],
+"persons":[],"vehicles":[],"documents":[],"locations":[]},"severity":"LOW","confidence":0.5,"completeness":"INCOMPLETE"
+,"riskCategory":null,"recommendations":["GENERAL_GUIDANCE","Track 
+Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft initiated","lastActivityAt":"2026
+-06-24T04:26:47.213Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTimestamp":1782275
+207585,"languageSelected":true,"lastCitizenInput":"9555270315","pendingScenarioId":"","pendingWorkflowId":"complaint","
+currentWorkflowState":"START","pendingWorkflowState":"START","lastCompletedQuestion":"PRE_ONBOARDING_LOOKUP"}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:59:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:47 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=0 transformationsCount=0 requiresAIReview=false[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:59:5)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:59:5)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:59:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:51 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mIntercepting message in onboarding state: PRE_ONBOARDING_LOOKUP[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: Raju Shrivastav sessionId: 
+sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:60:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"IDENTIFY_NAME","citizen":{"city":"","email":"","state":"Uttar Pradesh","pincode":"","district":"","f
+ullName":"","latitude":null,"longitude":null,"isConfirmed":false,"addressLine1":"","addressLine2":"","mobileNumber":"95
+55270315"},"language":"en","workflow":"complaint","serviceType":null,"intelligence":{"entities":{"dates":[],"devices":[
+],"persons":[],"vehicles":[],"documents":[],"locations":[],"incidentType":"LOST_MOBILE"},"severity":"LOW","confidence":
+0.5,"completeness":"INCOMPLETE","riskCategory":null,"recommendations":["GENERAL_GUIDANCE","Track 
+Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft initiated","lastActivityAt":"2026
+-06-24T04:26:52.345Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTimestamp":1782275
+212704,"languageSelected":true,"lastCitizenInput":"Raju Shrivastav","pendingScenarioId":"","pendingWorkflowId":"complai
+nt","resumeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":{},"lastUpdatedAt":"202
+6-06-24T04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendingWorkflowState":"START
+","lastCompletedQuestion":"IDENTIFY_NAME","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:60:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:54 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=raju[39m
+[33m[Nest] 1752  - [39m24/06/2026, 9:56:55 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=shrivastav[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:55 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=2 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:60:5)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:60:5)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:60:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:56:58 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mIntercepting message in onboarding state: IDENTIFY_NAME[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: Lucknow sessionId: sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:61:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"IDENTIFY_LOCATION","citizen":{"city":"","email":"","state":"Uttar 
+Pradesh","pincode":"","district":"","fullName":"Raju Shrivastav","latitude":null,"longitude":null,"isConfirmed":false,"
+addressLine1":"","addressLine2":"","mobileNumber":"9555270315"},"language":"en","workflow":"complaint","serviceType":nu
+ll,"intelligence":{"entities":{"dates":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":[],"incide
+ntType":"LOST_MOBILE"},"severity":"LOW","confidence":0.5,"completeness":"INCOMPLETE","riskCategory":null,"recommendatio
+ns":["GENERAL_GUIDANCE","Track Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft in
+itiated","lastActivityAt":"2026-06-24T04:26:59.326Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumbe
+r":"","resumeTimestamp":1782275219696,"languageSelected":true,"lastCitizenInput":"Lucknow","pendingScenarioId":"","pend
+ingWorkflowId":"complaint","resumeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":
+{},"lastUpdatedAt":"2026-06-24T04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendi
+ngWorkflowState":"START","lastCompletedQuestion":"IDENTIFY_LOCATION","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:61:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:00 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=lucknow[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:00 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=1 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:61:5)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:61:5)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:61:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:03 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mIntercepting message in onboarding state: IDENTIFY_LOCATION[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: Confirm sessionId: sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:62:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"CONFIRM_LOCATION","citizen":{"city":"Lucknow","email":"","state":"Uttar 
+Pradesh","pincode":"","district":"Lucknow","fullName":"Raju Shrivastav","latitude":null,"longitude":null,"isConfirmed":
+false,"addressLine1":"","addressLine2":"","mobileNumber":"9555270315"},"language":"en","workflow":"complaint","serviceT
+ype":null,"intelligence":{"entities":{"dates":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":["l
+ucknow"],"incidentType":"LOST_MOBILE"},"severity":"LOW","confidence":0.5,"completeness":"INCOMPLETE","riskCategory":nul
+l,"recommendations":["GENERAL_GUIDANCE","Track 
+Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft initiated","lastActivityAt":"2026
+-06-24T04:27:03.252Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTimestamp":1782275
+223624,"languageSelected":true,"lastCitizenInput":"Confirm","pendingScenarioId":"","pendingWorkflowId":"complaint","res
+umeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":{},"lastUpdatedAt":"2026-06-24T
+04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendingWorkflowState":"START","lastC
+ompletedQuestion":"CONFIRM_LOCATION","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:62:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:04 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=confirm[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:04 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=1 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:62:5)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:62:5)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:62:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:07 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mIntercepting message in onboarding state: CONFIRM_LOCATION[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: Gomti Nagar, Lucknow sessionId: 
+sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:63:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"IDENTIFY_ADDRESS","citizen":{"city":"Lucknow","email":"","state":"Uttar 
+Pradesh","pincode":"","district":"Lucknow","fullName":"Raju Shrivastav","latitude":null,"longitude":null,"isConfirmed":
+false,"addressLine1":"","addressLine2":"","mobileNumber":"9555270315"},"language":"en","workflow":"complaint","serviceT
+ype":null,"intelligence":{"entities":{"dates":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":[],
+"incidentType":"LOST_MOBILE"},"severity":"LOW","confidence":0.5,"completeness":"INCOMPLETE","riskCategory":null,"recomm
+endations":["GENERAL_GUIDANCE","Track 
+Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft initiated","lastActivityAt":"2026
+-06-24T04:27:07.203Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTimestamp":1782275
+227618,"languageSelected":true,"lastCitizenInput":"Gomti Nagar, Lucknow","pendingScenarioId":"","pendingWorkflowId":"co
+mplaint","resumeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":{},"lastUpdatedAt"
+:"2026-06-24T04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendingWorkflowState":"
+START","lastCompletedQuestion":"IDENTIFY_ADDRESS","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:63:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:08 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=gomti[39m
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:08 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=nagar[39m
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:09 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=lucknow[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:09 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=3 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:63:5)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:63:5)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:63:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:11 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mIntercepting message in onboarding state: IDENTIFY_ADDRESS[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: Confirm Details sessionId: 
+sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:64:23)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"CONFIRM_PROFILE","citizen":{"city":"Lucknow","email":"","state":"Uttar 
+Pradesh","pincode":"","district":"Lucknow","fullName":"Raju 
+Shrivastav","latitude":null,"longitude":null,"isConfirmed":false,"addressLine1":"Gomti Nagar, Lucknow","addressLine2":"
+","mobileNumber":"9555270315"},"language":"en","workflow":"complaint","serviceType":null,"intelligence":{"entities":{"d
+ates":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":["lucknow"],"incidentType":"LOST_MOBILE"},"
+severity":"LOW","confidence":0.5,"completeness":"INCOMPLETE","riskCategory":null,"recommendations":["GENERAL_GUIDANCE",
+"Track Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft initiated","lastActivityAt
+":"2026-06-24T04:27:12.103Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTimestamp":
+1782275232471,"languageSelected":true,"lastCitizenInput":"Confirm Details","pendingScenarioId":"","pendingWorkflowId":"
+complaint","resumeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":{},"lastUpdatedA
+t":"2026-06-24T04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendingWorkflowState"
+:"START","lastCompletedQuestion":"CONFIRM_PROFILE","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:64:5)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:13 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=confirm[39m
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:13 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=details[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:13 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=2 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:64:5)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:64:5)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:64:5)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:15 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mIntercepting message in onboarding state: CONFIRM_PROFILE[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: I lost my purse sessionId: 
+sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:67:35)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: 
+{"data":{},"step":"2","citizen":{"id":"cmqrknpgg0009u9cozjcnnai7","city":"Lucknow","email":"","state":"Uttar 
+Pradesh","pincode":"","district":"Lucknow","fullName":"Raju 
+Shrivastav","latitude":null,"longitude":null,"isConfirmed":true,"addressLine1":"Gomti Nagar, Lucknow","addressLine2":""
+,"mobileNumber":"9555270315"},"language":"en","workflow":"complaint","serviceType":null,"intelligence":{"entities":{"da
+tes":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":[],"incidentType":"LOST_MOBILE"},"severity":
+"LOW","confidence":0.5,"completeness":"INCOMPLETE","riskCategory":null,"recommendations":["GENERAL_GUIDANCE","Track 
+Application"],"clarificationRequired":true},"pendingIntent":"","resumeSummary":"Draft initiated","lastActivityAt":"2026
+-06-24T04:27:16.536Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTimestamp":1782275
+236913,"languageSelected":true,"lastCitizenInput":"I lost my purse","pendingScenarioId":"","pendingWorkflowId":"complai
+nt","resumeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":{},"lastUpdatedAt":"202
+6-06-24T04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendingWorkflowState":"START
+","lastCompletedQuestion":"2","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:67:17)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:17 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=0 transformationsCount=0 requiresAIReview=false[39m
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:67:17)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:67:17)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:20 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mForwarding message to FastAPI AI service: http://localhost:8000/chat/message[39m
+  console.error
+    [ChatService.sendMessage] Warning - AI Service connection failed, using local fallback: [Error: Forced connection failure for testing]
+
+    [0m [90m 888 |[39m       }[33m;[39m
+     [90m 889 |[39m     } [36mcatch[39m (e) {
+    [31m[1m>[22m[39m[90m 890 |[39m       console[33m.[39merror([32m'[ChatService.sendMessage] Warning - AI Service connection failed, using local fallback:'[39m[33m,[39m e)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 891 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`[39m)[33m;[39m
+     [90m 892 |[39m       [36mawait[39m [36mthis[39m[33m.[39mlogWorkflowTrace(sessionId[33m,[39m [32m'FALLBACK'[39m[33m,[39m [32m'WORKFLOW_FALLBACK_USED'[39m[33m,[39m state[33m.[39mworkflow[33m,[39m stepBefore[33m,[39m [33mString[39m(state[33m.[39mstep)[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 893 |[39m       [36mconst[39m localResult [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mhandleLocalFallback(sanitizedMessage[33m,[39m sessionId[33m,[39m state)[33m;[39m[0m
+
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:890:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:67:17)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:20 am [33m   WARN[39m [38;5;3m[ChatService] [39m[33mAI Service connection failed (Forced connection failure for testing). Initializing local rule-based mock workflow engine.[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Exit - Processed message via Fallback engine".
+
+    [0m [90m 899 |[39m       [36mawait[39m [36mthis[39m[33m.[39mhandlePostMessageMetrics(sessionId[33m,[39m 
+state[33m,[39m previousWorkflow[33m,[39m stepBefore[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 900 |[39m       [36mawait[39m [36mthis[39m[33m.[39msaveSession(sessionId[33m,[39m state)[33m;[39m
+    [31m[1m>[22m[39m[90m 901 |[39m       console[33m.[39mlog([32m'[ChatService.sendMessage] Exit - Processed 
+message via Fallback engine'[39m)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 902 |[39m       [36mreturn[39m { 
+     [90m 903 |[39m         [33m...[39mlocalResult[33m,[39m 
+     [90m 904 |[39m         avatar_state[33m:[39m localResult[33m.[39mavatar_state [33m||[39m 
+[32m'TALKING'[39m[33m,[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:901:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:67:17)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Entry - message: Yes sessionId: sess-free-text-1782275172051".
+
+    [0m [90m 649 |[39m     clientLanguage[33m?[39m[33m:[39m string[33m,[39m
+     [90m 650 |[39m   )[33m:[39m [33mPromise[39m[33m<[39m{ response[33m:[39m string[33m;[39m 
+suggestions[33m?[39m[33m:[39m string[][33m;[39m avatar_state[33m?[39m[33m:[39m string[33m;[39m 
+_debug[33m?[39m[33m:[39m any }[33m>[39m {
+    [31m[1m>[22m[39m[90m 651 |[39m     console[33m.[39mlog([32m'[ChatService.sendMessage] Entry - 
+message:'[39m[33m,[39m message[33m,[39m [32m'sessionId:'[39m[33m,[39m sessionId)[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 652 |[39m     [36mthis[39m[33m.[39manalyticsService[33m.[39mtrackHelpRequest()[33m;[39m
+     [90m 653 |[39m     
+     [90m 654 |[39m     [90m// Sanitize incoming message input to prevent Stored XSS[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:651:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:39)
+
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "SEND_MESSAGE STATE: {"data":{"empathyShown":true,"classifiedTypeCandidate":"Lost Document"},"step
+":"CONFIRM_CLASSIFIED_TYPE","citizen":{"id":"cmqrknpgg0009u9cozjcnnai7","city":"Lucknow","email":"","state":"Uttar 
+Pradesh","pincode":"","district":"Lucknow","fullName":"Raju 
+Shrivastav","latitude":null,"longitude":null,"isConfirmed":true,"addressLine1":"Gomti Nagar, Lucknow","addressLine2":""
+,"mobileNumber":"9555270315"},"language":"en","workflow":"complaint","serviceType":null,"intelligence":{"entities":{"da
+tes":[],"devices":[],"persons":[],"vehicles":[],"documents":[],"locations":[],"incidentType":"LOST_MOBILE"},"severity":
+"MEDIUM","confidence":0.95,"completeness":"INCOMPLETE","riskCategory":null,"recommendations":["COMPLAINT","TRACKING_GUI
+DANCE","Track Application"],"clarificationRequired":false},"pendingIntent":"","resumeSummary":"Draft initiated","lastAc
+tivityAt":"2026-06-24T04:27:20.547Z","applicationData":{},"pendingWorkflow":"complaint","referenceNumber":"","resumeTim
+estamp":1782275240990,"languageSelected":true,"lastCitizenInput":"Yes","pendingScenarioId":"","pendingWorkflowId":"comp
+laint","resumeInformation":{"step":"PRE_ONBOARDING_LOOKUP","workflowId":"complaint","dataSnapshot":{},"lastUpdatedAt":"
+2026-06-24T04:26:52.346Z"},"preOnboardingMobile":"9555270315","currentWorkflowState":"START","pendingWorkflowState":"ST
+ART","lastCompletedQuestion":"CONFIRM_CLASSIFIED_TYPE","preOnboardingCompleted":true}".
+
+    [0m [90m 678 |[39m
+     [90m 679 |[39m     [36mconst[39m previousWorkflow [33m=[39m state[33m.[39mworkflow[33m;[39m
+    [31m[1m>[22m[39m[90m 680 |[39m     console[33m.[39mlog([32m'SEND_MESSAGE STATE:'[39m[33m,[39m 
+[33mJSON[39m[33m.[39mstringify(state))[33m;[39m
+     [90m     |[39m             [31m[1m^[22m[39m
+     [90m 681 |[39m     [36mconst[39m stepBefore [33m=[39m [33mString[39m(state[33m.[39mstep)[33m;[39m
+     [90m 682 |[39m
+     [90m 683 |[39m     [90m// Synchronize language from client request if passed[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:680:13)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:21)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:21 am [33m   WARN[39m [38;5;3m[CueTelemetry] [39m[33m[UNKNOWN_TERM_DETECTED] term=yes[39m
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:21 am [32m    LOG[39m [38;5;3m[CueTelemetry] [39m[32m[CUE_NORMALIZATION_COMPLETED] sessionId=sess-free-text-1782275172051 unknownTermsCount=1 transformationsCount=0 requiresAIReview=true[39m
+  console.error
+    Error invoking Gemini in AiClassifier: Request failed with status code 429
+
+    [0m [90m 135 |[39m         }[33m;[39m
+     [90m 136 |[39m       }
+    [31m[1m>[22m[39m[90m 137 |[39m     } [36mcatch[39m (e[33m:[39m any) {
+     [90m     |[39m                     [31m[1m^[22m[39m
+     [90m 138 |[39m       console[33m.[39merror([32m'Error invoking Gemini in AiClassifier:'[39m[33m,[39m e[33m?[39m[33m.[39mmessage [33m||[39m e)[33m;[39m
+     [90m 139 |[39m       [36mreturn[39m {
+     [90m 140 |[39m         success[33m:[39m [36mfalse[39m[33m,[39m[0m
+
+      at AiClassifier.classify (backend/src/copilot/sae/classification/ai-classifier.ts:137:21)
+      at SituationAssessmentService.assess (backend/src/copilot/sae/situation-assessment.service.ts:336:44)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:700:25)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:21)
+
+  console.error
+    Gemini FactExtractor error (falling back deterministically): Request failed with status code 429
+
+    [0m [90m 188 |[39m           }
+     [90m 189 |[39m
+    [31m[1m>[22m[39m[90m 190 |[39m           [90m// Merge property details (AI can enrich, but cannot overwrite deterministic properties from regex/rules)[39m
+     [90m     |[39m                         [31m[1m^[22m[39m
+     [90m 191 |[39m           [36mif[39m (parsed[33m.[39mproperty [33m&&[39m parsed[33m.[39mproperty[33m.[39mlength [33m>[39m [35m0[39m) {
+     [90m 192 |[39m             [36mfor[39m ([36mconst[39m aiProperty [36mof[39m parsed[33m.[39mproperty) {
+     [90m 193 |[39m               [36mconst[39m matchingPropIndex [33m=[39m model[33m.[39mproperty[33m![39m[33m.[39mfindIndex(p [33m=>[39m p[33m.[39mtype [33m===[39m aiProperty[33m.[39mtype)[33m;[39m[0m
+
+      at FactExtractor.extract (backend/src/copilot/cie/engines/fact-extractor.ts:190:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:83:50)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:21)
+
+  console.error
+    Gemini TimelineReconstructor error: Request failed with status code 429
+
+    [0m [90m 68 |[39m               [36mif[39m (a[33m.[39mtime [33m&&[39m b[33m.[39mtime) {
+     [90m 69 |[39m                 [36mreturn[39m a[33m.[39mtime[33m.[39mlocaleCompare(b[33m.[39mtime)[33m;[39m
+    [31m[1m>[22m[39m[90m 70 |[39m               }
+     [90m    |[39m                [31m[1m^[22m[39m
+     [90m 71 |[39m               [36mreturn[39m [35m0[39m[33m;[39m
+     [90m 72 |[39m             })[33m;[39m
+     [90m 73 |[39m[0m
+
+      at TimelineReconstructor.reconstruct (backend/src/copilot/cie/engines/timeline-reconstructor.ts:70:25)
+      at ComplaintIntelligenceService.assess (backend/src/copilot/cie/complaint-intelligence.service.ts:85:26)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:720:21)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:21)
+
+[32m[Nest] 1752  - [39m24/06/2026, 9:57:24 am [32m    LOG[39m [38;5;3m[ChatService] [39m[32mForwarding message to FastAPI AI service: http://localhost:8000/chat/message[39m
+  console.error
+    [ChatService.sendMessage] Warning - AI Service connection failed, using local fallback: [Error: Forced connection failure for testing]
+
+    [0m [90m 888 |[39m       }[33m;[39m
+     [90m 889 |[39m     } [36mcatch[39m (e) {
+    [31m[1m>[22m[39m[90m 890 |[39m       console[33m.[39merror([32m'[ChatService.sendMessage] Warning - AI Service connection failed, using local fallback:'[39m[33m,[39m e)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 891 |[39m       [36mthis[39m[33m.[39mlogger[33m.[39mwarn([32m`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`[39m)[33m;[39m
+     [90m 892 |[39m       [36mawait[39m [36mthis[39m[33m.[39mlogWorkflowTrace(sessionId[33m,[39m [32m'FALLBACK'[39m[33m,[39m [32m'WORKFLOW_FALLBACK_USED'[39m[33m,[39m state[33m.[39mworkflow[33m,[39m stepBefore[33m,[39m [33mString[39m(state[33m.[39mstep)[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 893 |[39m       [36mconst[39m localResult [33m=[39m [36mawait[39m [36mthis[39m[33m.[39mhandleLocalFallback(sanitizedMessage[33m,[39m sessionId[33m,[39m state)[33m;[39m[0m
+
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:890:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:21)
+
+[33m[Nest] 1752  - [39m24/06/2026, 9:57:24 am [33m   WARN[39m [38;5;3m[ChatService] [39m[33mAI Service connection failed (Forced connection failure for testing). Initializing local rule-based mock workflow engine.[39m
+
+  ΓùÅ  Cannot log after tests are done. Did you forget to wait for something async in your test?
+    Attempted to log "[ChatService.sendMessage] Exit - Processed message via Fallback engine".
+
+    [0m [90m 899 |[39m       [36mawait[39m [36mthis[39m[33m.[39mhandlePostMessageMetrics(sessionId[33m,[39m 
+state[33m,[39m previousWorkflow[33m,[39m stepBefore[33m,[39m sanitizedMessage)[33m;[39m
+     [90m 900 |[39m       [36mawait[39m [36mthis[39m[33m.[39msaveSession(sessionId[33m,[39m state)[33m;[39m
+    [31m[1m>[22m[39m[90m 901 |[39m       console[33m.[39mlog([32m'[ChatService.sendMessage] Exit - Processed 
+message via Fallback engine'[39m)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 902 |[39m       [36mreturn[39m { 
+     [90m 903 |[39m         [33m...[39mlocalResult[33m,[39m 
+     [90m 904 |[39m         avatar_state[33m:[39m localResult[33m.[39mavatar_state [33m||[39m 
+[32m'TALKING'[39m[33m,[39m[0m
+
+      at console.log (node_modules/@jest/console/build/index.js:311:10)
+      at ChatService.sendMessage (backend/src/chat/chat.service.ts:901:15)
+      at Object.<anonymous> (tests/e2e/free_text_complaint_type.spec.ts:72:21)
+

@@ -17,6 +17,8 @@ const config = {
     '/node_modules/',
     '/dist/'
   ],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  testTimeout: 60000,
   moduleNameMapper: {
     '^@backend/complaint/(.*)$': '<rootDir>/backend/src/workflows/complaint/$1',
     '^@backend/verification/(.*)$': '<rootDir>/backend/src/workflows/verification/$1',

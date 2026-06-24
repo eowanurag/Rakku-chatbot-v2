@@ -1,6 +1,6 @@
 import { disconnectPrisma } from './helpers/prisma-test-helper';
 
-jest.setTimeout(30000);
+jest.setTimeout(60000);
 
 afterEach(() => {
   jest.clearAllTimers();

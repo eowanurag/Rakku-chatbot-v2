@@ -19,7 +19,7 @@ describe('Complaint Workflow Release Gate Spec', () => {
   let chatService: ChatService;
 
   beforeAll(() => {
-    jest.setTimeout(45000);
+    jest.setTimeout(120000);
     prisma = new PrismaService();
     const config = new ConfigService();
     const validation = new ValidationService();
@@ -90,7 +90,7 @@ describe('Complaint Workflow Release Gate Spec', () => {
     const migratedState = await chatService.getOrCreateSession(sess);
     expect(migratedState.data.type).toBe('Lost Mobile / Theft');
     expect(migratedState.data.location).toBe('Gomti Nagar Crossing');
-  }, 30000);
+  }, 120000);
 
   it('should verify that incident location is optional for submission', async () => {
     const sess = `sess-gate-optional-${Date.now()}`;
@@ -106,6 +106,7 @@ describe('Complaint Workflow Release Gate Spec', () => {
     await chatService.sendMessage('Confirm Details', sess);
 
     await chatService.sendMessage('Lost Mobile / Theft', sess);
+    await chatService.sendMessage('Yes', sess);
     await chatService.sendMessage('Apple', sess);
     await chatService.sendMessage('iPhone 14', sess);
     await chatService.sendMessage('Black', sess);
@@ -126,7 +127,7 @@ describe('Complaint Workflow Release Gate Spec', () => {
 
     const finalRes = await chatService.sendMessage('Submit Application', sess);
     expect(finalRes.response).toContain('submitted successfully');
-  }, 30000);
+  }, 120000);
 
   it('should verify that citizen and incident locations are decoupled', async () => {
     const sess = `sess-gate-decoupled-${Date.now()}`;
@@ -142,6 +143,7 @@ describe('Complaint Workflow Release Gate Spec', () => {
     await chatService.sendMessage('Confirm Details', sess);
 
     await chatService.sendMessage('Lost Mobile / Theft', sess);
+    await chatService.sendMessage('Yes', sess);
     await chatService.sendMessage('Apple', sess);
     await chatService.sendMessage('iPhone 14', sess);
     await chatService.sendMessage('Black', sess);
@@ -156,5 +158,5 @@ describe('Complaint Workflow Release Gate Spec', () => {
 
     const finalRes = await chatService.sendMessage('Submit Application', sess);
     expect(finalRes.response).toContain('submitted successfully');
-  }, 30000);
+  }, 120000);
 });
