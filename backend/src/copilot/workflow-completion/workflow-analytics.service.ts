@@ -11,12 +11,12 @@ export class WorkflowAnalyticsService {
     try {
       await this.prisma.citizenWorkflowEvent.create({
         data: {
-          sessionId,
+          sessionId: sessionId || 'default-session-id',
           workflowType,
           eventType,
         }
       });
-      this.logger.log(`Tracked workflow event: ${eventType} for session ${sessionId} (${workflowType})`);
+      this.logger.log(`Tracked workflow event: ${eventType} for session ${sessionId || 'default-session-id'} (${workflowType})`);
     } catch (err) {
       this.logger.error(`Failed to track workflow event: ${err.message}`);
     }

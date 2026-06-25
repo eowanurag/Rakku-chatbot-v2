@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { COMPLAINT_TYPE_ALIASES } from '../config/complaint-type-alias.config';
 import { normalizeComplaintText, normalizeSelection } from '../../../chat/utils/citizen-input.util';
+import { detectContainerContext } from '../config/incident-container.config';
 
 export interface ComplaintClassificationResult {
   matches: string[];
@@ -32,8 +33,7 @@ export class ComplaintTypeClassifierService {
     'Lost Mobile / Theft': ['phone', 'mobile', 'iphone', 'android', 'sim', 'device', 'stolen phone'],
     'Lost Document': ['passport', 'aadhaar', 'pan', 'documents', 'certificate', 'id card', 'license'],
     'Cyber Fraud / Financial Loss': ['fraud', 'upi', 'bank', 'money', 'otp', 'scam', 'transaction', 'card', 'cards', 'atm', 'credit', 'debit'],
-    'Simple Harassment': ['harassment', 'abuse', 'threat', 'stalking', 'bullying'],
-    'AMBIGUOUS_LOST_ITEM': ['wallet', 'purse', 'bag', 'handbag', 'backpack', 'briefcase', 'sling bag', 'laptop bag']
+    'Simple Harassment': ['harassment', 'abuse', 'threat', 'stalking', 'bullying']
   };
 
   classify(input: string): ComplaintClassificationResult {
@@ -58,6 +58,7 @@ export class ComplaintTypeClassifierService {
       }
     }
 
+    const containerCtx = detectContainerContext(input);
     const cleanText = normalizeComplaintText(input);
     const words = cleanText.split(' ');
 
@@ -77,12 +78,14 @@ export class ComplaintTypeClassifierService {
       'Lost Document': 0,
       'Cyber Fraud / Financial Loss': 0,
       'Simple Harassment': 0,
-      'AMBIGUOUS_LOST_ITEM': 0
+      'AMBIGUOUS_LOST_ITEM': containerCtx.shouldClarify ? 0.85 : 0
     };
 
     // Initialize scores with alias matches (weight 0.95)
     for (const type of aliasMatches) {
-      typeScores[type] = 0.95;
+      if (type in typeScores) {
+        typeScores[type] = 0.95;
+      }
     }
 
     for (const [type, keywords] of Object.entries(this.keywordSets)) {
@@ -143,3 +146,4 @@ export class ComplaintTypeClassifierService {
     return res.matches.length > 0;
   }
 }
+

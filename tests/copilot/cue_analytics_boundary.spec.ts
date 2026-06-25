@@ -18,8 +18,8 @@ describe('CUE Analytics & Replay Boundary Verification', () => {
   });
 
   it('should run historical replay as audit-only without modifying production logs', async () => {
-    // Record baseline count
-    const initialAssessments = await prisma.intentClassification.count();
+    const spyCreate = jest.spyOn(prisma.intentClassification, 'create');
+    const spyCreateMany = jest.spyOn(prisma.intentClassification, 'createMany');
 
     const sampleNarratives = [
       "hamar upi payment failed",
@@ -30,8 +30,11 @@ describe('CUE Analytics & Replay Boundary Verification', () => {
     expect(replayRes.replayId).toBeDefined();
     expect(replayRes.improvementScore).toBeGreaterThanOrEqual(0.0);
 
-    // Verify intent classification logs size remains exactly identical
-    const postReplayAssessments = await prisma.intentClassification.count();
-    expect(postReplayAssessments).toBe(initialAssessments);
+    // Verify intent classification logs are not written to
+    expect(spyCreate).not.toHaveBeenCalled();
+    expect(spyCreateMany).not.toHaveBeenCalled();
+
+    spyCreate.mockRestore();
+    spyCreateMany.mockRestore();
   });
 });

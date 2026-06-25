@@ -56,6 +56,17 @@ import { isSystemAction, normalizeComplaintText, normalizeSelection } from './ut
 import { IncidentItem, IncidentContainer, IncidentItemService } from '../copilot/cie/services/incident-item.service';
 import { ComplaintPriorityService } from '../copilot/cie/services/complaint-priority.service';
 import { IncidentItemCode } from '../copilot/cie/config/incident-item-risk.config';
+import {
+  detectContainerContext,
+  routeContainerIncident,
+  ensureComplaintType,
+  ensureWorkflowConsistency,
+  ensureContainerWorkflowComplete,
+  recoverComplaintType,
+  getRecoveryStep,
+  locationLooksCorrupted,
+  descriptionLooksCorrupted
+} from '../copilot/cie/config/incident-container.config';
 
 
 interface CitizenState {
@@ -3288,6 +3299,11 @@ ${readiness.checklist}
       session.data.location = null;
     }
 
+    if (!session.data.type && (session.step === '3' || session.step === '4' || session.step === '5' || session.step === 'REVIEW')) {
+      recoverComplaintType(session);
+      return this.runComplaintWorkflow(session, '');
+    }
+
     const step = session.step;
     const lang = session.language;
     const cleanMsg = msg.trim().toLowerCase();
@@ -3318,6 +3334,10 @@ ${readiness.checklist}
 
     // --- Hardened Review States ---
     if (step === 'REVIEW') {
+      if (!ensureComplaintType(session) || !ensureWorkflowConsistency(session) || !ensureContainerWorkflowComplete(session)) {
+        recoverComplaintType(session);
+        return this.runComplaintWorkflow(session, '');
+      }
       const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
       
       const isConfirm = ['yes', 'submit', 'confirm', 'option:yes', 'submit application', 'confirm details', 'option:confirm details', 'option:confirm'].includes(cleanMsg);
@@ -3577,33 +3597,16 @@ ${readiness.checklist}
 
     // --- Dynamic / Natural Text Classification ---
     if (step === '2') {
-      if (!isSystem && msg) {
-        // Run CIE extraction
-        const parseRes = this.incidentItemService.extractItemsAndContainers(msg, session.data.incidentItems, session.data.containers);
-        session.data.incidentItems = parseRes.items;
-        session.data.containers = parseRes.containers;
-
-        if (parseRes.reviewReasons && parseRes.reviewReasons.length > 0) {
-          session.data.reviewReasons = [...(session.data.reviewReasons || []), ...parseRes.reviewReasons];
-        }
-        this.syncLegacyFields(session);
-
-        const lowerMsg = msg.toLowerCase();
-        const containerKeywords = ['purse', 'wallet', 'bag', 'handbag', 'backpack', 'briefcase', 'sling bag', 'laptop bag'];
-        const matchesContainer = containerKeywords.some(kw => lowerMsg.includes(kw));
-
-        const classification = this.complaintTypeClassifier.classify(msg);
-
-        if (classification.primaryType === 'AMBIGUOUS_LOST_ITEM' || (matchesContainer && session.data.incidentItems.length === 0)) {
-          this.transitionTo(session, 'COMPLAINT_LOST_ITEM_CLARIFICATION');
-          session.pendingComplaintType = 'AMBIGUOUS_LOST_ITEM';
-          await this.workflowAnalytics.trackEvent(session.sessionId, 'complaint', 'AMBIGUOUS_COMPLAINT_DETECTED');
-          
+      if (msg && !isSystem && !session.data.type) {
+        const containerCtx = detectContainerContext(msg, session.intelligence);
+        if (containerCtx.shouldClarify) {
+          routeContainerIncident(session, containerCtx);
+          const displayLabel = containerCtx.displayLabel || 'bag';
           return {
-            response: `I understand that you lost a purse, wallet, or bag.
-
+            response: `I understand that you lost your ${displayLabel}.
+  
 To help you file the correct complaint, please tell me what was inside it.
-
+  
 1. Important Documents
 2. Mobile Phone
 3. ATM / Debit / Credit Cards
@@ -3621,65 +3624,32 @@ To help you file the correct complaint, please tell me what was inside it.
           };
         }
 
-        // Apply Priority override logic
-        const priorityRes = this.complaintPriorityService.resolveComplaintPriority(session.data.incidentItems, msg);
-        session.data.type = priorityRes.primaryComplaintType;
-        session.data.incidentType = priorityRes.incidentType;
-        session.data.risk = priorityRes.risk;
-
-        // Multi-match classification handling
-        if (classification.matches.length > 1) {
-          this.transitionTo(session, 'MULTIPLE_MATCH_CLARIFY');
-          session.data.multipleMatchCandidates = classification.matches;
-          const multiPrompt = lang === 'hi' ? 
-            "मुझे एक से अधिक संभावित शिकायत प्रकार मिले हैं।\n\n" + classification.matches.map((m, i) => `${i + 1}. ${m}`).join('\n') + "\n\nकृपया एक चुनें।" :
-            "I found more than one possible complaint type.\n\n" + classification.matches.map((m, i) => `${i + 1}. ${m}`).join('\n') + "\n\nPlease choose one.";
-          return {
-            response: multiPrompt,
-            suggestions: classification.matches
-          };
+        const classification = this.complaintTypeClassifier.classify(msg);
+        if (classification.primaryType) {
+          return this.handleComplaintClassification(session, classification, msg);
         }
-
-        // High / Medium Confidence Handling -> Ask confirmation
-        if (classification.confidence === 'HIGH' || classification.confidence === 'MEDIUM') {
-          const matchedType = classification.matches[0];
-          this.transitionTo(session, 'CONFIRM_CLASSIFIED_TYPE');
-          session.data.classifiedTypeCandidate = matchedType;
-          const confirmPrompt = classification.confidence === 'HIGH' ?
-            `I understand that you would like to file a ${matchedType} complaint.\n\nIs that correct?\n\n- [Yes](option:Yes)\n- [No](option:No)` :
-            `I believe this may be a ${matchedType} complaint.\n\nIs this correct?\n\n- [Yes](option:Yes)\n- [No](option:No)`;
-          return {
-            response: confirmPrompt,
-            suggestions: ['Yes', 'No']
-          };
-        }
-
-        // Low Confidence -> Menus/Other handling
-        if (classification.confidence === 'LOW') {
-          return {
-            response: "I could not determine the exact complaint type. Please choose the closest option:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
-            suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss']
-          };
-        }
+        return this.showComplaintTypeMenu(session);
       }
 
-      if (msg) session.data.type = msg;
+      if (session.data.type) {
+        const cleanMsgLower = normalizeSelection(session.data.type).toLowerCase();
+        const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('गुम') || cleanMsgLower.includes('चोरी') || cleanMsgLower.includes('stolen');
+        if (isMobileTheft) {
+          this.transitionTo(session, '2_brand');
+          session.data.empathyShown = true;
+          return {
+            response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
+            suggestions: ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Realme', 'Vivo']
+          };
+        }
 
-      const cleanMsgLower = normalizeSelection(msg).toLowerCase();
-      const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('गुम') || cleanMsgLower.includes('चोरी') || cleanMsgLower.includes('stolen');
-      if (isMobileTheft) {
-        this.transitionTo(session, '2_brand');
-        session.data.empathyShown = true;
+        this.transitionTo(session, '3');
         return {
-          response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
-          suggestions: ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Realme', 'Vivo']
+          response: prompts[lang][1],
         };
       }
 
-      this.transitionTo(session, '3');
-      return {
-        response: prompts[lang][1],
-      };
+      return this.showComplaintTypeMenu(session);
     }
 
     if (step === 'CONFIRM_CLASSIFIED_TYPE') {
@@ -3952,6 +3922,115 @@ To help you file the correct complaint, please tell me what was inside it.
     }
 
     return { response: this.localizationService.translate('invalidStep', lang) };
+  }
+
+  private async handleComplaintClassification(
+    session: ChatSessionState,
+    classification: any,
+    msg: string
+  ): Promise<{ response: string; suggestions?: string[] }> {
+    const lang = session.language;
+    const containerCtx = detectContainerContext(msg, session.intelligence);
+    const matchesContainer = containerCtx.shouldClarify;
+
+    // Run CIE extraction
+    const parseRes = this.incidentItemService.extractItemsAndContainers(msg, session.data.incidentItems, session.data.containers);
+    session.data.incidentItems = parseRes.items;
+    session.data.containers = parseRes.containers;
+    if (parseRes.reviewReasons && parseRes.reviewReasons.length > 0) {
+      session.data.reviewReasons = [...(session.data.reviewReasons || []), ...parseRes.reviewReasons];
+    }
+    this.syncLegacyFields(session);
+
+    if (classification.primaryType === 'AMBIGUOUS_LOST_ITEM' || (matchesContainer && session.data.incidentItems.length === 0)) {
+      this.transitionTo(session, 'COMPLAINT_LOST_ITEM_CLARIFICATION');
+      session.pendingComplaintType = 'AMBIGUOUS_LOST_ITEM';
+      await this.workflowAnalytics.trackEvent(session.sessionId, 'complaint', 'AMBIGUOUS_COMPLAINT_DETECTED');
+      
+      const displayLabel = containerCtx.displayLabel || 'bag';
+      return {
+        response: `I understand that you lost your ${displayLabel}.
+  
+To help you file the correct complaint, please tell me what was inside it.
+  
+1. Important Documents
+2. Mobile Phone
+3. ATM / Debit / Credit Cards
+4. Cash Only
+5. Mixed Items
+6. Nothing Important`,
+        suggestions: [
+          'Important Documents',
+          'Mobile Phone',
+          'ATM / Debit / Credit Cards',
+          'Cash Only',
+          'Mixed Items',
+          'Nothing Important'
+        ]
+      };
+    }
+
+    // Apply Priority override logic
+    const priorityRes = this.complaintPriorityService.resolveComplaintPriority(session.data.incidentItems, msg);
+    session.data.type = priorityRes.primaryComplaintType;
+    session.data.incidentType = priorityRes.incidentType;
+    session.data.risk = priorityRes.risk;
+
+    // Multi-match classification handling
+    if (classification.matches.length > 1) {
+      this.transitionTo(session, 'MULTIPLE_MATCH_CLARIFY');
+      session.data.multipleMatchCandidates = classification.matches;
+      const multiPrompt = lang === 'hi' ? 
+        "मुझे एक से अधिक संभावित शिकायत प्रकार मिले हैं।\n\n" + classification.matches.map((m, i) => `${i + 1}. ${m}`).join('\n') + "\n\nकृपया एक चुनें।" :
+        "I found more than one possible complaint type.\n\n" + classification.matches.map((m, i) => `${i + 1}. ${m}`).join('\n') + "\n\nPlease choose one.";
+      return {
+        response: multiPrompt,
+        suggestions: classification.matches
+      };
+    }
+
+    // High / Medium Confidence Handling -> Ask confirmation
+    if (classification.confidence === 'HIGH' || classification.confidence === 'MEDIUM') {
+      const matchedType = classification.matches[0];
+      this.transitionTo(session, 'CONFIRM_CLASSIFIED_TYPE');
+      session.data.classifiedTypeCandidate = matchedType;
+      const confirmPrompt = classification.confidence === 'HIGH' ?
+        `I understand that you would like to file a ${matchedType} complaint.\n\nIs that correct?\n\n- [Yes](option:Yes)\n- [No](option:No)` :
+        `I believe this may be a ${matchedType} complaint.\n\nIs this correct?\n\n- [Yes](option:Yes)\n- [No](option:No)`;
+      return {
+        response: confirmPrompt,
+        suggestions: ['Yes', 'No']
+      };
+    }
+
+    // Low Confidence -> Menus/Other handling
+    if (classification.confidence === 'LOW') {
+      return {
+        response: "I could not determine the exact complaint type. Please choose the closest option:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
+        suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss']
+      };
+    }
+
+    return this.showComplaintTypeMenu(session);
+  }
+
+  private showComplaintTypeMenu(session: ChatSessionState): { response: string; suggestions?: string[] } {
+    const lang = session.language;
+    const prompts = {
+      en: [
+        "Please select the **Complaint Type**:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
+      ],
+      hi: [
+        "कृपया **शिकायत का प्रकार** चुनें:\n\n- [मोबाइल चोरी / गुम होना](option:Lost Mobile / Theft)\n- [खोया हुआ दस्तावेज़](option:Lost Document)\n- [सामान्य उत्पीड़न](option:Simple Harassment)\n- [साइबर धोखाधड़ी](option:Cyber Fraud / Financial Loss)",
+      ],
+      hinglish: [
+        "Please select the **Complaint Type**:\n\n- [Lost Mobile / Theft](option:Lost Mobile / Theft)\n- [Lost Document](option:Lost Document)\n- [Simple Harassment](option:Simple Harassment)\n- [Cyber Fraud / Financial Loss](option:Cyber Fraud / Financial Loss)",
+      ],
+    };
+    return {
+      response: prompts[lang][0],
+      suggestions: ['Lost Mobile / Theft', 'Lost Document', 'Simple Harassment', 'Cyber Fraud / Financial Loss'],
+    };
   }
 
   // --- Verification Workflow ---
