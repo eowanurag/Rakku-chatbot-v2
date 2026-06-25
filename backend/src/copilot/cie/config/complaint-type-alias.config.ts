@@ -6,16 +6,6 @@ export interface ComplaintTypeAlias {
 export const COMPLAINT_TYPE_ALIASES: ComplaintTypeAlias[] = [
   {
     aliases: [
-      "lost purse",
-      "lost my purse",
-      "lost wallet",
-      "lost my wallet",
-      "lost bag",
-      "lost my bag",
-      "purse missing",
-      "wallet missing",
-      "bag missing",
-      "my bag is lost",
       "passport missing",
       "lost passport",
       "lost my passport",
@@ -29,11 +19,41 @@ export const COMPLAINT_TYPE_ALIASES: ComplaintTypeAlias[] = [
       "lost my documents",
       "certificate lost",
       "id card lost",
-      "license lost",
-      "wallet lost",
-      "purse lost"
+      "license lost"
     ],
     complaintType: "Lost Document"
+  },
+  {
+    aliases: [
+      'lost purse',
+      'purse lost',
+      'lost wallet',
+      'wallet lost',
+      'wallet missing',
+      'purse missing',
+      'lost my purse',
+      'lost my wallet',
+      'my bag is missing',
+      'lost my bag',
+      'lost handbag',
+      'handbag lost',
+      'lost backpack',
+      'backpack missing',
+      'my purse is missing',
+      'misplaced wallet',
+      'misplaced purse',
+      'misplaced bag',
+      'lost laptop bag',
+      'laptop bag lost',
+      'laptop bag missing',
+      'lost briefcase',
+      'briefcase lost',
+      'briefcase missing',
+      'lost sling bag',
+      'sling bag lost',
+      'sling bag missing'
+    ],
+    complaintType: 'AMBIGUOUS_LOST_ITEM'
   },
   {
     aliases: [

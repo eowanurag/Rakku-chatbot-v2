@@ -7,7 +7,7 @@ export class WorkflowAnalyticsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async trackEvent(sessionId: string, workflowType: string, eventType: 'WORKFLOW_STARTED' | 'WORKFLOW_COMPLETED' | 'WORKFLOW_ABANDONED' | 'WORKFLOW_RESUMED'): Promise<void> {
+  async trackEvent(sessionId: string, workflowType: string, eventType: string): Promise<void> {
     try {
       await this.prisma.citizenWorkflowEvent.create({
         data: {
@@ -36,10 +36,38 @@ export class WorkflowAnalyticsService {
         where: { predictedIntent: 'EMERGENCY_HELP' }
       });
 
+      const totalComplaints = await this.prisma.citizenWorkflowEvent.count({
+        where: { workflowType: 'complaint', eventType: 'WORKFLOW_STARTED' }
+      });
+      const ambiguousStarts = await this.prisma.citizenWorkflowEvent.count({
+        where: { eventType: 'AMBIGUOUS_COMPLAINT_DETECTED' }
+      });
+      const ambiguousCompletes = await this.prisma.citizenWorkflowEvent.count({
+        where: { eventType: 'AMBIGUOUS_CLARIFICATION_COMPLETED' }
+      });
+      const freetextCount = await this.prisma.citizenWorkflowEvent.count({
+        where: { eventType: 'AMBIGUOUS_CLARIFICATION_FREETEXT' }
+      });
+      const buttonCount = await this.prisma.citizenWorkflowEvent.count({
+        where: { eventType: 'AMBIGUOUS_CLARIFICATION_BUTTON' }
+      });
+
+      // Item & Container telemetry records
+      const itemAddedLater = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'ITEM_ADDED_LATER' } });
+      const itemRemoved = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'ITEM_REMOVED' } });
+      const itemEdited = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'ITEM_EDITED' } });
+      const itemDeferred = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'ITEM_DEFERRED' } });
+      const containerDetected = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'CONTAINER_DETECTED' } });
+      const multiContainerDetected = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'MULTI_CONTAINER_DETECTED' } });
+      const identityRiskIncident = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'IDENTITY_RISK_INCIDENT' } });
+      const financialRiskIncident = await this.prisma.citizenWorkflowEvent.count({ where: { eventType: 'FINANCIAL_RISK_INCIDENT' } });
+
       const completionRate = started > 0 ? (completed / started) * 100 : 96.5;
       const abandonmentRate = started > 0 ? (abandoned / started) * 100 : 3.5;
       const resumeSuccess = abandoned > 0 ? (resumed / abandoned) * 100 : 91.0;
       const recommendationAcceptance = recTotal > 0 ? (recAccepted / recTotal) * 100 : 79.5;
+      const ambiguousComplaintRate = totalComplaints > 0 ? (ambiguousStarts / totalComplaints) * 100 : 0.0;
+      const clarificationCompletionRate = ambiguousStarts > 0 ? (ambiguousCompletes / ambiguousStarts) * 100 : 0.0;
 
       const metrics = {
         completionRate: parseFloat(completionRate.toFixed(2)),
@@ -47,6 +75,18 @@ export class WorkflowAnalyticsService {
         resumeSuccess: parseFloat(resumeSuccess.toFixed(2)),
         emergencyUsage,
         recommendationAcceptance: parseFloat(recommendationAcceptance.toFixed(2)),
+        ambiguousComplaintRate: parseFloat(ambiguousComplaintRate.toFixed(2)),
+        clarificationCompletionRate: parseFloat(clarificationCompletionRate.toFixed(2)),
+        ambiguousFreetextCount: freetextCount,
+        ambiguousButtonCount: buttonCount,
+        itemAddedLater,
+        itemRemoved,
+        itemEdited,
+        itemDeferred,
+        containerDetected,
+        multiContainerDetected,
+        identityRiskIncident,
+        financialRiskIncident,
         updatedAt: new Date().toISOString()
       };
 

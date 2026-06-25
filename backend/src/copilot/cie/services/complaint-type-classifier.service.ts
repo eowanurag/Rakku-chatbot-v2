@@ -6,6 +6,10 @@ export interface ComplaintClassificationResult {
   matches: string[];
   confidence: 'LOW' | 'MEDIUM' | 'HIGH';
   score: number;
+  primaryType?: string;
+  secondaryTypes?: string[];
+  requiresClarification?: boolean;
+  clarificationReason?: string;
 }
 
 @Injectable()
@@ -20,14 +24,16 @@ export class ComplaintTypeClassifierService {
     'cyber fraud': 'Cyber Fraud / Financial Loss',
     'cyber fraud/financial loss': 'Cyber Fraud / Financial Loss',
     'simple harassment': 'Simple Harassment',
-    'harassment': 'Simple Harassment'
+    'harassment': 'Simple Harassment',
+    'ambiguous_lost_item': 'AMBIGUOUS_LOST_ITEM'
   };
 
   private readonly keywordSets: Record<string, string[]> = {
     'Lost Mobile / Theft': ['phone', 'mobile', 'iphone', 'android', 'sim', 'device', 'stolen phone'],
-    'Lost Document': ['wallet', 'purse', 'bag', 'passport', 'aadhaar', 'pan', 'documents', 'certificate', 'id card', 'license'],
-    'Cyber Fraud / Financial Loss': ['fraud', 'upi', 'bank', 'money', 'otp', 'scam', 'transaction'],
-    'Simple Harassment': ['harassment', 'abuse', 'threat', 'stalking', 'bullying']
+    'Lost Document': ['passport', 'aadhaar', 'pan', 'documents', 'certificate', 'id card', 'license'],
+    'Cyber Fraud / Financial Loss': ['fraud', 'upi', 'bank', 'money', 'otp', 'scam', 'transaction', 'card', 'cards', 'atm', 'credit', 'debit'],
+    'Simple Harassment': ['harassment', 'abuse', 'threat', 'stalking', 'bullying'],
+    'AMBIGUOUS_LOST_ITEM': ['wallet', 'purse', 'bag', 'handbag', 'backpack', 'briefcase', 'sling bag', 'laptop bag']
   };
 
   classify(input: string): ComplaintClassificationResult {
@@ -40,7 +46,15 @@ export class ComplaintTypeClassifierService {
 
     for (const [key, value] of Object.entries(this.typeMapping)) {
       if (normalizedLower === key) {
-        return { matches: [value], confidence: 'HIGH', score: 1.0 };
+        return {
+          matches: [value],
+          confidence: 'HIGH',
+          score: 1.0,
+          primaryType: value,
+          secondaryTypes: [],
+          requiresClarification: value === 'AMBIGUOUS_LOST_ITEM',
+          clarificationReason: value === 'AMBIGUOUS_LOST_ITEM' ? 'LOST_CONTAINER' : undefined
+        };
       }
     }
 
@@ -62,7 +76,8 @@ export class ComplaintTypeClassifierService {
       'Lost Mobile / Theft': 0,
       'Lost Document': 0,
       'Cyber Fraud / Financial Loss': 0,
-      'Simple Harassment': 0
+      'Simple Harassment': 0,
+      'AMBIGUOUS_LOST_ITEM': 0
     };
 
     // Initialize scores with alias matches (weight 0.95)
@@ -85,9 +100,14 @@ export class ComplaintTypeClassifierService {
       }
     }
 
-    const matchedTypes = Object.keys(typeScores)
+    let matchedTypes = Object.keys(typeScores)
       .filter(type => typeScores[type] >= 0.5)
       .sort((a, b) => typeScores[b] - typeScores[a]);
+
+    // If we have concrete types matched along with AMBIGUOUS_LOST_ITEM, filter out AMBIGUOUS_LOST_ITEM
+    if (matchedTypes.includes('AMBIGUOUS_LOST_ITEM') && matchedTypes.some(t => t !== 'AMBIGUOUS_LOST_ITEM')) {
+      matchedTypes = matchedTypes.filter(t => t !== 'AMBIGUOUS_LOST_ITEM');
+    }
 
     if (matchedTypes.length === 0) {
       return { matches: [], confidence: 'LOW', score: 0.0 };
@@ -105,10 +125,16 @@ export class ComplaintTypeClassifierService {
       confidence = 'MEDIUM';
     }
 
+    const requiresClarification = topType === 'AMBIGUOUS_LOST_ITEM';
+
     return {
       matches: matchedTypes,
       confidence,
-      score: topScore
+      score: topScore,
+      primaryType: topType,
+      secondaryTypes: matchedTypes.slice(1),
+      requiresClarification,
+      clarificationReason: requiresClarification ? 'LOST_CONTAINER' : undefined
     };
   }
 

@@ -50,8 +50,13 @@ import { EvidenceGuidanceService } from '../copilot/cie/services/evidence-guidan
 import { JurisdictionGuidanceService } from '../copilot/cie/services/jurisdiction-guidance.service';
 import { WorkflowInsightsService } from '../copilot/workflow-completion/workflow-insights.service';
 import { ComplaintTypeClassifierService } from '../copilot/cie/services/complaint-type-classifier.service';
+import { WorkflowAnalyticsService } from '../copilot/workflow-completion/workflow-analytics.service';
 import { validateIncidentDate } from './utils/validateIncidentDate';
 import { isSystemAction, normalizeComplaintText, normalizeSelection } from './utils/citizen-input.util';
+import { IncidentItem, IncidentContainer, IncidentItemService } from '../copilot/cie/services/incident-item.service';
+import { ComplaintPriorityService } from '../copilot/cie/services/complaint-priority.service';
+import { IncidentItemCode } from '../copilot/cie/config/incident-item-risk.config';
+
 
 interface CitizenState {
   id?: string;
@@ -84,6 +89,7 @@ interface ChatSessionState {
   citizen: CitizenState;
 
   // Temporary pre-onboarding fields
+  sessionId?: string;
   preOnboardingMobile?: string;
   preOnboardingCompleted?: boolean;
   returningCitizen?: boolean;
@@ -94,6 +100,7 @@ interface ChatSessionState {
   pendingIntent?: string;
   pendingWorkflowState?: any;
   pendingWorkflow?: string;
+  pendingComplaintType?: string;
     intelligence?: {
       entities: Record<string, any>;
       severity: string | null;
@@ -102,6 +109,7 @@ interface ChatSessionState {
       completeness: 'INCOMPLETE' | 'PARTIAL' | 'READY';
       confidence: number | null;
       clarificationRequired: boolean;
+      secondaryRecommendations?: string[];
     };
     backActionsCount?: number;
     validationFailuresCount?: number;
@@ -185,6 +193,9 @@ export class ChatService {
   public readonly jurisdictionGuidanceService: JurisdictionGuidanceService;
   public readonly workflowInsightsService: WorkflowInsightsService;
   private readonly complaintTypeClassifier: ComplaintTypeClassifierService;
+  private readonly incidentItemService: IncidentItemService;
+  private readonly complaintPriorityService: ComplaintPriorityService;
+  private readonly workflowAnalytics: WorkflowAnalyticsService;
   private readonly sessionCache = new Map<string, ChatSessionState>();
 
   constructor(
@@ -212,7 +223,10 @@ export class ChatService {
     complaintGuidanceService?: ComplaintGuidanceService,
     timelineGeneratorService?: TimelineGeneratorService,
   ) {
+    this.incidentItemService = new IncidentItemService();
+    this.complaintPriorityService = new ComplaintPriorityService();
     this.complaintTypeClassifier = new ComplaintTypeClassifierService();
+    this.workflowAnalytics = new WorkflowAnalyticsService(this.prisma);
     this.checkpointService = checkpointService || new CheckpointService(this.prisma);
     this.workflowCompletionService = workflowCompletionService || new WorkflowCompletionService(this.prisma);
     this.draftRecoveryService = draftRecoveryService || new DraftRecoveryService(this.prisma);
@@ -281,10 +295,14 @@ export class ChatService {
       'MODIFY_PROFILE_INPUT': ['CONFIRM_PROFILE'],
       
       // Complaint Steps
-      '1': ['2', '2_brand', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY'],
-      '2': ['2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY'],
-      'CONFIRM_CLASSIFIED_TYPE': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE'],
-      'MULTIPLE_MATCH_CLARIFY': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE'],
+      '1': ['2', '2_brand', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY', 'COMPLAINT_LOST_ITEM_CLARIFICATION', 'INCIDENT_ITEMS_REVIEW'],
+      '2': ['2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY', 'COMPLAINT_LOST_ITEM_CLARIFICATION', 'INCIDENT_ITEMS_REVIEW'],
+      'CONFIRM_CLASSIFIED_TYPE': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE', 'COMPLAINT_LOST_ITEM_CLARIFICATION', 'INCIDENT_ITEMS_REVIEW'],
+      'MULTIPLE_MATCH_CLARIFY': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE', 'COMPLAINT_LOST_ITEM_CLARIFICATION', 'INCIDENT_ITEMS_REVIEW'],
+      'COMPLAINT_LOST_ITEM_CLARIFICATION': ['2', '2_brand', '3', 'CONFIRM_CLASSIFIED_TYPE', 'MULTIPLE_MATCH_CLARIFY', 'INCIDENT_ITEMS_REVIEW', 'TIMED_OUT'],
+      'INCIDENT_ITEMS_REVIEW': ['REVIEW', 'INCIDENT_ITEMS_EDIT', 'INCIDENT_ITEMS_DEFERRED_REVIEW', 'START'],
+      'INCIDENT_ITEMS_EDIT': ['INCIDENT_ITEMS_REVIEW'],
+      'INCIDENT_ITEMS_DEFERRED_REVIEW': ['INCIDENT_ITEMS_REVIEW', 'REVIEW'],
       '2_brand': ['2_model'],
       '2_model': ['2_color'],
       '2_color': ['2_year'],
@@ -501,6 +519,37 @@ export class ChatService {
   private migrateAndRecoverSession(state: ChatSessionState): void {
     if (!state) return;
 
+    // V2.8.5 Schema migration shims
+    if (state.data) {
+      if (!state.data.schema) {
+        state.data.schema = {
+          version: '2.8.5',
+          migratedFrom: '2.8.4.2a',
+          migratedAt: new Date().toISOString()
+        };
+      }
+      
+      // Getter shims fallback recovery
+      const items = this.incidentItemService.getIncidentItemsHelper(state.data);
+      if (items && items.length > 0 && (!state.data.incidentItems || state.data.incidentItems.length === 0)) {
+        state.data.incidentItems = items;
+      }
+      
+      // Initialize lists
+      if (!state.data.containers) state.data.containers = [];
+      if (!state.data.incidentItems) state.data.incidentItems = [];
+      if (!state.data.evidenceRequests) state.data.evidenceRequests = [];
+      if (!state.data.assetsReview) {
+        state.data.assetsReview = {
+          state: 'NOT_STARTED',
+          clarification: {
+            attempts: 0
+          },
+          partialItems: []
+        };
+      }
+    }
+
     // Legacy Complaint Session Migration Shim (V2.8) & Revision 2 Legacy Session Recovery
     if (state.workflow === 'complaint' && state.data) {
       const knownComplaintTypes = [
@@ -636,6 +685,7 @@ export class ChatService {
   }
 
   async saveSession(sessionId: string, state: ChatSessionState): Promise<void> {
+    this.incidentItemService.trimSessionData(state);
     state.lastActivityAt = new Date().toISOString();
     this.sessionCache.set(sessionId, state);
     try {
@@ -768,6 +818,7 @@ export class ChatService {
         confidence: consensus.confidence,
         clarificationRequired: consensus.clarificationRequired || false
       };
+      this.syncLegacyFields(state);
 
       // Workstream H: Auto-save drafts / reliability checks
       if (state.workflow && state.step !== 'START' && state.step !== 'CONFIRM_PROFILE') {
@@ -2932,12 +2983,18 @@ export class ChatService {
   private renderComplaintReviewScreen(session: ChatSessionState, lang: 'en' | 'hi' | 'hinglish'): { response: string; suggestions?: string[] } {
     const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
 
+    const items = session.data.incidentItems || [];
+    const itemBullets = items.map((i: IncidentItem) => `- ${i.itemCode.replace(/_/g, ' ')}`).join('\n');
+
     let reviewScreen = `👮 **Please review your application.**
 
 Name: **${session.citizen.fullName}**
 Mobile: **${session.citizen.mobileNumber}**
 District: **${session.citizen.city || session.citizen.district || 'Not Provided'}**
 Complaint Type: **${session.data.type}**
+
+**Reported Items:**
+${itemBullets || 'None'}
 `;
 
     if (session.data.brand) {
@@ -3014,6 +3071,202 @@ ${readiness.checklist}
   }
 
 
+  private syncLegacyFields(session: ChatSessionState): void {
+    if (!session.data) return;
+    if (!session.data.entities) {
+      session.data.entities = {};
+    }
+    
+    // Map container type (legacy -> new)
+    if (Array.isArray(session.data.containers) && session.data.containers.length > 0) {
+      session.data.entities.lostContainerType = session.data.containers[0].type;
+    } else if (session.data.entities.lostContainerType) {
+      if (!session.data.containers || session.data.containers.length === 0) {
+        session.data.containers = [{
+          containerId: 'container_001',
+          type: session.data.entities.lostContainerType,
+          status: 'LOST',
+          owner: 'SELF',
+          containerConfidence: 'HIGH'
+        }];
+      }
+    }
+
+    // Map lostItemContents and secondaryRecommendations (legacy -> new)
+    if ((!session.data.incidentItems || session.data.incidentItems.length === 0) && (session.data.lostItemContents || (session.intelligence && session.intelligence.secondaryRecommendations))) {
+      const items: IncidentItem[] = [];
+      const lostItemContents = session.data.lostItemContents;
+      const secondaryRecommendations = (session.intelligence && session.intelligence.secondaryRecommendations) || session.data.secondaryRecommendations || [];
+
+      if (lostItemContents === 'Documents') {
+        items.push({
+          itemId: 'item_001',
+          itemCode: 'UNKNOWN_IDENTITY_DOCUMENTS',
+          status: 'LOST',
+          confirmed: true,
+          quantity: 1,
+          confidence: 'MEDIUM',
+          source: 'LEGACY_MIGRATION',
+          relationship: 'SEPARATE_ITEM',
+          owner: 'SELF',
+          requiresCitizenConfirmation: false
+        });
+      } else if (lostItemContents === 'Mobile Phone') {
+        items.push({
+          itemId: 'item_001',
+          itemCode: 'MOBILE_PHONE',
+          status: 'LOST',
+          confirmed: true,
+          quantity: 1,
+          confidence: 'HIGH',
+          source: 'LEGACY_MIGRATION',
+          relationship: 'SEPARATE_ITEM',
+          owner: 'SELF',
+          requiresCitizenConfirmation: false
+        });
+      } else if (lostItemContents === 'ATM / Debit / Credit Cards') {
+        items.push({
+          itemId: 'item_001',
+          itemCode: 'UNKNOWN_BANK_CARDS',
+          status: 'LOST',
+          confirmed: true,
+          quantity: 1,
+          confidence: 'MEDIUM',
+          source: 'LEGACY_MIGRATION',
+          relationship: 'SEPARATE_ITEM',
+          owner: 'SELF',
+          requiresCitizenConfirmation: false
+        });
+      } else if (lostItemContents === 'Cash Only') {
+        items.push({
+          itemId: 'item_001',
+          itemCode: 'CASH',
+          status: 'LOST',
+          confirmed: true,
+          quantity: 1,
+          confidence: 'HIGH',
+          source: 'LEGACY_MIGRATION',
+          relationship: 'SEPARATE_ITEM',
+          owner: 'SELF',
+          requiresCitizenConfirmation: false
+        });
+      } else if (lostItemContents === 'Mixed Items') {
+        items.push({
+          itemId: 'item_001',
+          itemCode: 'UNKNOWN_OTHER',
+          status: 'LOST',
+          confirmed: true,
+          quantity: 1,
+          confidence: 'LOW',
+          source: 'LEGACY_MIGRATION',
+          relationship: 'SEPARATE_ITEM',
+          owner: 'SELF',
+          requiresCitizenConfirmation: false
+        });
+      }
+
+      // Reconstruct specific items based on secondaryRecommendations
+      for (const rec of secondaryRecommendations) {
+        const lowerRec = rec.toLowerCase();
+        if (lowerRec.includes('sim') || lowerRec.includes('mobile')) {
+          if (!items.some(i => i.itemCode === 'MOBILE_PHONE')) {
+            items.push({
+              itemId: `item_${items.length + 1}`,
+              itemCode: 'MOBILE_PHONE',
+              status: 'LOST',
+              confirmed: true,
+              quantity: 1,
+              confidence: 'HIGH',
+              source: 'LEGACY_MIGRATION',
+              relationship: 'SEPARATE_ITEM',
+              owner: 'SELF',
+              requiresCitizenConfirmation: false
+            });
+          }
+        }
+        if (lowerRec.includes('passport')) {
+          if (!items.some(i => i.itemCode === 'PASSPORT')) {
+            items.push({
+              itemId: `item_${items.length + 1}`,
+              itemCode: 'PASSPORT',
+              status: 'LOST',
+              confirmed: true,
+              quantity: 1,
+              confidence: 'HIGH',
+              source: 'LEGACY_MIGRATION',
+              relationship: 'SEPARATE_ITEM',
+              owner: 'SELF',
+              requiresCitizenConfirmation: false
+            });
+          }
+        }
+        if (lowerRec.includes('atm') || lowerRec.includes('bank') || lowerRec.includes('1930')) {
+          if (!items.some(i => i.itemCode === 'UNKNOWN_BANK_CARDS' || i.itemCode === 'ATM_CARD')) {
+            items.push({
+              itemId: `item_${items.length + 1}`,
+              itemCode: 'UNKNOWN_BANK_CARDS',
+              status: 'LOST',
+              confirmed: true,
+              quantity: 1,
+              confidence: 'MEDIUM',
+              source: 'LEGACY_MIGRATION',
+              relationship: 'SEPARATE_ITEM',
+              owner: 'SELF',
+              requiresCitizenConfirmation: false
+            });
+          }
+        }
+      }
+
+      if (items.length > 0) {
+        session.data.incidentItems = items;
+      }
+    }
+    
+    // Map lostItemContents if not already set
+    if (!session.data.lostItemContents && Array.isArray(session.data.incidentItems) && session.data.incidentItems.length > 0) {
+      const items = session.data.incidentItems;
+      const codes = items.map(i => i.itemCode);
+      
+      const hasPhone = codes.includes('MOBILE_PHONE');
+      const hasCard = codes.some(c => ['ATM_CARD', 'DEBIT_CARD', 'CREDIT_CARD', 'UNKNOWN_BANK_CARDS'].includes(c));
+      const hasCash = codes.includes('CASH');
+      const hasDoc = codes.some(c => ['AADHAAR_CARD', 'PAN_CARD', 'DRIVING_LICENSE', 'PASSPORT', 'VEHICLE_RC', 'CHEQUEBOOK', 'UNKNOWN_IDENTITY_DOCUMENTS'].includes(c));
+      
+      const categoriesCount = [hasPhone, hasCard, hasCash, hasDoc].filter(Boolean).length;
+      if (categoriesCount > 1) {
+        session.data.lostItemContents = 'Mixed Items';
+      } else if (hasPhone) {
+        session.data.lostItemContents = 'Mobile Phone';
+      } else if (hasCard) {
+        session.data.lostItemContents = 'ATM / Debit / Credit Cards';
+      } else if (hasCash) {
+        session.data.lostItemContents = 'Cash Only';
+      } else if (hasDoc) {
+        session.data.lostItemContents = 'Documents';
+      }
+    }
+
+    if (session.intelligence) {
+      const secondaryRecs: string[] = [];
+      if (Array.isArray(session.data.incidentItems)) {
+        const codes = session.data.incidentItems.map(i => i.itemCode);
+        if (codes.some(c => ['ATM_CARD', 'DEBIT_CARD', 'CREDIT_CARD', 'UNKNOWN_BANK_CARDS'].includes(c))) {
+          secondaryRecs.push('Block ATM cards');
+          secondaryRecs.push('Block ATM Cards');
+          secondaryRecs.push('Call 1930');
+        }
+        if (codes.includes('MOBILE_PHONE')) {
+          secondaryRecs.push('Block SIM');
+        }
+        if (codes.includes('PASSPORT')) {
+          secondaryRecs.push('Passport Reissue Guidance');
+        }
+      }
+      session.intelligence.secondaryRecommendations = secondaryRecs;
+    }
+  }
+
   // --- Complaint Workflow ---
   private async runComplaintWorkflow(session: ChatSessionState, msg: string): Promise<{ response: string; suggestions?: string[] }> {
     // Migration shim for backward compatibility
@@ -3078,6 +3331,21 @@ ${readiness.checklist}
             suggestions: ["Modify Details"]
           };
         }
+
+        // Initialize submissionSnapshot
+        const items = session.data.incidentItems || [];
+        const incidentHash = this.incidentItemService.computeIncidentHash(items);
+        const priorityRes = this.complaintPriorityService.resolveComplaintPriority(items, session.data.description || '');
+
+        session.data.submissionSnapshot = {
+          submittedAt: new Date().toISOString(),
+          incidentHash,
+          schemaVersion: '2.8.5',
+          itemCount: items.length,
+          riskLevel: priorityRes.risk.level,
+          incidentVersion: session.data.submissionSnapshot?.incidentVersion || 1
+        };
+
         this.transitionTo(session, 'ASK_FEEDBACK');
         let fullDetails = `Location: ${session.data.location} | Date/Time: ${session.data.time} | Description: ${session.data.description}`;
         if (session.data.brand) {
@@ -3160,6 +3428,118 @@ ${readiness.checklist}
       }
     }
 
+    if (step === 'COMPLAINT_LOST_ITEM_CLARIFICATION') {
+      const cleanInput = cleanMsg;
+
+      // Timeout Check
+      if (!session.data.assetsReview) {
+        session.data.assetsReview = { state: 'NOT_STARTED', clarification: { attempts: 0 }, partialItems: [] };
+      }
+      if (!session.data.assetsReview.clarification) {
+        session.data.assetsReview.clarification = { attempts: 0 };
+      }
+
+      if (session.data.assetsReview.clarification.lastPromptAt) {
+        const lastPrompt = new Date(session.data.assetsReview.clarification.lastPromptAt).getTime();
+        const diffMinutes = (Date.now() - lastPrompt) / (1000 * 60);
+        if (diffMinutes >= 1440) { // 24 hours
+          session.data.assetsReview.state = 'TIMED_OUT';
+          return {
+            response: "⏰ Verification Session Timed Out. Please restart your lost item reporting to review and confirm your items.",
+            suggestions: ['File Complaint']
+          };
+        }
+      }
+
+      session.data.assetsReview.clarification.attempts = (session.data.assetsReview.clarification.attempts || 0) + 1;
+      session.data.assetsReview.clarification.lastPromptAt = new Date().toISOString();
+
+      if (session.data.assetsReview.clarification.attempts > 5) {
+        // Capped attempts, accept as is and proceed
+        this.transitionTo(session, 'INCIDENT_ITEMS_REVIEW');
+        return this.runComplaintWorkflow(session, '');
+      }
+      
+      const isDoc = ['1', 'documents', 'important documents', 'aadhaar', 'pan', 'passport', 'license', 'licence', 'dl', 'id'].some(kw => cleanInput.includes(kw));
+      const isPhone = ['2', 'mobile phone', 'phone', 'mobile', 'iphone', 'samsung', 'android'].some(kw => cleanInput.includes(kw));
+      const isCard = ['3', 'cards', 'card', 'atm', 'debit', 'credit'].some(kw => cleanInput.includes(kw));
+      const isCash = ['4', 'cash only', 'cash', 'money', 'rupees', '₹'].some(kw => cleanInput.includes(kw));
+      const isMixed = ['5', 'mixed items', 'mixed', 'mix', 'both'].some(kw => cleanInput.includes(kw));
+      const isNothing = ['6', 'nothing important', 'nothing', 'empty', 'important'].some(kw => cleanInput.includes(kw));
+
+      let selectionNum = '';
+      let isFreeText = false;
+      
+      if (cleanInput === '1' || cleanInput.includes('important documents')) selectionNum = '1';
+      else if (cleanInput === '2' || cleanInput.includes('mobile phone')) selectionNum = '2';
+      else if (cleanInput === '3' || cleanInput.includes('debit') || cleanInput.includes('credit')) selectionNum = '3';
+      else if (cleanInput === '4' || cleanInput.includes('cash only')) selectionNum = '4';
+      else if (cleanInput === '5' || cleanInput.includes('mixed items')) selectionNum = '5';
+      else if (cleanInput === '6' || cleanInput.includes('nothing important')) selectionNum = '6';
+      else {
+        isFreeText = true;
+      }
+
+      let targetType = '';
+      
+      if (selectionNum === '1' || (isDoc && !isPhone && !isCard && !isCash && !isMixed && !isNothing)) {
+        targetType = 'Lost Document';
+        session.data.lostItemContents = 'Documents';
+      } else if (selectionNum === '2' || (isPhone && !isDoc && !isCard && !isCash && !isMixed && !isNothing)) {
+        targetType = 'Lost Mobile / Theft';
+        session.data.lostItemContents = 'Mobile Phone';
+      } else if (selectionNum === '3' || (isCard && !isDoc && !isPhone && !isCash && !isMixed && !isNothing)) {
+        targetType = 'Cyber Fraud / Financial Loss';
+        session.data.lostItemContents = 'ATM / Debit / Credit Cards';
+      } else if (selectionNum === '4' || (isCash && !isDoc && !isPhone && !isCard && !isMixed && !isNothing)) {
+        targetType = 'Lost Document';
+        session.data.propertyOnly = true;
+        session.data.lostItemContents = 'Cash Only';
+      } else if (selectionNum === '5' || isMixed) {
+        targetType = 'Lost Document';
+        session.data.lostItemContents = 'Mixed Items';
+      } else if (selectionNum === '6' || isNothing) {
+        targetType = 'Lost Document';
+        session.data.propertyOnly = true;
+        session.data.lostItemContents = 'Nothing Important';
+      }
+
+      // Run central service parser
+      const parseRes = this.incidentItemService.extractItemsAndContainers(msg, session.data.incidentItems, session.data.containers);
+      session.data.incidentItems = parseRes.items;
+      session.data.containers = parseRes.containers;
+
+      if (parseRes.reviewReasons && parseRes.reviewReasons.length > 0) {
+        session.data.reviewReasons = [...(session.data.reviewReasons || []), ...parseRes.reviewReasons];
+      }
+      this.syncLegacyFields(session);
+
+      session.data.type = targetType || 'Lost Document';
+      delete session.pendingComplaintType;
+      
+      await this.workflowAnalytics.trackEvent(session.sessionId, 'complaint', 'AMBIGUOUS_CLARIFICATION_COMPLETED');
+      if (isFreeText) {
+        await this.workflowAnalytics.trackEvent(session.sessionId, 'complaint', 'AMBIGUOUS_CLARIFICATION_FREETEXT');
+      } else {
+        await this.workflowAnalytics.trackEvent(session.sessionId, 'complaint', 'AMBIGUOUS_CLARIFICATION_BUTTON');
+      }
+
+      const cleanMsgLower = (targetType || '').toLowerCase();
+      const isMobileTheft = cleanMsgLower.includes('mobile') || cleanMsgLower.includes('theft') || cleanMsgLower.includes('stolen');
+      if (isMobileTheft) {
+        this.transitionTo(session, '2_brand');
+        session.data.empathyShown = true;
+        return {
+          response: this.formatMessage('EMPATHY_LOST_MOBILE', lang, ''),
+          suggestions: ['Apple', 'Samsung', 'OnePlus', 'Xiaomi', 'Realme', 'Vivo']
+        };
+      }
+
+      // Transition straight to INCIDENT_ITEMS_REVIEW step
+      this.transitionTo(session, 'INCIDENT_ITEMS_REVIEW');
+      return this.runComplaintWorkflow(session, '');
+    }
+
     if (step === 'REVIEW_EDIT_VALUE') {
       const field = session.data.editingField;
       if (isSystem) {
@@ -3198,8 +3578,55 @@ ${readiness.checklist}
     // --- Dynamic / Natural Text Classification ---
     if (step === '2') {
       if (!isSystem && msg) {
+        // Run CIE extraction
+        const parseRes = this.incidentItemService.extractItemsAndContainers(msg, session.data.incidentItems, session.data.containers);
+        session.data.incidentItems = parseRes.items;
+        session.data.containers = parseRes.containers;
+
+        if (parseRes.reviewReasons && parseRes.reviewReasons.length > 0) {
+          session.data.reviewReasons = [...(session.data.reviewReasons || []), ...parseRes.reviewReasons];
+        }
+        this.syncLegacyFields(session);
+
+        const lowerMsg = msg.toLowerCase();
+        const containerKeywords = ['purse', 'wallet', 'bag', 'handbag', 'backpack', 'briefcase', 'sling bag', 'laptop bag'];
+        const matchesContainer = containerKeywords.some(kw => lowerMsg.includes(kw));
+
         const classification = this.complaintTypeClassifier.classify(msg);
-        
+
+        if (classification.primaryType === 'AMBIGUOUS_LOST_ITEM' || (matchesContainer && session.data.incidentItems.length === 0)) {
+          this.transitionTo(session, 'COMPLAINT_LOST_ITEM_CLARIFICATION');
+          session.pendingComplaintType = 'AMBIGUOUS_LOST_ITEM';
+          await this.workflowAnalytics.trackEvent(session.sessionId, 'complaint', 'AMBIGUOUS_COMPLAINT_DETECTED');
+          
+          return {
+            response: `I understand that you lost a purse, wallet, or bag.
+
+To help you file the correct complaint, please tell me what was inside it.
+
+1. Important Documents
+2. Mobile Phone
+3. ATM / Debit / Credit Cards
+4. Cash Only
+5. Mixed Items
+6. Nothing Important`,
+            suggestions: [
+              'Important Documents',
+              'Mobile Phone',
+              'ATM / Debit / Credit Cards',
+              'Cash Only',
+              'Mixed Items',
+              'Nothing Important'
+            ]
+          };
+        }
+
+        // Apply Priority override logic
+        const priorityRes = this.complaintPriorityService.resolveComplaintPriority(session.data.incidentItems, msg);
+        session.data.type = priorityRes.primaryComplaintType;
+        session.data.incidentType = priorityRes.incidentType;
+        session.data.risk = priorityRes.risk;
+
         // Multi-match classification handling
         if (classification.matches.length > 1) {
           this.transitionTo(session, 'MULTIPLE_MATCH_CLARIFY');
@@ -3385,11 +3812,117 @@ ${readiness.checklist}
       };
     }
 
+    if (step === 'INCIDENT_ITEMS_REVIEW') {
+      const items = session.data.incidentItems || [];
+      const containers = session.data.containers || [];
+      const labels = items.map((i: IncidentItem) => {
+        const itemLabel = i.itemCode.replace(/_/g, ' ');
+        const quantityLabel = i.quantity && i.quantity > 1 ? ` (Qty: ${i.quantity})` : '';
+        const amountLabel = i.amount ? ` (Amount: ₹${i.amount})` : '';
+        const ownerLabel = i.owner && i.owner !== 'SELF' ? ` [Owner: ${i.owner}]` : '';
+        return `- ${itemLabel}${quantityLabel}${amountLabel}${ownerLabel}`;
+      }).join('\n');
+
+      let responseText = `👮 **Structured Incident Verification Summary**\n\n`;
+      if (containers.length > 0) {
+        responseText += `**Container Details:**\n`;
+        containers.forEach((c: IncidentContainer) => {
+          responseText += `- Type: **${c.type}**, Owner: **${c.owner}**, Confidence: **${c.containerConfidence}**\n`;
+        });
+        responseText += `\n`;
+      }
+      responseText += `**Detected Items:**\n${labels || 'No items extracted'}\n\n`;
+      responseText += `Please review and confirm these items. Would you like to:\n\n`;
+      responseText += `- [Confirm Items](option:Confirm Items)\n`;
+      responseText += `- [Add/Edit Items](option:Add/Edit Items)\n`;
+      responseText += `- [Add Later](option:Add Later)\n`;
+
+      return {
+        response: responseText,
+        suggestions: ['Confirm Items', 'Add/Edit Items', 'Add Later']
+      };
+    }
+
+    if (step === 'INCIDENT_ITEMS_DEFERRED_REVIEW') {
+      const cleanInput = cleanMsg;
+      if (cleanInput.includes('confirm') || cleanInput.includes('option:confirm') || cleanInput === 'yes') {
+        this.transitionTo(session, 'REVIEW');
+        return this.runComplaintWorkflow(session, '');
+      } else {
+        // Parse more items
+        const parseRes = this.incidentItemService.extractItemsAndContainers(msg, session.data.incidentItems, session.data.containers);
+        session.data.incidentItems = parseRes.items;
+        session.data.containers = parseRes.containers;
+
+        // Record amendment audit logs
+        if (!session.data.amendments) session.data.amendments = [];
+        session.data.amendments.push({
+          timestamp: new Date().toISOString(),
+          actor: 'CITIZEN',
+          action: 'ADDED',
+          reason: 'LATE_RECALL',
+          changes: parseRes.items.map(i => ({
+            field: 'incidentItems',
+            newValue: i.itemCode
+          }))
+        });
+
+        // Increment incident version
+        if (session.data.submissionSnapshot) {
+          session.data.submissionSnapshot.incidentVersion = (session.data.submissionSnapshot.incidentVersion || 1) + 1;
+        }
+
+        this.transitionTo(session, 'INCIDENT_ITEMS_REVIEW');
+        return this.runComplaintWorkflow(session, '');
+      }
+    }
+
+    if (step === 'INCIDENT_ITEMS_EDIT') {
+      const cleanInput = cleanMsg;
+      
+      // Basic modification handling
+      if (cleanInput.startsWith('add ') || cleanInput.includes('add')) {
+        const parseRes = this.incidentItemService.extractItemsAndContainers(msg, session.data.incidentItems, session.data.containers);
+        session.data.incidentItems = parseRes.items;
+        
+        // Record amendment audit logs
+        if (!session.data.amendments) session.data.amendments = [];
+        session.data.amendments.push({
+          timestamp: new Date().toISOString(),
+          actor: 'CITIZEN',
+          action: 'ADDED',
+          reason: 'CITIZEN_CORRECTION',
+          changes: parseRes.items.map(i => ({
+            field: 'incidentItems',
+            newValue: i.itemCode
+          }))
+        });
+      } else if (cleanInput.startsWith('remove ') || cleanInput.includes('remove') || cleanInput.includes('delete')) {
+        // Extract what to remove or filter out UNKNOWN items
+        session.data.incidentItems = session.data.incidentItems.filter((i: IncidentItem) => i.itemCode !== 'UNKNOWN_OTHER');
+        
+        if (!session.data.amendments) session.data.amendments = [];
+        session.data.amendments.push({
+          timestamp: new Date().toISOString(),
+          actor: 'CITIZEN',
+          action: 'REMOVED',
+          reason: 'CITIZEN_CORRECTION',
+          changes: [{ field: 'incidentItems', oldValue: 'UNKNOWN_OTHER' }]
+        });
+      }
+
+      // Deduplicate items
+      session.data.incidentItems = this.incidentItemService.normalizeItems(session.data.incidentItems);
+
+      this.transitionTo(session, 'INCIDENT_ITEMS_REVIEW');
+      return this.runComplaintWorkflow(session, '');
+    }
+
     if (step === '3') {
       if (!isSystem && msg) session.data.location = msg;
       this.transitionTo(session, '4');
       return {
-        response: prompts[lang][2],
+        response: prompts[lang][1],
       };
     }
 
