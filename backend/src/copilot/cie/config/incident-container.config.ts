@@ -185,9 +185,12 @@ export function descriptionLooksCorrupted(text?: string): boolean {
   return normalized.length < 5 || ['lost mobile / theft', 'lost document', 'simple harassment', 'cyber fraud / financial loss'].includes(normalized);
 }
 
-export function locationLooksCorrupted(text?: string): boolean {
+export function locationLooksCorrupted(text?: string, citizenCity?: string): boolean {
   if (!text) return true;
   const normalized = text.toLowerCase().trim();
+  if (citizenCity && normalized === citizenCity.toLowerCase().trim()) {
+    return true;
+  }
   return normalized.length < 3 || ['lost mobile / theft', 'lost document', 'simple harassment', 'cyber fraud / financial loss'].includes(normalized);
 }
 
@@ -196,8 +199,8 @@ export function recoverComplaintType(session: any) {
   delete session.data.typeConfirmation;
   
   if (!session.data.type && session.step === 'REVIEW') {
-    if (locationLooksCorrupted(session.data.location)) {
-      delete session.data.location;
+    if (locationLooksCorrupted(session.data.location, session.citizen?.city)) {
+      session.data.location = null;
     }
   }
   
@@ -214,7 +217,15 @@ export function getRecoveryStep(session: any): string {
   if (session.data.partialIncidentItems?.length) {
     return 'INCIDENT_ITEMS_PENDING_CONFIRMATION';
   }
-  if (session.pendingComplaintType === 'AMBIGUOUS_CONTAINER_INCIDENT') {
+  const descCtx = detectContainerContext(session.data?.description, session.intelligence);
+  if (
+    session.pendingComplaintType === 'AMBIGUOUS_CONTAINER_INCIDENT' ||
+    session.pendingComplaintType === 'AMBIGUOUS_LOST_ITEM' ||
+    descCtx.shouldClarify
+  ) {
+    if (descCtx.shouldClarify) {
+      session.pendingComplaintType = 'AMBIGUOUS_CONTAINER_INCIDENT';
+    }
     return 'COMPLAINT_LOST_ITEM_CLARIFICATION';
   }
   return '2';

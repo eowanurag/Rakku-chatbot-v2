@@ -17,8 +17,26 @@ describe('Citizen Experience (CX) Quality Audit Test', () => {
   let prisma: PrismaService;
   let sess: string;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     prisma = new PrismaService();
+    
+    // Clear any existing test citizen profiles and all child records to ensure clean lookup onboarding tests
+    try {
+      const citizen = await prisma.citizen.findFirst({ where: { mobileNumber: "9876543210" } });
+      if (citizen) {
+        const cid = citizen.id;
+        await prisma.complaint.deleteMany({ where: { citizenId: cid } });
+        await prisma.verification.deleteMany({ where: { citizenId: cid } });
+        await prisma.characterCertificate.deleteMany({ where: { citizenId: cid } });
+        await prisma.eventPermission.deleteMany({ where: { citizenId: cid } });
+        await prisma.notification.deleteMany({ where: { citizenId: cid } });
+        await prisma.workflowSession.deleteMany({ where: { citizenId: cid } });
+        await prisma.citizen.delete({ where: { id: cid } });
+      }
+    } catch (e) {
+      console.warn("Could not clear test citizens:", e.message);
+    }
+
     const config = new ConfigService();
     const validation = new ValidationService();
     const complaint = new ComplaintService(prisma);
@@ -64,26 +82,26 @@ describe('Citizen Experience (CX) Quality Audit Test', () => {
 
   it('Stage 2: Profile Collection and Reassurance', async () => {
     const r3 = await chatService.sendMessage("File Complaint", sess);
-    expect(r3.response).toContain("Before we begin");
-    expect(r3.response).toContain("name");
-    expect(r3.response).toContain("assist you properly");
+    expect(r3.response).toContain("Mobile Number");
 
-    const r4 = await chatService.sendMessage("Sunil Dutt", sess);
-    expect(r4.response).toContain("Sunil Dutt");
-    expect(r4.response).toContain("contact you regarding this request");
+    const rNameRequest = await chatService.sendMessage("9876543210", sess);
+    expect(rNameRequest.response).toContain("Before we begin");
+    expect(rNameRequest.response).toContain("name");
+    expect(rNameRequest.response).toContain("assist you properly");
+
+    const rLocationRequest = await chatService.sendMessage("Sunil Dutt", sess);
+    expect(rLocationRequest.response).toContain("city, district, or area");
   });
 
   it('Stage 3: Incident Details & Empathy Check', async () => {
-    await chatService.sendMessage("9876543210", sess);
     await chatService.sendMessage("Noida", sess);
     await chatService.sendMessage("Confirm", sess);
     await chatService.sendMessage("Sector 15, Noida - 201301", sess);
-    
-    // Confirm details
     await chatService.sendMessage("option:Confirm Details", sess);
     
     // Select Lost Mobile Complaint type
-    const rComplaintType = await chatService.sendMessage("Lost Mobile / Theft", sess);
+    await chatService.sendMessage("Lost Mobile / Theft", sess);
+    const rComplaintType = await chatService.sendMessage("Yes", sess);
     
     expect(rComplaintType.response).toContain("lost your mobile phone");
     expect(rComplaintType.response).toContain("register the complaint");

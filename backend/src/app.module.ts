@@ -12,6 +12,7 @@ import { CitizenAssistanceModule } from './citizen-assistance/citizen-assistance
 import { ChatController } from './chat/chat.controller';
 import { ChatService } from './chat/chat.service';
 import { ValidationService } from './chat/validation.service';
+import { CitizenWorkflowManager } from './chat/services/citizen-workflow-manager.service';
 
 // Knowledge
 import { KnowledgeController } from './knowledge/knowledge.controller';
@@ -56,6 +57,7 @@ import { PayloadProtectionMiddleware } from './common/payload-protection.middlew
     PrismaService,
     ChatService,
     ValidationService,
+    CitizenWorkflowManager,
     KnowledgeService,
     IntelligenceService,
     {

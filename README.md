@@ -1,4 +1,4 @@
-# RAKKU - V2.8.4.2 (Citizen Workflow Hotfix Release)
+# RAKKU - V2.8.6 (Clean Architecture & Workflow Consolidation Release)
 
 *Responsive Assistant for Knowledge, Kiosk & Citizen Utilities*  
 **AI-Powered Citizen Assistance Platform with CUE, SAE, SRE & CIE Transition Foundations**
@@ -17,7 +17,7 @@
 
 RAKKU is an AI-powered Digital Citizen Assistance Platform simplifying access to police and e-governance services through natural language conversations. 
 
-With **V2.8.4.2**, the platform incorporates a citizen workflow hotfix. This release hardens complaint handling with natural free-text classification, robust review workflow corruption & infinite loop preventions, system action filters, confidence threshold checks, legacy session recovery, and deterministic date validation.
+With **V2.8.6**, the platform incorporates a major clean architecture refactor. This release consolidates workflow state machines into pure controllers under the `CitizenWorkflowManager`, routes UI rendering templates into decoupled formatting utilities, and establishes strict unidirectional import constraints checked by automated test suites.
 
 ---
 
@@ -224,6 +224,9 @@ npx jest --runInBand tests/release tests/governance tests/evaluation tests/e2e
 ```
 
 ### Key V2.7.8.2-A Certified Test Suites:
+- **Dependency Direction Gate**: `npx jest tests/release/dependency_direction.spec.ts`
+- **Orchestrator-Only Guard**: `npx jest tests/release/orchestrator_only.spec.ts`
+- **Complexity Control Gate**: `npx jest tests/release/chat_service_complexity.spec.ts`
 - **Operational Reliability Gate**: `npx jest tests/release/conversation_reliability_gate.spec.ts`
 - **Release Lock Integrity**: `npx jest tests/release/release_lock_integrity.spec.ts`
 - **Baseline Drift Protection**: `npx jest tests/release/certification_drift.spec.ts`
@@ -246,3 +249,4 @@ npx jest --runInBand tests/release tests/governance tests/evaluation tests/e2e
 | **v2.7.5** | SRE Decision Authority, CUE normalisation, SAE Hint consensus (RC-1 Architecture Freeze) | Frozen & Verified |
 | **v2.7.8.2-A** | Conversation Quality Certification, Sentinel Incident Blocker Gates, Drift Protection, Docker Run | Certified & Locked |
 | **v2.8.4.2** | Citizen Workflow Hotfix: Natural free-text classification, review loop prevention, legacy recovery, system command filtering, confidence thresholds, and deterministic date validations | **Certified & Locked** |
+| **v2.8.6** | Clean Architecture Realignment: Consolidated workflow state machines, versioned `workflowContext`, isolated review/menu/recovery rendering utilities, and added automated module boundary check test suites. | **Certified & Locked** |

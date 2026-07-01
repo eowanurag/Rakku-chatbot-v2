@@ -1156,7 +1156,7 @@ class WorkflowEngine:
         fields = self.get_workflow_fields(session)
 
         # PRP flow interceptor
-        if self.requires_profile_reuse(session.workflow) and (str(session.step) in ['1', 'PRP_INIT', 'PRP_CHOICE', 'PRP_CONFIRM', 'ORG_NAME', 'ORG_ADDRESS', 'ORG_MOBILE']):
+        if self.requires_profile_reuse(session.workflow) and (str(session.step) in ['1', 'PRP_INIT', 'PRP_CHOICE', 'PRP_CONFIRM', 'ORG_NAME', 'ORG_ADDRESS', 'ORG_MOBILE'] or (session.workflow == "event" and str(session.step) == '2')):
             prp_res = self.handle_profile_reuse_protocol_flow(session, message)
             if prp_res is not None:
                 return prp_res
@@ -1176,7 +1176,8 @@ class WorkflowEngine:
  
         # Enforce step validations before moving forward
         if isinstance(session.step, int) and session.step > 0:
-            prev_field_name = fields[session.step - 1]["name"]
+            idx = session.step - 2 if session.workflow == "event" else session.step - 1
+            prev_field_name = fields[idx]["name"]
             session.currentExpectedField = prev_field_name
             
             # Run field validation on message input
@@ -1187,7 +1188,7 @@ class WorkflowEngine:
                 return {
                     "intercepted": True,
                     "response": error_msg,
-                    "suggestions": fields[session.step - 1].get("suggestions", [])
+                    "suggestions": fields[idx].get("suggestions", [])
                 }
             
             # Save valid data (mapping complaint type to canonical keys)
@@ -1211,8 +1212,9 @@ class WorkflowEngine:
         fields = self.get_workflow_fields(session)
 
         # Prompt next field or transition to Review Screen
-        if session.step < len(fields):
-            next_field = fields[session.step]
+        next_idx = session.step - 1 if session.workflow == "event" else session.step
+        if next_idx < len(fields):
+            next_field = fields[next_idx]
             session.step += 1
             session.currentExpectedField = next_field["name"]
             response_txt = self._format_question(session, next_field, session.language, session.step)
@@ -1346,7 +1348,9 @@ class WorkflowEngine:
             }
         }
 
-        if step in ['1', 'PRP_INIT']:
+        if step in ['1', 'PRP_INIT'] or (session.workflow == "event" and step == '2'):
+            if session.workflow == "event" and step == '2':
+                session.data["event_type"] = message
             session.step = 'PRP_CHOICE'
             return {
                 "intercepted": True,
@@ -1420,12 +1424,12 @@ class WorkflowEngine:
                         "suggestions": purpose_field.get("suggestions", [])
                     }
                 elif session.workflow == "event":
-                    session.step = 2
+                    session.step = 3
                     name_field = self.workflow_fields["event"][1]
                     session.currentExpectedField = name_field["name"]
                     return {
                         "intercepted": True,
-                        "response": self._format_question(session, name_field, lang, 2),
+                        "response": self._format_question(session, name_field, lang, 3),
                         "suggestions": name_field.get("suggestions", [])
                     }
             elif is_modify:
@@ -1488,12 +1492,12 @@ class WorkflowEngine:
                     "suggestions": []
                 }
             session.data["organizerMobile"] = normalize_mobile(message)
-            session.step = 2
+            session.step = 3
             name_field = self.workflow_fields["event"][1]
             session.currentExpectedField = name_field["name"]
             return {
                 "intercepted": True,
-                "response": self._format_question(session, name_field, lang, 2),
+                "response": self._format_question(session, name_field, lang, 3),
                 "suggestions": name_field.get("suggestions", [])
             }
         return None

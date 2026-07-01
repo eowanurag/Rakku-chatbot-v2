@@ -224,6 +224,7 @@ ${promptLabel}`;
     cueResult?: any,
     cueMetadata?: any
   ): Promise<SituationAssessment> {
+    sessionId = String(sessionId);
     // Check ENABLE_SAE feature flag
     if (process.env.ENABLE_SAE === 'false') {
       return {
@@ -330,6 +331,9 @@ ${promptLabel}`;
       // 3. Fallback to Gemini AI
       try {
         const aiAssessmentResult = await this.aiClassifier.classify(classificationText);
+        if (!aiAssessmentResult.success) {
+          throw new Error('AI classification failed: ' + (aiAssessmentResult.errorType || 'UNKNOWN_ERROR'));
+        }
         const aiAssessment = aiAssessmentResult.data;
         
         // Ensure bands and status are mapped properly

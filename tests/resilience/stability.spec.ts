@@ -16,8 +16,27 @@ describe('Stability and Resilience Regression Suite', () => {
   let chatService: ChatService;
   let prisma: PrismaService;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     prisma = new PrismaService();
+    // Clear any existing test citizen profiles and all child records to ensure clean lookup onboarding tests
+    try {
+      const citizens = await prisma.citizen.findMany({
+        where: { mobileNumber: { in: ["9988776655", "9111222333"] } }
+      });
+      for (const citizen of citizens) {
+        const cid = citizen.id;
+        await prisma.complaint.deleteMany({ where: { citizenId: cid } });
+        await prisma.verification.deleteMany({ where: { citizenId: cid } });
+        await prisma.characterCertificate.deleteMany({ where: { citizenId: cid } });
+        await prisma.eventPermission.deleteMany({ where: { citizenId: cid } });
+        await prisma.notification.deleteMany({ where: { citizenId: cid } });
+        await prisma.workflowSession.deleteMany({ where: { citizenId: cid } });
+        await prisma.citizen.delete({ where: { id: cid } });
+      }
+    } catch (e) {
+      console.warn("Could not clear test citizens:", e.message);
+    }
+
     const config = new ConfigService();
     const validation = new ValidationService();
     const complaint = new ComplaintService(prisma);
@@ -77,8 +96,8 @@ describe('Stability and Resilience Regression Suite', () => {
     await chatService.sendMessage("hello", sess);
     await chatService.sendMessage("english", sess);
     await chatService.sendMessage("File Complaint", sess);
-    await chatService.sendMessage("Rahul Roy", sess);
     await chatService.sendMessage("9988776655", sess);
+    await chatService.sendMessage("Rahul Roy", sess);
     await chatService.sendMessage("Kanpur", sess);
     await chatService.sendMessage("Confirm", sess); // Confirm location
     const confirmationPrompt = await chatService.sendMessage("Sector 1, Kanpur - 208002", sess);
@@ -109,8 +128,8 @@ describe('Stability and Resilience Regression Suite', () => {
     await chatService.sendMessage("hello", deadEndSess);
     await chatService.sendMessage("english", deadEndSess);
     await chatService.sendMessage("File Complaint", deadEndSess);
-    await chatService.sendMessage("Test User", deadEndSess);
     await chatService.sendMessage("9111222333", deadEndSess);
+    await chatService.sendMessage("Test User", deadEndSess);
     await chatService.sendMessage("Lucknow", deadEndSess);
     await chatService.sendMessage("Confirm", deadEndSess); // Confirm location
     await chatService.sendMessage("Gomti Nagar, Lucknow - 226010", deadEndSess);

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
+import { ConfidenceLevel } from '../../../chat/workflow-state.enum';
 import { IncidentItemCode, ITEM_CATEGORIES } from '../config/incident-item-risk.config';
 import {
   MAX_INCIDENT_ITEMS,
@@ -367,5 +368,143 @@ export class IncidentItemService {
       return sessionData.reportedItems;
     }
     return [];
+  }
+
+  public applyModification(
+    items: IncidentItem[],
+    citizenMessage: string
+  ): { items: IncidentItem[]; needsClarification?: boolean } {
+    const cleanMsg = citizenMessage.toLowerCase().trim();
+    
+    // Check CLEAR_ALL first
+    const clearAllKeywords = ['clear all', 'remove all', 'delete all', 'clear everything', 'remove everything'];
+    if (clearAllKeywords.some(kw => cleanMsg.includes(kw))) {
+      return { items: [] };
+    }
+
+    const itemMapping: { patterns: string[]; code: IncidentItemCode }[] = [
+      { patterns: ['aadhaar', 'adhar', 'uidai'], code: 'AADHAAR_CARD' },
+      { patterns: ['pan card', 'pan doc', 'pancard'], code: 'PAN_CARD' },
+      { patterns: ['driving license', 'driving licence', 'dl license', 'driving doc', 'dl'], code: 'DRIVING_LICENSE' },
+      { patterns: ['passport'], code: 'PASSPORT' },
+      { patterns: ['atm card', 'atmcard'], code: 'ATM_CARD' },
+      { patterns: ['debit card', 'debitcard'], code: 'DEBIT_CARD' },
+      { patterns: ['credit card', 'creditcard'], code: 'CREDIT_CARD' },
+      { patterns: ['mobile phone', 'phone', 'mobile', 'iphone', 'android', 'device'], code: 'MOBILE_PHONE' },
+      { patterns: ['cash', 'rupees', 'money', 'rs', 'inr', '₹'], code: 'CASH' },
+      { patterns: ['chequebook', 'cheque book', 'checkbook'], code: 'CHEQUEBOOK' },
+      { patterns: ['vehicle rc', 'rc doc', 'registration certificate', 'bike rc', 'car rc'], code: 'VEHICLE_RC' },
+      { patterns: ['some documents', 'other documents'], code: 'UNKNOWN_IDENTITY_DOCUMENTS' },
+      { patterns: ['some cards', 'bank cards'], code: 'UNKNOWN_BANK_CARDS' },
+      { patterns: ['electronics', 'other devices'], code: 'UNKNOWN_ELECTRONICS' }
+    ];
+
+    const matchedCodes: IncidentItemCode[] = [];
+    for (const entry of itemMapping) {
+      const matched = entry.patterns.some(pattern => {
+        if (pattern === 'rs') {
+          return /\brs\b/.test(cleanMsg);
+        }
+        return cleanMsg.includes(pattern);
+      });
+      if (matched) {
+        matchedCodes.push(entry.code);
+      }
+    }
+
+    if (matchedCodes.length === 0) {
+      return { items, needsClarification: true };
+    }
+
+    let updatedItems = [...items];
+    let actionTaken = false;
+
+    // 1. REMOVE
+    const removeKeywords = ['remove', 'delete', 'clear', 'exclude', 'drop', 'wasn\'t carrying', 'not carrying', 'lost only', 'except', 'don\'t have'];
+    const isRemove = removeKeywords.some(kw => cleanMsg.includes(kw));
+
+    if (isRemove) {
+      for (const code of matchedCodes) {
+        const index = updatedItems.findIndex(i => i.itemCode === code);
+        if (index !== -1) {
+          updatedItems.splice(index, 1);
+          actionTaken = true;
+        }
+      }
+    }
+
+    // 2. REPLACE
+    const replaceKeywords = ['replace', 'instead of', 'change', 'swap', 'instead'];
+    const isReplace = replaceKeywords.some(kw => cleanMsg.includes(kw));
+    if (isReplace && matchedCodes.length >= 2) {
+      const toRemove = matchedCodes.find(code => updatedItems.some(i => i.itemCode === code));
+      const toAdd = matchedCodes.find(code => !updatedItems.some(i => i.itemCode === code));
+      if (toRemove && toAdd) {
+        const index = updatedItems.findIndex(i => i.itemCode === toRemove);
+        if (index !== -1) {
+          updatedItems[index] = {
+            ...updatedItems[index],
+            itemCode: toAdd,
+            confidence: 'HIGH',
+            confirmed: false
+          };
+          actionTaken = true;
+        }
+      }
+    }
+
+    // 3. ADD
+    const addKeywords = ['add', 'also', 'and', 'with', 'plus', 'as well', 'include', 'too'];
+    const isAdd = !isRemove && !isReplace;
+    const hasAddIntent = isAdd || (addKeywords.some(kw => cleanMsg.includes(kw)) && !isReplace);
+
+    if (hasAddIntent) {
+      for (const code of matchedCodes) {
+        if (!updatedItems.some(i => i.itemCode === code)) {
+          const itemId = `item_${String(updatedItems.length + 1).padStart(3, '0')}`;
+          updatedItems.push({
+            itemId,
+            itemCode: code,
+            status: 'LOST',
+            confirmed: false,
+            quantity: 1,
+            confidence: 'HIGH',
+            source: 'EXPLICIT',
+            relationship: 'SEPARATE_ITEM',
+            owner: 'SELF',
+            requiresCitizenConfirmation: true
+          });
+          actionTaken = true;
+        }
+      }
+    }
+
+    if (!actionTaken) {
+      return { items, needsClarification: true };
+    }
+
+    updatedItems = this.normalizeItems(updatedItems);
+    return { items: updatedItems };
+  }
+
+  public calculateOverallConfidence(items: IncidentItem[]): ConfidenceLevel {
+    if (!items || items.length === 0) {
+      return ConfidenceLevel.LOW;
+    }
+    const confidences = items.map(i => i.confidence);
+    if (confidences.includes('LOW')) {
+      return ConfidenceLevel.LOW;
+    }
+    if (confidences.includes('MEDIUM')) {
+      return ConfidenceLevel.MEDIUM;
+    }
+    return ConfidenceLevel.HIGH;
+  }
+
+  public clearItems(session: any): void {
+    if (!session.data) session.data = {};
+    session.data.incidentItems = [];
+    session.data.partialIncidentItems = [];
+    delete session.data.pendingComplaintType;
   }
 }

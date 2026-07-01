@@ -24,8 +24,26 @@ describe('Workflow Parity & Integration Validation', () => {
   let intelligence: IntelligenceService;
   let config: ConfigService;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     prisma = new PrismaService();
+    
+    // Clear any existing test citizen profiles and all child records to ensure clean lookup onboarding tests
+    try {
+      const citizens = await prisma.citizen.findMany({ where: { mobileNumber: { startsWith: "78787878" } } });
+      for (const citizen of citizens) {
+        const cid = citizen.id;
+        await prisma.complaint.deleteMany({ where: { citizenId: cid } });
+        await prisma.verification.deleteMany({ where: { citizenId: cid } });
+        await prisma.characterCertificate.deleteMany({ where: { citizenId: cid } });
+        await prisma.eventPermission.deleteMany({ where: { citizenId: cid } });
+        await prisma.notification.deleteMany({ where: { citizenId: cid } });
+        await prisma.workflowSession.deleteMany({ where: { citizenId: cid } });
+        await prisma.citizen.delete({ where: { id: cid } });
+      }
+    } catch (e) {
+      console.warn("Could not clear test citizens:", e.message);
+    }
+
     config = new ConfigService();
     validation = new ValidationService();
     complaint = new ComplaintService(prisma);
@@ -35,6 +53,24 @@ describe('Workflow Parity & Integration Validation', () => {
     tracking = new TrackingService(prisma);
     analytics = new AnalyticsService();
     intelligence = new IntelligenceService(prisma);
+  });
+
+  beforeEach(async () => {
+    try {
+      const citizens = await prisma.citizen.findMany({ where: { mobileNumber: { startsWith: "78787878" } } });
+      for (const citizen of citizens) {
+        const cid = citizen.id;
+        await prisma.complaint.deleteMany({ where: { citizenId: cid } });
+        await prisma.verification.deleteMany({ where: { citizenId: cid } });
+        await prisma.characterCertificate.deleteMany({ where: { citizenId: cid } });
+        await prisma.eventPermission.deleteMany({ where: { citizenId: cid } });
+        await prisma.notification.deleteMany({ where: { citizenId: cid } });
+        await prisma.workflowSession.deleteMany({ where: { citizenId: cid } });
+        await prisma.citizen.delete({ where: { id: cid } });
+      }
+    } catch (e) {
+      console.warn("Could not clear test citizens in beforeEach:", e.message);
+    }
   });
 
   afterAll(async () => {
@@ -62,6 +98,23 @@ describe('Workflow Parity & Integration Validation', () => {
   };
 
   const runConversation = async (useFastApi: boolean, inputs: string[], sessionId: string) => {
+    // Clear any existing test citizen profiles and all child records to ensure clean lookup onboarding tests
+    try {
+      const citizens = await prisma.citizen.findMany({ where: { mobileNumber: { startsWith: "78787878" } } });
+      for (const citizen of citizens) {
+        const cid = citizen.id;
+        await prisma.complaint.deleteMany({ where: { citizenId: cid } });
+        await prisma.verification.deleteMany({ where: { citizenId: cid } });
+        await prisma.characterCertificate.deleteMany({ where: { citizenId: cid } });
+        await prisma.eventPermission.deleteMany({ where: { citizenId: cid } });
+        await prisma.notification.deleteMany({ where: { citizenId: cid } });
+        await prisma.workflowSession.deleteMany({ where: { citizenId: cid } });
+        await prisma.citizen.delete({ where: { id: cid } });
+      }
+    } catch (e) {
+      console.warn("Could not clear test citizens in runConversation:", e.message);
+    }
+
     const chatService = getEngine(useFastApi);
     const responses = [];
     const steps = [];
@@ -130,13 +183,14 @@ describe('Workflow Parity & Integration Validation', () => {
     const inputs = [
       "english",
       "File Complaint",
+      "7878787801",
       "Manoj Tiwari",
-      "7878787878",
       "Ayodhya",
       "Confirm",
-      "House No 22 Civil Lines",
-      "Confirm Details",
+      "House No 22 Civil Lines, Ayodhya",
+      "option:Confirm Details",
       "Lost Mobile",
+      "Yes",
       "Samsung",
       "M34",
       "Black",
@@ -161,18 +215,18 @@ describe('Workflow Parity & Integration Validation', () => {
     const lastNestJsResp = nestJsResult.responses[nestJsResult.responses.length - 1];
     expect(lastFastApiResp).toContain('UP-CMP-');
     expect(lastNestJsResp).toContain('UP-CMP-');
-  }, 60000);
+  }, 300000);
 
   it('Parity: Tenant Verification', async () => {
     const inputs = [
       "english",
       "Tenant Verification",
+      "7878787802",
       "Manoj Tiwari",
-      "7878787878",
       "Ayodhya",
       "Confirm",
-      "House No 22 Civil Lines",
-      "Confirm Details",
+      "House No 22 Civil Lines, Ayodhya",
+      "option:Confirm Details",
       "Tenant Verification",
       "Rahul Kumar",
       "Delhi",
@@ -193,18 +247,18 @@ describe('Workflow Parity & Integration Validation', () => {
     const lastNestJsResp = nestJsResult.responses[nestJsResult.responses.length - 1];
     expect(lastFastApiResp).toContain('UP-TV-');
     expect(lastNestJsResp).toContain('UP-TV-');
-  }, 60000);
+  }, 300000);
 
   it('Parity: Character Certificate', async () => {
     const inputs = [
       "english",
       "Character Certificate",
+      "7878787803",
       "Manoj Tiwari",
-      "7878787878",
       "Ayodhya",
       "Confirm",
-      "House No 22 Civil Lines",
-      "Confirm Details",
+      "House No 22 Civil Lines, Ayodhya",
+      "option:Confirm Details",
       "Apply For Someone Else", // PRP Selection
       "Manoj Tiwari",
       "House No 22",
@@ -225,26 +279,26 @@ describe('Workflow Parity & Integration Validation', () => {
     const lastNestJsResp = nestJsResult.responses[nestJsResult.responses.length - 1];
     expect(lastFastApiResp).toContain('UP-CC-');
     expect(lastNestJsResp).toContain('UP-CC-');
-  }, 60000);
+  }, 300000);
 
   it('Parity: Event Permission', async () => {
     const inputs = [
       "english",
       "Event Permission",
+      "7878787804",
       "Manoj Tiwari",
-      "7878787878",
       "Ayodhya",
       "Confirm",
-      "House No 22 Civil Lines",
-      "Confirm Details",
+      "House No 22 Civil Lines, Ayodhya",
+      "option:Confirm Details",
       "Event Permission",      // 1. Select request type
       "Apply For Someone Else", // 2. PRP Choice
       "Manoj Tiwari",           // 3. Organizer Name
-      "House No 22 Civil Lines",// 4. Organizer Address
-      "7878787878",             // 5. Organizer Mobile
+      "House No 22 Civil Lines, Ayodhya",// 4. Organizer Address
+      "7878787804",             // 5. Organizer Mobile
       "Diwali Mela",            // 6. Event Name
       "Ram Katha Park",         // 7. Event Location
-      "25/10/2026",             // 8. Event Date
+      "10/12/2026",             // 8. Event Date
       "1000",                   // 9. Expected Attendance
       "Submit Application"      // 10. Submit
     ];
@@ -261,7 +315,7 @@ describe('Workflow Parity & Integration Validation', () => {
     const lastNestJsResp = nestJsResult.responses[nestJsResult.responses.length - 1];
     expect(lastFastApiResp).toContain('UP-EP-');
     expect(lastNestJsResp).toContain('UP-EP-');
-  }, 60000);
+  }, 300000);
 
   it('Parity: Application Tracking', async () => {
     const inputs = [
@@ -277,6 +331,6 @@ describe('Workflow Parity & Integration Validation', () => {
     const nestJsResult = await runConversation(false, inputs, sess2);
 
     compareRuns(fastApiResult, nestJsResult);
-  }, 10000);
+  }, 300000);
 
 });

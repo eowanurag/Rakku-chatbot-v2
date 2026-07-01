@@ -1,4 +1,4 @@
-import { AiClassifier } from '../../backend/src/situation-assessment/classification/ai-classifier';
+import { AiClassifier } from '../../backend/src/copilot/sae/classification/ai-classifier';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -22,9 +22,9 @@ describe('Gemini AI Fallback and Resilience Spec', () => {
     const result = await aiClassifier.classify("Help my phone was stolen.");
     
     expect(result).toBeDefined();
-    expect(result.intent).toBe("UNKNOWN");
-    expect(result.requiresClarification).toBe(true);
-    expect(result.reasoning[0]).toContain("Could not verify narrative context");
+    expect(result.data.intent).toBe("UNKNOWN");
+    expect(result.data.requiresClarification).toBe(true);
+    expect(result.data.reasoning[0]).toContain("Could not verify narrative context");
   });
 
   it('should fallback gracefully on 429 Rate Limited API error', async () => {
@@ -35,8 +35,8 @@ describe('Gemini AI Fallback and Resilience Spec', () => {
     const result = await aiClassifier.classify("Help my phone was stolen.");
     
     expect(result).toBeDefined();
-    expect(result.intent).toBe("UNKNOWN");
-    expect(result.requiresClarification).toBe(true);
+    expect(result.data.intent).toBe("UNKNOWN");
+    expect(result.data.requiresClarification).toBe(true);
   });
 
   it('should fallback gracefully on 503 Service Unavailable error', async () => {
@@ -47,8 +47,8 @@ describe('Gemini AI Fallback and Resilience Spec', () => {
     const result = await aiClassifier.classify("Help my phone was stolen.");
     
     expect(result).toBeDefined();
-    expect(result.intent).toBe("UNKNOWN");
-    expect(result.requiresClarification).toBe(true);
+    expect(result.data.intent).toBe("UNKNOWN");
+    expect(result.data.requiresClarification).toBe(true);
   });
 
   it('should fallback gracefully on API request timeout', async () => {
@@ -57,7 +57,7 @@ describe('Gemini AI Fallback and Resilience Spec', () => {
     const result = await aiClassifier.classify("Help my phone was stolen.");
     
     expect(result).toBeDefined();
-    expect(result.intent).toBe("UNKNOWN");
-    expect(result.requiresClarification).toBe(true);
+    expect(result.data.intent).toBe("UNKNOWN");
+    expect(result.data.requiresClarification).toBe(true);
   });
 });

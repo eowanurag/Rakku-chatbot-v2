@@ -53,6 +53,18 @@ import { ComplaintTypeClassifierService } from '../copilot/cie/services/complain
 import { WorkflowAnalyticsService } from '../copilot/workflow-completion/workflow-analytics.service';
 import { validateIncidentDate } from './utils/validateIncidentDate';
 import { isSystemAction, normalizeComplaintText, normalizeSelection } from './utils/citizen-input.util';
+import { WorkflowState, WorkflowEvent, ConfidenceLevel } from './workflow-state.enum';
+import { WorkflowContext, WorkflowInput, WorkflowAdvice } from './workflow.types';
+import { CitizenWorkflowManager } from './services/citizen-workflow-manager.service';
+import { RuleUnderstandingEngine } from './services/rule-understanding-engine';
+import { AiCircuitBreaker } from './services/ai-circuit-breaker';
+import { UnderstandingMerger } from './services/understanding-merger';
+import { UnderstandingPipelineService } from './services/understanding-pipeline.service';
+import { renderReview } from './utils/review-renderer';
+import { renderMenu } from './utils/menu-renderer';
+import { renderRecovery } from './utils/recovery-renderer';
+
+
 import { IncidentItem, IncidentContainer, IncidentItemService } from '../copilot/cie/services/incident-item.service';
 import { ComplaintPriorityService } from '../copilot/cie/services/complaint-priority.service';
 import { IncidentItemCode } from '../copilot/cie/config/incident-item-risk.config';
@@ -87,7 +99,7 @@ interface CitizenState {
   isConfirmed: boolean;
 }
 
-interface ChatSessionState {
+export interface ChatSessionState {
   workflow: 'complaint' | 'verification' | 'certificate' | 'event' | 'tracking' | null;
   step: string;
   currentWorkflowState?: string;
@@ -197,6 +209,7 @@ export class ChatService {
   private readonly draftRecoveryService: DraftRecoveryService;
   private readonly complaintGuidanceService: ComplaintGuidanceService;
   private readonly timelineGeneratorService: TimelineGeneratorService;
+  private readonly citizenWorkflowManager: CitizenWorkflowManager;
   public readonly workflowFrictionService: WorkflowFrictionService;
   public readonly questionAssistanceService: QuestionAssistanceService;
   public readonly progressService: ProgressService;
@@ -207,6 +220,10 @@ export class ChatService {
   private readonly incidentItemService: IncidentItemService;
   private readonly complaintPriorityService: ComplaintPriorityService;
   private readonly workflowAnalytics: WorkflowAnalyticsService;
+  private readonly ruleEngine: RuleUnderstandingEngine;
+  private readonly circuitBreaker: AiCircuitBreaker;
+  private readonly merger: UnderstandingMerger;
+  private readonly pipelineService: UnderstandingPipelineService;
   private readonly sessionCache = new Map<string, ChatSessionState>();
 
   constructor(
@@ -237,12 +254,23 @@ export class ChatService {
     this.incidentItemService = new IncidentItemService();
     this.complaintPriorityService = new ComplaintPriorityService();
     this.complaintTypeClassifier = new ComplaintTypeClassifierService();
+    this.ruleEngine = new RuleUnderstandingEngine(this.complaintTypeClassifier, this.incidentItemService);
+    this.circuitBreaker = new AiCircuitBreaker();
+    this.merger = new UnderstandingMerger();
+    this.pipelineService = new UnderstandingPipelineService(
+      this.ruleEngine,
+      this.circuitBreaker,
+      this.merger,
+      this.httpService,
+      this.configService
+    );
     this.workflowAnalytics = new WorkflowAnalyticsService(this.prisma);
     this.checkpointService = checkpointService || new CheckpointService(this.prisma);
     this.workflowCompletionService = workflowCompletionService || new WorkflowCompletionService(this.prisma);
     this.draftRecoveryService = draftRecoveryService || new DraftRecoveryService(this.prisma);
     this.complaintGuidanceService = complaintGuidanceService || new ComplaintGuidanceService();
     this.timelineGeneratorService = timelineGeneratorService || new TimelineGeneratorService();
+    this.citizenWorkflowManager = new CitizenWorkflowManager();
 
     this.workflowFrictionService = new WorkflowFrictionService();
     this.questionAssistanceService = new QuestionAssistanceService();
@@ -350,6 +378,56 @@ export class ChatService {
       this.logger.warn(`Invalid state transition: ${state.step} -> ${nextStep}`);
     }
   }
+
+  private transitionWorkflow(session: ChatSessionState, event: WorkflowEvent): void {
+    if (!session.data.workflowContext) {
+      session.data.workflowContext = {
+        schemaVersion: 1,
+        workflowVersion: 1,
+        state: WorkflowState.ITEM_EXTRACTION,
+        reviewConfirmed: false,
+        confidence: ConfidenceLevel.MEDIUM,
+        editCycles: 0
+      };
+    }
+
+    const hasAmbiguity = !!(session.data.reviewReasons && session.data.reviewReasons.length > 0);
+    const confidence = this.incidentItemService.calculateOverallConfidence(session.data.incidentItems || []);
+    const reviewConfirmed = !!session.data.workflowContext.reviewConfirmed;
+
+    const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
+
+    const input: WorkflowInput = {
+      workflowContext: session.data.workflowContext,
+      confidence,
+      ambiguity: hasAmbiguity,
+      reviewRequired: hasAmbiguity || confidence !== ConfidenceLevel.HIGH,
+      submissionReady: readiness.valid
+    };
+
+    const result = this.citizenWorkflowManager.transition(input, event);
+
+    session.data.workflowContext = result.workflowContext;
+    session.data.workflow = {
+      state: result.workflowContext.state,
+      reviewConfirmed: result.workflowContext.reviewConfirmed,
+      editCycles: result.workflowContext.editCycles,
+      confidence: result.workflowContext.confidence
+    };
+    session.step = result.workflowContext.state;
+
+    if (result.auditEvents) {
+      if (!session.data.workflowAudit) session.data.workflowAudit = [];
+      session.data.workflowAudit.push(...result.auditEvents);
+    }
+  }
+
+  private resetIncidentItemsWorkflow(session: ChatSessionState): void {
+    this.citizenWorkflowManager.resetWorkflow(session);
+    this.incidentItemService.clearItems(session);
+    session.step = WorkflowState.ITEM_EXTRACTION;
+  }
+
 
   private loadMessageLibrary() {
     try {
@@ -859,23 +937,79 @@ export class ChatService {
       };
     }
 
-    try {
-      this.logger.log(`Forwarding message to FastAPI AI service: ${this.aiServiceUrl}/chat/message`);
-      const response = await firstValueFrom(
-        this.httpService.post(`${this.aiServiceUrl}/chat/message`, {
-          message: sanitizedMessage,
-          session_id: sessionId,
-          latitude: state.citizen.latitude,
-          longitude: state.citizen.longitude,
-          state: state,
-        }),
-      );
+    // Run the resilient understanding pipeline
+    let responseData: { response: string; suggestions?: string[]; avatar_state?: string; db_action?: any; state?: any } = {
+      response: '',
+      suggestions: []
+    };
 
-      const responseData = response.data;
+    const pipelineResult = await this.pipelineService.process(
+      sanitizedMessage,
+      sessionId,
+      state,
+      latitude,
+      longitude
+    );
 
-      if (responseData && responseData.state) {
-        Object.assign(state, responseData.state);
-      }
+    // Apply the pipeline result understanding context to the session state
+    state.language = pipelineResult.language;
+    if (pipelineResult.complaintType) {
+      state.data.type = pipelineResult.complaintType;
+    }
+    state.data.incidentItems = pipelineResult.incidentItems;
+    state.data.containers = pipelineResult.containers;
+
+    // Map fine-grained intent to coarse-grained workflow type
+    let mappedWorkflow: ChatSessionState['workflow'] = null;
+    const intentUpper = pipelineResult.intent ? pipelineResult.intent.toUpperCase() : 'UNKNOWN';
+    if (['LOST_MOBILE', 'LOST_DOCUMENT', 'CYBER_FRAUD', 'HARASSMENT', 'COMPLAINT', 'AMBIGUOUS_CONTAINER_INCIDENT'].some(wf => intentUpper.includes(wf))) {
+      mappedWorkflow = 'complaint';
+    } else if (intentUpper.includes('VERIFICATION')) {
+      mappedWorkflow = 'verification';
+    } else if (intentUpper.includes('CERTIFICATE')) {
+      mappedWorkflow = 'certificate';
+    } else if (intentUpper.includes('EVENT')) {
+      mappedWorkflow = 'event';
+    } else if (intentUpper.includes('TRACK')) {
+      mappedWorkflow = 'tracking';
+    }
+
+    if (mappedWorkflow) {
+      state.workflow = mappedWorkflow;
+      state.serviceType = mappedWorkflow;
+    }
+
+    // Synchronize to legacy fields if needed
+    if (!state.data.schema) {
+      state.data.schema = {
+        version: '2.8.5',
+        migratedFrom: '2.8.4.2a',
+        migratedAt: new Date().toISOString()
+      };
+    }
+    
+    // Map entities to state intelligence
+    state.intelligence = {
+      entities: pipelineResult.entities.reduce((acc, curr) => {
+        acc[curr.name] = curr.value;
+        return acc;
+      }, {} as Record<string, any>),
+      severity: pipelineResult.confidence === 'HIGH' ? 'LOW' : 'MEDIUM',
+      riskCategory: pipelineResult.intent,
+      recommendations: [],
+      completeness: pipelineResult.confidence === 'HIGH' ? 'READY' : 'INCOMPLETE',
+      confidence: pipelineResult.confidence === 'HIGH' ? 0.95 : 0.5,
+      clarificationRequired: pipelineResult.ambiguity
+    };
+
+    // Determine engine source and log trace
+    const sourceEngine = pipelineResult.source === 'RULE_PLUS_AI' || pipelineResult.source === 'MERGED' ? 'FASTAPI' : 'FALLBACK';
+    
+    if (pipelineResult.response) {
+      // AI succeeded or merger enriched
+      responseData.response = pipelineResult.response;
+      responseData.suggestions = pipelineResult.suggestions || [];
+      responseData.avatar_state = pipelineResult.avatar_state || 'TALKING';
 
       // Pre-onboarding Wrapper Interception AFTER FastAPI (on workflow selection)
       if (!state.citizen.isConfirmed && state.workflow && state.workflow !== 'tracking' && !state.preOnboardingCompleted) {
@@ -888,7 +1022,6 @@ export class ChatService {
         }
       }
 
-      // Log workflow trace for FastAPI path
       await this.logWorkflowTrace(sessionId, 'FASTAPI', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
 
       // Record self-learning intelligence events
@@ -897,7 +1030,6 @@ export class ChatService {
         const workflow = state.workflow || null;
         const lang = state.language || 'en';
         
-        // Log Conversation Insight (Intent tracking)
         await this.intelligenceService.logInsight(
           sessionId,
           citizenId,
@@ -907,7 +1039,6 @@ export class ChatService {
           lang
         );
 
-        // Detect and log Sentiment (emotion tracking)
         let detectedSentiment = 'Neutral';
         let emotion = 'Neutral';
         const cleanMsg = sanitizedMessage.toLowerCase();
@@ -920,76 +1051,57 @@ export class ChatService {
         }
         await this.intelligenceService.logSentiment(sessionId, detectedSentiment, emotion, workflow);
 
-        // Track unanswered/low-confidence FAQ questions
         if (responseData.response && responseData.response.includes('I may not have enough information')) {
           await this.intelligenceService.logUnansweredQuestion(sanitizedMessage, lang);
           await this.intelligenceService.logLearningEvent('Knowledge_Missing', 'WARN', { question: sanitizedMessage, language: lang });
         }
 
-        // Save preferences
         if (citizenId) {
           await this.intelligenceService.saveCitizenPreferences(citizenId, lang, state.citizen.district, workflow);
         }
       } catch (logErr) {
         this.logger.warn(`Failed to capture intelligence logs: ${logErr.message}`);
       }
-
-      if (responseData && responseData.db_action) {
-        const dbResult = await this.executeDbAction(responseData.db_action, sessionId);
-        if (dbResult && dbResult.id) {
-          state.citizen.id = dbResult.id;
-          if (responseData.state && responseData.state.citizen) {
-            responseData.state.citizen.id = dbResult.id;
-          }
-        }
-        if (dbResult && dbResult.trackingResponse) {
-          responseData.response = dbResult.trackingResponse;
-        }
-      }
-
-      if (responseData && responseData.response) {
-        const text = responseData.response;
-        if (text.includes('112')) this.analyticsService.trackHelplineRecommendation('112');
-        if (text.includes('1090')) this.analyticsService.trackHelplineRecommendation('1090');
-        if (text.includes('1930')) this.analyticsService.trackHelplineRecommendation('1930');
-        if (text.includes('1098')) this.analyticsService.trackHelplineRecommendation('1098');
-        
-        if (text.includes('EMERGENCY') || text.includes('Notice') || text.includes('आपातकालीन')) {
-          this.analyticsService.trackEmergencyOverride();
-        }
-
-        responseData.response = this.validationService.sanitizeOutput(responseData.response);
-      }
-
-      // Persist state to DB
-      await this.handlePostMessageMetrics(sessionId, state, previousWorkflow, stepBefore, sanitizedMessage);
-      await this.saveSession(sessionId, state);
-      console.log('[ChatService.sendMessage] Exit - Successfully processed message via FastAPI');
-      return { 
-        ...responseData, 
-        avatar_state: responseData.avatar_state || 'TALKING',
-        _debug: { activeEngine: 'FASTAPI', step: state.step, workflow: state.workflow } 
-      };
-    } catch (e) {
-      console.error('[ChatService.sendMessage] Warning - AI Service connection failed, using local fallback:', e);
-      this.logger.warn(`AI Service connection failed (${e.message}). Initializing local rule-based mock workflow engine.`);
+    } else {
+      // Skipped AI or AI failed. Fall back to local rule-based workflow engine
+      this.logger.warn(`Using local rule-based mock workflow engine (Source: ${pipelineResult.source}).`);
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'WORKFLOW_FALLBACK_USED', state.workflow, stepBefore, String(state.step), sanitizedMessage);
+      
       const localResult = await this.handleLocalFallback(sanitizedMessage, sessionId, state);
-      if (localResult && localResult.response) {
-        localResult.response = this.validationService.sanitizeOutput(localResult.response);
-      }
-      // Log fallback step transition
+      
+      responseData.response = localResult.response;
+      responseData.suggestions = localResult.suggestions;
+      responseData.avatar_state = localResult.avatar_state;
+      
       await this.logWorkflowTrace(sessionId, 'FALLBACK', 'STEP_TRANSITION', state.workflow, stepBefore, String(state.step), sanitizedMessage);
-      await this.handlePostMessageMetrics(sessionId, state, previousWorkflow, stepBefore, sanitizedMessage);
-      await this.saveSession(sessionId, state);
-      console.log('[ChatService.sendMessage] Exit - Processed message via Fallback engine');
-      return { 
-        ...localResult, 
-        avatar_state: localResult.avatar_state || 'TALKING',
-        _debug: { activeEngine: 'FALLBACK', step: state.step, workflow: state.workflow } 
-      };
     }
+
+    // Common response metadata formatting
+    if (responseData.response) {
+      const text = responseData.response;
+      if (text.includes('112')) this.analyticsService.trackHelplineRecommendation('112');
+      if (text.includes('1090')) this.analyticsService.trackHelplineRecommendation('1090');
+      if (text.includes('1930')) this.analyticsService.trackHelplineRecommendation('1930');
+      if (text.includes('1098')) this.analyticsService.trackHelplineRecommendation('1098');
+      
+      if (text.includes('EMERGENCY') || text.includes('Notice') || text.includes('आपातकालीन')) {
+        this.analyticsService.trackEmergencyOverride();
+      }
+
+      responseData.response = this.validationService.sanitizeOutput(responseData.response);
+    }
+
+    // Persist state to DB
+    await this.handlePostMessageMetrics(sessionId, state, previousWorkflow, stepBefore, sanitizedMessage);
+    await this.saveSession(sessionId, state);
+    console.log(`[ChatService.sendMessage] Exit - Successfully processed message via ${sourceEngine}`);
+    return {
+      ...responseData,
+      avatar_state: responseData.avatar_state || 'TALKING',
+      _debug: { activeEngine: sourceEngine, step: state.step, workflow: state.workflow }
+    };
   }
+
 
   private async handlePostMessageMetrics(
     sessionId: string,
@@ -2326,9 +2438,11 @@ export class ChatService {
 
               state.data.pendingResumeSession = selectedSession.id;
               state.step = 'PRE_ONBOARDING_RESUME_CHOICE';
+              const recoveryMsg = this.draftRecoveryService.getIntelligentResumeMessage(loadedState.workflow, lastQuestion);
+              const recoveryResult = renderRecovery(recoveryMsg, ['Continue Previous Application', 'Start New Request']);
               return {
-                response: this.draftRecoveryService.getIntelligentResumeMessage(loadedState.workflow, lastQuestion),
-                suggestions: ['Continue Previous Application', 'Start New Request'],
+                response: recoveryResult.text,
+                suggestions: recoveryResult.buttons?.map(b => b.text),
               };
             }
           }
@@ -2991,97 +3105,6 @@ export class ChatService {
     return { score, checklist, valid: score === 100 };
   }
 
-  private renderComplaintReviewScreen(session: ChatSessionState, lang: 'en' | 'hi' | 'hinglish'): { response: string; suggestions?: string[] } {
-    const readiness = this.calculateReadiness(session, ['type', 'time', 'description']);
-
-    const items = session.data.incidentItems || [];
-    const itemBullets = items.map((i: IncidentItem) => `- ${i.itemCode.replace(/_/g, ' ')}`).join('\n');
-
-    let reviewScreen = `👮 **Please review your application.**
-
-Name: **${session.citizen.fullName}**
-Mobile: **${session.citizen.mobileNumber}**
-District: **${session.citizen.city || session.citizen.district || 'Not Provided'}**
-Complaint Type: **${session.data.type}**
-
-**Reported Items:**
-${itemBullets || 'None'}
-`;
-
-    if (session.data.brand) {
-      reviewScreen += `\n📱 **Device Information**\n`;
-      reviewScreen += `Brand: **${session.data.brand}**\n`;
-      if (session.data.model) {
-        reviewScreen += `Model: **${session.data.model}**\n`;
-      }
-      if (session.data.color) {
-        reviewScreen += `Color: **${session.data.color}**\n`;
-      }
-      if (session.data.year) {
-        reviewScreen += `Manufacturing/Purchase Year: **${session.data.year}**\n`;
-      }
-      reviewScreen += `IMEI: **${session.data.imei || 'Not Provided'}**\n`;
-    }
-
-    reviewScreen += `Incident Location: **${session.data.location}**
-Incident Date: **${session.data.time}**
-Description: **${session.data.description}**
-
-**Validation Status**
-
-${readiness.checklist}
-
-`;
-
-    // Check missing fields using complaintGuidanceConfig
-    const missingFields: string[] = [];
-    if (!session.data.location) missingFields.push('lastSeen');
-    if (session.data.type === 'Lost Mobile / Theft' || session.data.type === 'LOST_MOBILE') {
-      if (!session.data.brand) missingFields.push('brand');
-      if (!session.data.model) missingFields.push('mobileModel');
-      if (!session.data.imei) missingFields.push('imei');
-    } else if (session.data.type === 'Cyber Fraud / Financial Loss' || session.data.type === 'CYBER_FRAUD') {
-      if (!session.data.transactionId) missingFields.push('transactionId');
-      if (!session.data.upi) missingFields.push('upi');
-      if (!session.data.bank) missingFields.push('bank');
-    }
-
-    if (missingFields.length > 0) {
-      const guidanceMsg = this.complaintGuidanceService.generateGuidanceMessage(
-        session.data.type === 'Lost Mobile / Theft' ? 'LOST_MOBILE' :
-        session.data.type === 'Cyber Fraud / Financial Loss' ? 'CYBER_FRAUD' : session.data.type,
-        missingFields
-      );
-      reviewScreen += `\n### Guidance for Missing Details\n${guidanceMsg}\n`;
-    }
-
-    // Add timeline generator display
-    const timelineDisplay = this.timelineGeneratorService.generateTimelineDisplay('complaint');
-    if (timelineDisplay) {
-      reviewScreen += `\n${timelineDisplay}\n\n`;
-    }
-
-    let sugs: string[];
-    if (readiness.valid) {
-      reviewScreen += `Would you like to submit this application?
-
-- [Submit Application](option:Submit Application)
-- [Modify Details](option:Modify Details)`;
-      sugs = ['Submit Application', 'Modify Details'];
-    } else {
-      reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields and ensure validations pass.
-
-- [Modify Details](option:Modify Details)`;
-      sugs = ['Modify Details'];
-    }
-
-    return {
-      response: reviewScreen,
-      suggestions: sugs,
-    };
-  }
-
-
   private syncLegacyFields(session: ChatSessionState): void {
     if (!session.data) return;
     if (!session.data.entities) {
@@ -3407,7 +3430,7 @@ ${readiness.checklist}
           suggestions: ['Incident Location', 'Incident Date', 'Description']
         };
       } else {
-        return this.renderComplaintReviewScreen(session, lang);
+        return this.renderActiveWorkflowReviewScreen(session);
       }
     }
 
@@ -4746,157 +4769,11 @@ Would you like to submit this application?
   }
 
   private async renderActiveWorkflowReviewScreen(state: ChatSessionState): Promise<{ response: string; suggestions?: string[] }> {
-    const lang = state.language;
-    const header = this.localizationService.translate('REVIEW_SCREEN_HEADER', lang);
-    const labelValidationStatus = this.localizationService.translate('REVIEW_VALIDATION_STATUS', lang);
-    
-    let submitPrompt = lang === 'hi' ? 'क्या आप इस आवेदन को जमा करना चाहते हैं?' : (lang === 'hinglish' ? 'Kya aap ye application submit karna chahte hain?' : 'Would you like to submit this application?');
-    let submitLabel = lang === 'hi' ? 'आवेदन सबमिट करें' : (lang === 'hinglish' ? 'Application submit karein' : 'Submit Application');
-    let modifyLabel = lang === 'hi' ? 'विवरण बदलें' : (lang === 'hinglish' ? 'Details modify karein' : 'Modify Details');
-
-    if (state.workflow === 'complaint') {
-      const readiness = this.calculateReadiness(state, ['type', 'time', 'description']);
-      let reviewScreen = `${header}\n\n`;
-      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_LOCATION', lang)}: **${(state.citizen.city || state.citizen.district) ? this.localizationService.localizeLocation(state.citizen.city || state.citizen.district, lang) : (lang === 'hi' ? 'प्रदान नहीं किया गया' : 'Not provided')}**\n`;
-      reviewScreen += `${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}: **${state.data.type}**\n`;
-
-      if (state.data.brand) {
-        reviewScreen += `\n📱 **${this.localizationService.translate('REVIEW_DEVICE_INFORMATION', lang)}**\n`;
-        reviewScreen += `Brand: **${state.data.brand}**\n`;
-        if (state.data.model) {
-          reviewScreen += `Model: **${state.data.model}**\n`;
-        }
-        if (state.data.color) {
-          reviewScreen += `Color: **${state.data.color}**\n`;
-        }
-        if (state.data.year) {
-          reviewScreen += `Year: **${state.data.year}**\n`;
-        }
-        reviewScreen += `IMEI: **${state.data.imei || 'Not Provided'}**\n`;
-      }
-
-      reviewScreen += `\n**${this.localizationService.translate('REVIEW_INCIDENT_DETAILS', lang)}**\n`;
-      reviewScreen += `Incident Location: **${state.data.location}**\n`;
-      reviewScreen += `Incident Date: **${state.data.time}**\n`;
-      reviewScreen += `Description: **${state.data.description}**\n\n`;
-
-      reviewScreen += `**${labelValidationStatus}**\n\n${readiness.checklist}\n\n`;
-
-      let sugs: string[];
-      if (readiness.valid) {
-        reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
-        sugs = [submitLabel, modifyLabel];
-      } else {
-        reviewScreen += `⚠️ **Cannot Submit:** Please complete all required fields.\n\n- [${modifyLabel}](option:Modify Details)`;
-        sugs = [modifyLabel];
-      }
-      return {
-        response: reviewScreen,
-        suggestions: sugs,
-      };
-    } else if (state.workflow === 'verification') {
-      const labelCandidateName = lang === 'hi' ? 'उम्मीदवार का नाम' : (lang === 'hinglish' ? 'Candidate Name' : 'Candidate Name');
-      const labelCandidateMobile = lang === 'hi' ? 'उम्मीदवार का मोबाइल' : (lang === 'hinglish' ? 'Candidate Mobile' : 'Candidate Mobile');
-      const labelCandidateAddress = lang === 'hi' ? 'उम्मीदवार का पता' : (lang === 'hinglish' ? 'Candidate Address' : 'Candidate Address');
-      const labelPropertyDetails = lang === 'hi' ? 'संपत्ति का विवरण' : (lang === 'hinglish' ? 'Property Details' : 'Property Details');
-
-      let checklist = `✓ ${lang === 'hi' ? 'सत्यापन विवरण पूर्ण' : 'Verification Details Complete'}\n✓ ${lang === 'hi' ? 'जमा करने के लिए तैयार' : 'Ready for Submission'}`;
-
-      let reviewScreen = `${header}\n\n`;
-      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n`;
-      reviewScreen += `${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}: **${state.data.type}**\n\n`;
-
-      reviewScreen += `**${this.localizationService.translate('REVIEW_CANDIDATE_DETAILS', lang)}**\n`;
-      reviewScreen += `${labelCandidateName}: **${state.data.name}**\n`;
-      reviewScreen += `${labelCandidateMobile}: **${state.data.mobile}**\n`;
-      reviewScreen += `${labelCandidateAddress}: **${state.data.address}**\n`;
-      reviewScreen += `${labelPropertyDetails}: **${state.data.propertyDetails}**\n\n`;
-
-      reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;
-      reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
-
-      return {
-        response: reviewScreen,
-        suggestions: [submitLabel, modifyLabel],
-      };
-    } else if (state.workflow === 'certificate') {
-      const labelSubjectName = lang === 'hi' ? 'विषय का नाम' : (lang === 'hinglish' ? 'Subject Name' : 'Subject Name');
-      const labelSubjectAddress = lang === 'hi' ? 'विषय का पता' : (lang === 'hinglish' ? 'Subject Address' : 'Subject Address');
-      const labelDistrict = lang === 'hi' ? 'ज़िला' : (lang === 'hinglish' ? 'District' : 'District');
-      const labelPurpose = lang === 'hi' ? 'उद्देश्य' : (lang === 'hinglish' ? 'Purpose' : 'Purpose');
-      const isPRPUsed = state.data.prpUsed;
-      const sourceLabel = isPRPUsed
-        ? `✓ ${lang === 'hi' ? 'सत्यापित प्रोफ़ाइल से पुनः उपयोग किया गया' : (lang === 'hinglish' ? 'Verified profile se reused' : 'Reused From Verified Profile')}`
-        : `✓ ${lang === 'hi' ? 'मैन्युअल रूप से प्रदान किया गया' : (lang === 'hinglish' ? 'Manually provide kiya gaya' : 'Provided Manually')}`;
-
-      let checklist = `✓ ${lang === 'hi' ? 'विषय का नाम मान्य' : 'Subject Name Valid'}\n✓ ${lang === 'hi' ? 'उद्देश्य मान्य' : 'Purpose Valid'}\n✓ ${lang === 'hi' ? 'विवरण पूर्ण' : 'Details Complete'}`;
-
-      let reviewScreen = `${header}\n\n`;
-      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n\n`;
-
-      reviewScreen += `**${this.localizationService.translate('REVIEW_CANDIDATE_DETAILS', lang)}**\n`;
-      reviewScreen += `Subject Information Source: **${sourceLabel}**\n`;
-      reviewScreen += `${labelSubjectName}: **${state.data.name}**\n`;
-      reviewScreen += `${labelSubjectAddress}: **${state.data.address}**\n`;
-      reviewScreen += `${labelDistrict}: **${state.data.district ? this.localizationService.localizeLocation(state.data.district, lang) : 'Not Provided'}**\n`;
-      reviewScreen += `${labelPurpose}: **${state.data.purpose}**\n\n`;
-
-      reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;
-      reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
-
-      return {
-        response: reviewScreen,
-        suggestions: [submitLabel, modifyLabel],
-      };
-    } else if (state.workflow === 'event') {
-      const labelEventName = lang === 'hi' ? 'कार्यक्रम का नाम' : (lang === 'hinglish' ? 'Event Name' : 'Event Name');
-      const labelLocation = lang === 'hi' ? 'स्थान' : (lang === 'hinglish' ? 'Location' : 'Location');
-      const labelDate = lang === 'hi' ? 'दिनांक' : (lang === 'hinglish' ? 'Date' : 'Date');
-      const labelAttendance = lang === 'hi' ? 'अपेक्षित उपस्थिति' : (lang === 'hinglish' ? 'Expected Attendance' : 'Expected Attendance');
-      
-      const labelOrganizerName = lang === 'hi' ? 'आयोजक का नाम' : (lang === 'hinglish' ? 'Organizer Name' : 'Organizer Name');
-      const labelOrganizerAddress = lang === 'hi' ? 'आयोजक का पता' : (lang === 'hinglish' ? 'Organizer Address' : 'Organizer Address');
-      const labelOrganizerMobile = lang === 'hi' ? 'आयोजक का मोबाइल' : (lang === 'hinglish' ? 'Organizer Mobile' : 'Organizer Mobile');
-
-      const isPRPUsed = state.data.prpUsed;
-      const sourceLabel = isPRPUsed
-        ? `✓ ${lang === 'hi' ? 'सत्यापित प्रोफ़ाइल से पुनः उपयोग किया गया' : (lang === 'hinglish' ? 'Verified profile se reused' : 'Reused From Verified Profile')}`
-        : `✓ ${lang === 'hi' ? 'मैन्युअल रूप से प्रदान किया गया' : (lang === 'hinglish' ? 'Manually provide kiya gaya' : 'Provided Manually')}`;
-
-      let checklist = `✓ ${lang === 'hi' ? 'कार्यक्रम का नाम मान्य' : 'Event Name Valid'}\n✓ ${lang === 'hi' ? 'दिनांक मान्य' : 'Date Valid'}\n✓ ${lang === 'hi' ? 'विवरण पूर्ण' : 'Details Complete'}`;
-
-      let reviewScreen = `${header}\n\n`;
-      reviewScreen += `**${this.localizationService.translate('REVIEW_APPLICANT_PROFILE', lang)}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_NAME', lang)}: **${state.citizen.fullName}**\n`;
-      reviewScreen += `${this.localizationService.translate('PROFILE_MOBILE', lang)}: **${state.citizen.mobileNumber}**\n\n`;
-
-      reviewScreen += `**Organizer Information Source: ${sourceLabel}**\n`;
-      reviewScreen += `${labelOrganizerName}: **${state.data.organizerName || state.citizen.fullName}**\n`;
-      reviewScreen += `${labelOrganizerAddress}: **${state.data.organizerAddress || state.citizen.addressLine1}**\n`;
-      reviewScreen += `${labelOrganizerMobile}: **${state.data.organizerMobile || state.citizen.mobileNumber}**\n\n`;
-
-      reviewScreen += `**${this.localizationService.translate('REVIEW_SERVICE_TYPE', lang)}**\n`;
-      reviewScreen += `${labelEventName}: **${state.data.name}**\n`;
-      reviewScreen += `${labelLocation}: **${state.data.location}**\n`;
-      reviewScreen += `${labelDate}: **${state.data.date}**\n`;
-      reviewScreen += `${labelAttendance}: **${state.data.attendance}**\n\n`;
-
-      reviewScreen += `**${labelValidationStatus}**\n\n${checklist}\n\n`;
-      reviewScreen += `${submitPrompt}\n\n- [${submitLabel}](option:Submit Application)\n- [${modifyLabel}](option:Modify Details)`;
-
-      return {
-        response: reviewScreen,
-        suggestions: [submitLabel, modifyLabel],
-      };
-    }
-    return { response: 'State details updated. Please continue.' };
+    const result = renderReview(state, this.localizationService, this.calculateReadiness.bind(this));
+    return {
+      response: result.text,
+      suggestions: result.buttons?.map(b => b.text)
+    };
   }
 
   // --- Tracking Workflow ---
